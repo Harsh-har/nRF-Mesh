@@ -50,5 +50,6 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="@dimen/activity_vertical_margin"
         android:gravity="center_horizontal"
+        android:textColor="@color/black"
         android:text="@string/no_nodes_provisioned_rationale" />
 </LinearLayout>

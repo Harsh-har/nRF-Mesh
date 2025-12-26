@@ -28,8 +28,8 @@ public class RangeView extends View {
     private int otherRangeColor;
     private int conflictColor;
     private int borderColor;
-    private List<Range> ranges = new ArrayList<>();
-    private List<Range> otherRanges = new ArrayList<>();
+    private final List<Range> ranges = new ArrayList<>();
+    private final List<Range> otherRanges = new ArrayList<>();
 
     public RangeView(@NonNull final Context context, @Nullable final AttributeSet attrs) {
         super(context, attrs);
@@ -94,16 +94,13 @@ public class RangeView extends View {
         final Paint paint = getRectPaint();
         paint.setColor(rangesColor);
         for (Range range : ranges) {
-            if (range instanceof AllocatedUnicastRange) {
-                final AllocatedUnicastRange range1 = (AllocatedUnicastRange) range;
+            if (range instanceof AllocatedUnicastRange range1) {
                 final Rect rect = getRegion(canvas, range1.getLowAddress(), range1.getHighAddress(), MeshAddress.START_UNICAST_ADDRESS, MeshAddress.END_UNICAST_ADDRESS);
                 canvas.drawRect(rect, paint);
-            } else if (range instanceof AllocatedGroupRange) {
-                final AllocatedGroupRange range1 = (AllocatedGroupRange) range;
+            } else if (range instanceof AllocatedGroupRange range1) {
                 final Rect rect = getRegion(canvas, range1.getLowAddress(), range1.getHighAddress(), MeshAddress.START_GROUP_ADDRESS, MeshAddress.END_GROUP_ADDRESS);
                 canvas.drawRect(rect, paint);
-            } else if (range instanceof AllocatedSceneRange) {
-                final AllocatedSceneRange range1 = (AllocatedSceneRange) range;
+            } else if (range instanceof AllocatedSceneRange range1) {
                 final Rect rect = getRegion(canvas, range1.getFirstScene(), range1.getLastScene(), range1.getLowerBound(), range1.getUpperBound());
                 canvas.drawRect(rect, paint);
             }
@@ -114,16 +111,13 @@ public class RangeView extends View {
         final Paint paint = getRectPaint();
         paint.setColor(otherRangeColor);
         for (Range range : otherRanges) {
-            if (range instanceof AllocatedUnicastRange) {
-                final AllocatedUnicastRange range1 = (AllocatedUnicastRange) range;
+            if (range instanceof AllocatedUnicastRange range1) {
                 final Rect rect = getRegion(canvas, range1.getLowAddress(), range1.getHighAddress(), MeshAddress.START_UNICAST_ADDRESS, MeshAddress.END_UNICAST_ADDRESS);
                 canvas.drawRect(rect, paint);
-            } else if (range instanceof AllocatedGroupRange) {
-                final AllocatedGroupRange range1 = (AllocatedGroupRange) range;
+            } else if (range instanceof AllocatedGroupRange range1) {
                 final Rect rect = getRegion(canvas, range1.getLowAddress(), range1.getHighAddress(), MeshAddress.START_GROUP_ADDRESS, MeshAddress.END_GROUP_ADDRESS);
                 canvas.drawRect(rect, paint);
-            } else if (range instanceof AllocatedSceneRange) {
-                final AllocatedSceneRange range1 = (AllocatedSceneRange) range;
+            } else if (range instanceof AllocatedSceneRange range1) {
                 final Rect rect = getRegion(canvas, range1.getFirstScene(), range1.getLastScene(), range1.getLowerBound(), range1.getUpperBound());
                 canvas.drawRect(rect, paint);
             }
@@ -135,16 +129,14 @@ public class RangeView extends View {
         paint.setColor(conflictColor);
         for (Range range : ranges) {
             for (Range other : otherRanges) {
-                if (range instanceof AllocatedUnicastRange) {
-                    final AllocatedUnicastRange unicastRange = (AllocatedUnicastRange) range;
+                if (range instanceof AllocatedUnicastRange unicastRange) {
                     final AllocatedUnicastRange otherRange = (AllocatedUnicastRange) other;
                     if (unicastRange.overlaps(otherRange)) {
                         final Rect overlapRegion = getRegion(canvas, otherRange.getLowAddress(), otherRange.getHighAddress(),
                                 MeshAddress.START_UNICAST_ADDRESS, MeshAddress.END_UNICAST_ADDRESS);
                         canvas.drawRect(overlapRegion, paint);
                     }
-                } else if (range instanceof AllocatedGroupRange) {
-                    final AllocatedGroupRange groupRange = (AllocatedGroupRange) range;
+                } else if (range instanceof AllocatedGroupRange groupRange) {
                     final AllocatedGroupRange otherRange = (AllocatedGroupRange) other;
                     if (groupRange.overlaps(otherRange)) {
                         final Rect overlapRegion = getRegion(canvas, otherRange.getLowAddress(), otherRange.getHighAddress(),

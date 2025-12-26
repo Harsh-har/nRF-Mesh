@@ -31,6 +31,7 @@ import com.google.android.material.snackbar.Snackbar;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Random;
 
 import androidx.annotation.NonNull;
@@ -79,7 +80,6 @@ public class GroupControlsActivity extends AppCompatActivity implements
     private static final String VENDOR_FRAGMENT = "VENDOR_FRAGMENT";
     private static final String DETAILS_FRAGMENT = "DETAILS_FRAGMENT";
 
-    private ActivityConfigGroupsBinding binding;
     private GroupControlsViewModel mViewModel;
     private SubGroupAdapter groupAdapter;
     private boolean mIsConnected;
@@ -89,13 +89,13 @@ public class GroupControlsActivity extends AppCompatActivity implements
     @Override
     protected void onCreate(@Nullable final Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        binding = ActivityConfigGroupsBinding.inflate(getLayoutInflater());
+        ActivityConfigGroupsBinding binding = ActivityConfigGroupsBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
         mViewModel = new ViewModelProvider(this).get(GroupControlsViewModel.class);
 
         container = binding.container;
         setSupportActionBar(binding.toolbarInfo);
-        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        Objects.requireNonNull(getSupportActionBar()).setDisplayHomeAsUpEnabled(true);
         final View noModelsConfigured = binding.noModelsSubscribed.getRoot();
         final View noAppKeysBound = binding.noAppKeys.getRoot();
 

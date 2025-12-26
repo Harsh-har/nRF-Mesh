@@ -30,8 +30,8 @@ import no.nordicsemi.android.nrfmesh.R;
 
 public class RemovableViewHolder extends RecyclerView.ViewHolder {
 
-    private ImageView mDeleteView;
-    private View mRemovableView;
+    private final ImageView mDeleteView;
+    private final View mRemovableView;
 
     public RemovableViewHolder(final View itemView) {
         super(itemView);

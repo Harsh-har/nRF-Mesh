@@ -54,8 +54,7 @@ public class RemovableItemTouchHelperCallback extends ItemTouchHelper.Callback {
 
     @Override
     public int getMovementFlags(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder) {
-        if (viewHolder instanceof RemovableViewHolder) {
-            final RemovableViewHolder vHolder = ((RemovableViewHolder) viewHolder);
+        if (viewHolder instanceof RemovableViewHolder vHolder) {
             if (!(vHolder).isRemovable())
                 return 0;
             int swipeFlags = ItemTouchHelper.START | ItemTouchHelper.END;
