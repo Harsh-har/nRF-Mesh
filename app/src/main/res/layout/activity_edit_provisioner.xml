@@ -160,37 +160,37 @@
                             android:layout_height="?actionBarSize"
                             app:logo="@drawable/ic_arrow_collapse_black"
                             app:title="@string/title_allocated_ranges"
-                            app:titleMarginStart="@dimen/toolbar_title_margin"/>
+                            app:titleMarginStart="@dimen/toolbar_title_margin" />
 
                         <include
                             android:id="@+id/container_unicast_range"
                             layout="@layout/layout_range_container"
                             android:layout_width="match_parent"
-                            android:layout_height="wrap_content"/>
+                            android:layout_height="wrap_content" />
 
                         <include
                             android:id="@+id/container_group_range"
                             layout="@layout/layout_range_container"
                             android:layout_width="match_parent"
-                            android:layout_height="wrap_content"/>
+                            android:layout_height="wrap_content" />
 
                         <include
                             android:id="@+id/container_scene_range"
                             layout="@layout/layout_range_container"
                             android:layout_width="match_parent"
-                            android:layout_height="wrap_content"/>
+                            android:layout_height="wrap_content" />
 
                         <include
                             android:id="@+id/div3"
                             layout="@layout/layout_divider"
                             android:layout_width="match_parent"
-                            android:layout_height="1dp"/>
+                            android:layout_height="1dp" />
 
                         <include
                             android:id="@+id/info_ranges"
                             layout="@layout/info_range_legend"
                             android:layout_width="match_parent"
-                            android:layout_height="wrap_content"/>
+                            android:layout_height="wrap_content" />
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
             </LinearLayout>

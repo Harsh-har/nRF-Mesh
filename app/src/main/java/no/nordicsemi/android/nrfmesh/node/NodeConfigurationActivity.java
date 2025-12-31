@@ -202,24 +202,6 @@ public class NodeConfigurationActivity extends BaseActivity implements
             }
         });
 
-        binding.actionGetProxyState.setOnClickListener(v -> {
-            if (!checkConnectivity(binding.container)) return;
-            final ConfigGattProxyGet configGattProxyGet = new ConfigGattProxyGet();
-            sendMessage(configGattProxyGet);
-        });
-
-        binding.actionSetProxyState.setOnClickListener(v -> {
-            final String message;
-            final boolean mProxyState = ((NodeConfigurationViewModel) mViewModel).isProxyFeatureEnabled();
-            if (mProxyState) {
-                message = getString(R.string.proxy_set_off_rationale_summary);
-            } else {
-                message = getString(R.string.proxy_set_on_rationale_summary);
-            }
-            final DialogFragmentProxySet resetNodeFragment = DialogFragmentProxySet.
-                    newInstance(getString(R.string.title_proxy_state_settings), message, !mProxyState);
-            resetNodeFragment.show(getSupportFragmentManager(), null);
-        });
 
         binding.actionResetNode.setOnClickListener(v -> {
             if (!checkConnectivity(binding.container)) return;
@@ -296,14 +278,7 @@ public class NodeConfigurationActivity extends BaseActivity implements
     private void updateProxySettingsCardUi() {
         final ProvisionedMeshNode meshNode = mViewModel.getSelectedMeshNode().getValue();
         if (meshNode != null && meshNode.getNodeFeatures() != null && meshNode.getNodeFeatures().isProxyFeatureSupported()) {
-            binding.nodeProxyStateCard.setVisibility(View.VISIBLE);
-            if (meshNode.getNodeFeatures().isProxyFeatureEnabled()) {
-                binding.proxyStateSummary.setText(R.string.proxy_set_off_rationale);
-                binding.actionSetProxyState.setText(R.string.action_proxy_state_set_off);
-            } else {
-                binding.proxyStateSummary.setText(R.string.proxy_set_on_rationale);
-                binding.actionSetProxyState.setText(R.string.action_proxy_state_set_on);
-            }
+
         }
     }
 
@@ -324,8 +299,6 @@ public class NodeConfigurationActivity extends BaseActivity implements
         binding.actionGetCompositionData.setEnabled(true);
         binding.actionGetDefaultTtl.setEnabled(true);
         binding.actionSetDefaultTtl.setEnabled(true);
-        binding.actionGetProxyState.setEnabled(true);
-        binding.actionSetProxyState.setEnabled(true);
         binding.actionResetNode.setEnabled(true);
     }
 
@@ -334,8 +307,6 @@ public class NodeConfigurationActivity extends BaseActivity implements
         binding.actionGetCompositionData.setEnabled(false);
         binding.actionGetDefaultTtl.setEnabled(false);
         binding.actionSetDefaultTtl.setEnabled(false);
-        binding.actionGetProxyState.setEnabled(false);
-        binding.actionSetProxyState.setEnabled(false);
         binding.actionResetNode.setEnabled(false);
     }
 
