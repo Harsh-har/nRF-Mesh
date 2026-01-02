@@ -71,30 +71,30 @@ public class MainActivity extends AppCompatActivity implements
                     savedInstanceState.getInt(CURRENT_FRAGMENT));
         }
     }
+//
+//    @Override
+//    public boolean onCreateOptionsMenu(Menu menu) {
+//        Boolean isConnected = mViewModel.isConnectedToProxy().getValue();
+//        getMenuInflater().inflate(
+//                isConnected != null && isConnected
+//                        ? R.menu.disconnect
+//                        : R.menu.connect,
+//                menu
+//        );
+//        return true;
+//    }
 
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        Boolean isConnected = mViewModel.isConnectedToProxy().getValue();
-        getMenuInflater().inflate(
-                isConnected != null && isConnected
-                        ? R.menu.disconnect
-                        : R.menu.connect,
-                menu
-        );
-        return true;
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        if (item.getItemId() == R.id.action_connect) {
-            mViewModel.navigateToScannerActivity(this, false);
-            return true;
-        } else if (item.getItemId() == R.id.action_disconnect) {
-            mViewModel.disconnect();
-            return true;
-        }
-        return super.onOptionsItemSelected(item);
-    }
+//    @Override
+//    public boolean onOptionsItemSelected(MenuItem item) {
+//        if (item.getItemId() == R.id.action_connect) {
+//            mViewModel.navigateToScannerActivity(this, false);
+//            return true;
+//        } else if (item.getItemId() == R.id.action_disconnect) {
+//            mViewModel.disconnect();
+//            return true;
+//        }
+//        return super.onOptionsItemSelected(item);
+//    }
 
     @Override
     public boolean onNavigationItemSelected(@NonNull MenuItem item) {
@@ -104,18 +104,18 @@ public class MainActivity extends AppCompatActivity implements
             ft.show(mNetworkFragment).hide(mGroupsFragment)
                     .hide(mProxyFilterFragment).hide(mSettingsFragment);
         }
-//        else if (item.getItemId() == R.id.action_groups) {
-//            ft.hide(mNetworkFragment).show(mGroupsFragment)
-//                    .hide(mProxyFilterFragment).hide(mSettingsFragment);
-//        }
-//        else if (item.getItemId() == R.id.action_proxy) {
-//            ft.hide(mNetworkFragment).hide(mGroupsFragment)
-//                    .show(mProxyFilterFragment).hide(mSettingsFragment);
-//        }
-//        else if (item.getItemId() == R.id.action_settings) {
-//            ft.hide(mNetworkFragment).hide(mGroupsFragment)
-//                    .hide(mProxyFilterFragment).show(mSettingsFragment);
-//        }
+        else if (item.getItemId() == R.id.action_groups) {
+            ft.hide(mNetworkFragment).show(mGroupsFragment)
+                    .hide(mProxyFilterFragment).hide(mSettingsFragment);
+        }
+        else if (item.getItemId() == R.id.action_proxy) {
+            ft.hide(mNetworkFragment).hide(mGroupsFragment)
+                    .show(mProxyFilterFragment).hide(mSettingsFragment);
+        }
+        else if (item.getItemId() == R.id.action_settings) {
+            ft.hide(mNetworkFragment).hide(mGroupsFragment)
+                    .hide(mProxyFilterFragment).show(mSettingsFragment);
+        }
 
         ft.commit();
         invalidateOptionsMenu();

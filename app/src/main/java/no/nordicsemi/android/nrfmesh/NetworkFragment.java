@@ -191,7 +191,8 @@ public class NetworkFragment extends Fragment implements
                                 //     message = getString(R.string.init_config_error_app_key_msg);
                                 //     showErrorDialog(title, message);
                                 // }
-                            } else {
+                            }
+                            else {
                                 message = getString(R.string.init_config_error_app_key_msg);
                                 showErrorDialog(title, message);
                             }
@@ -199,10 +200,11 @@ public class NetworkFragment extends Fragment implements
                             message = getString(R.string.init_config_error_default_ttl_get_msg);
                             showErrorDialog(title, message);
                         }
-                    } else {
-                        message = getString(R.string.init_config_error_all);
-                        showErrorDialog(title, message);
                     }
+//                    else {
+//                        message = getString(R.string.init_config_error_all);
+//                        showErrorDialog(title, message);
+//                    }
                 }
             }
             requireActivity().invalidateOptionsMenu();

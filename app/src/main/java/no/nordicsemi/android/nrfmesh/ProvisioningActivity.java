@@ -207,26 +207,34 @@ public class ProvisioningActivity extends AppCompatActivity implements
 
         binding.actionProvisionDevice.setOnClickListener(v -> {
             final UnprovisionedMeshNode node = mViewModel.getUnprovisionedMeshNode().getValue();
+
+            // Identify mode (before capabilities)
             if (node == null) {
                 device.setName(mViewModel.getNetworkLiveData().getNodeName());
                 mViewModel.getNrfMeshRepository().identifyNode(device);
                 return;
             }
 
-            if (node.getProvisioningCapabilities() != null) {
-                if (node.getProvisioningCapabilities().isPublicKeyOobSupported()) {
-                    DialogFragmentOobPublicKey.newInstance().show(getSupportFragmentManager(), null);
-                } else {
-                    if (node.getProvisioningCapabilities().getAvailableOOBTypes().size() == 1 &&
-                            node.getProvisioningCapabilities().getAvailableOOBTypes().get(0) == AuthenticationOOBMethods.NO_OOB_AUTHENTICATION) {
-                        onNoOOBSelected();
-                    } else {
-                        final DialogFragmentSelectOOBType fragmentSelectOOBType = DialogFragmentSelectOOBType.newInstance(node.getProvisioningCapabilities());
-                        fragmentSelectOOBType.show(getSupportFragmentManager(), null);
-                    }
-                }
+            try {
+                // Always force NO OOB
+                node.setNodeName(mViewModel.getNetworkLiveData().getNodeName());
+                setupProvisionerStateObservers();
+                binding.provisioningProgressBar.setVisibility(View.VISIBLE);
+
+                mViewModel.getMeshManagerApi().startProvisioning(node);
+
+            } catch (IllegalArgumentException ex) {
+                mViewModel.displaySnackBar(
+                        this,
+                        binding.coordinator,
+                        ex.getMessage() == null
+                                ? getString(R.string.unknwon_error)
+                                : ex.getMessage(),
+                        Snackbar.LENGTH_LONG
+                );
             }
         });
+
 
         if (savedInstanceState == null)
             mViewModel.getNetworkLiveData().resetSelectedAppKey();

@@ -1,4 +1,3 @@
-
 <resources>
     <string name="app_name">Swaro Mesh</string>
     <string name="feature_name">Mesh</string>
@@ -258,7 +257,7 @@
     <string name="no_elements_guide_info">No elements were found! \n\nTry configuring the node again to see what elements are available on this node.
         You may do this by going back to the main screen and connecting to the node.</string>
     <string name="no_elements_guide_composition_data">No elements were found! \nGet composition data to see what elements are on this node.</string>
-    <string name="action_connect">CONNECT</string>
+    <string name="action_connect">Connect</string>
     <string name="action_disconnect">Disconnect</string>
 
     <string name="hint_publish_address">Publish Address</string>
@@ -477,13 +476,13 @@
         Step 1. Connect to the network.\n\n
         Step 2. Click on the node.\n\n
         Step 3. Add app key</string>
-    <string name="init_config_error_all">Initial configuration of the node has failed.
-        Continue with the following steps to configure the node\n\n
-        Step 1. Connect to the network.\n\n
-        Step 2. Click on the node.\n\n
-        Step 3. Click get composition data\n\n
-        Step 4. Get default TTL\n\n
-        Step 5. Add app key</string>
+    <!--    <string name="init_config_error_all">Initial configuration of the node has failed.-->
+    <!--        Continue with the following steps to configure the node\n\n-->
+    <!--        Step 1. Connect to the network.\n\n-->
+    <!--        Step 2. Click on the node.\n\n-->
+    <!--        Step 3. Click get composition data\n\n-->
+    <!--        Step 4. Get default TTL\n\n-->
+    <!--        Step 5. Add app key</string>-->
     <string name="network_transmit_interval_steps_summary">10 ms step(s)</string>
     <string name="please_connect_to_network">Please connect to network to control devices!</string>
     <string name="action_edit">Edit</string>
@@ -633,7 +632,7 @@
     <string name="error_cannot_assign_addresses">The device cannot assign consecutive unicast addresses to all elements!</string>
     <string name="error_rfu">Reserved for Future Use!</string>
     <string name="error_invalid_key_length">Error, key length must be 16-bytes</string>
-  
+    <string name="title_exclude_node">Exclude Node</string>
     <string name="exclude">Exclude</string>
     <string name="excluded">Excluded</string>
     <string name="node_exclusion_summary">If checked the node will be excluded from key exchange process. When the key refresh procedure is complete,
