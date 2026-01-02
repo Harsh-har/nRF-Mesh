@@ -1,6 +1,4 @@
 # Android-nRF-Mesh-Library
-[ ![Download](https://maven-badges.herokuapp.com/maven-central/no.nordicsemi.android/mesh/badge.svg?style=plastic) ](https://search.maven.org/artifact/no.nordicsemi.android/mesh)
-
 ## About
 The Android-nRF-Mesh-Library allows provisioning and sending messages to Bluetooth Mesh devices.
 
@@ -20,7 +18,6 @@ The mesh network configuration (JSON schema) is compatible with
 - **Mesh Configuration Database Profile 1.0**.
 
 Bluetooth mesh specifications are available at
-[Bluetooth.com](https://www.bluetooth.com/specifications/specs/?status=active&show_latest_version=1&keyword=mesh).
 
 ### Supported features
 1. Provisioning with all features that available in Bluetooth Mesh Profile 1.0.1, including
@@ -172,7 +169,7 @@ and Config messages can also be sent similarly.
 
 Mobile Applications Team, Nordic Semiconductor ASA.
 
-Contact: roshanrajaratnam <roshan.rajaratnam@nordicsemi.no>
+
 
 ## License
 
