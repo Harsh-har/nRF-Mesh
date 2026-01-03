@@ -25,7 +25,7 @@ import no.nordicsemi.android.mesh.Group;
 import no.nordicsemi.android.mesh.MeshNetwork;
 import no.nordicsemi.android.mesh.NetworkKey;
 import no.nordicsemi.android.mesh.NodeKey;
-import no.nordicsemi.android.mesh.models.ConfigurationServerModel;
+//import no.nordicsemi.android.mesh.models.ConfigurationServerModel;
 import no.nordicsemi.android.mesh.transport.ConfigHeartbeatPublicationSet;
 import no.nordicsemi.android.mesh.transport.Element;
 import no.nordicsemi.android.mesh.transport.MeshMessage;
@@ -95,9 +95,9 @@ public class HeartbeatPublicationActivity extends AppCompatActivity implements
         setContentView(binding.getRoot());
         mViewModel = new ViewModelProvider(this).get(HeartbeatViewModel.class);
 
-        final ConfigurationServerModel meshModel = (ConfigurationServerModel) mViewModel.getSelectedModel().getValue();
-        if (meshModel == null)
-            finish();
+//        final ConfigurationServerModel meshModel = (ConfigurationServerModel) mViewModel.getSelectedModel().getValue();
+//        if (meshModel == null)
+//            finish();
 
         setSupportActionBar(binding.toolbar);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
@@ -153,15 +153,16 @@ public class HeartbeatPublicationActivity extends AppCompatActivity implements
 
         binding.containerPublicationTtl.setOnClickListener(v -> {
             final DialogFragmentTtl fragmentPublishTtl;
-            final HeartbeatPublication publication = meshModel.getHeartbeatPublication();
-            if (publication != null && publication.isEnabled()) {
-                fragmentPublishTtl = DialogFragmentHeartbeatPublishTtl
-                        .newInstance(meshModel.getHeartbeatPublication().getTtl());
-            } else {
-                fragmentPublishTtl = DialogFragmentHeartbeatPublishTtl
-                        .newInstance(DEFAULT_PUBLICATION_TTL);
-            }
-            fragmentPublishTtl.show(getSupportFragmentManager(), null);
+//            final HeartbeatPublication publication = meshModel.getHeartbeatPublication();
+//            if (publication != null && publication.isEnabled()) {
+//                fragmentPublishTtl = DialogFragmentHeartbeatPublishTtl
+//                        .newInstance(meshModel.getHeartbeatPublication().getTtl());
+//            }
+//            else {
+//                fragmentPublishTtl = DialogFragmentHeartbeatPublishTtl
+//                        .newInstance(DEFAULT_PUBLICATION_TTL);
+//            }
+//            fragmentPublishTtl.show(getSupportFragmentManager(), null);
         });
 
         binding.containerNetKeyIndex.setOnClickListener(v -> {
@@ -176,31 +177,31 @@ public class HeartbeatPublicationActivity extends AppCompatActivity implements
         });
 
         final ProvisionedMeshNode node = mViewModel.getSelectedMeshNode().getValue();
-        if (meshModel.getHeartbeatPublication() != null) {
-            final HeartbeatPublication publication = meshModel.getHeartbeatPublication();
-            updateCountLog(publication.getCountLog());
-            updatePeriodLog(publication.getPeriodLog());
-            updateDestinationAddress(publication.getDst());
-            updateTtl(publication.getTtl());
-            updateNetKeyIndex(mNetKey = mViewModel.getNetworkLiveData().getMeshNetwork().getNetKey(publication.getNetKeyIndex()));
-            final Features features = publication.getFeatures();
-            updateFeatures(features.isRelayFeatureSupported(), features.getRelay(),
-                    features.isProxyFeatureSupported(), features.getProxy(),
-                    features.isFriendFeatureSupported(), features.getFriend(),
-                    features.getFriend());
-        } else {
-            updateCountLog(COUNT_MIN);
-            updatePeriodLog(PERIOD_LOG_MIN);
-            updateDestinationAddress(mDestination);
-            updateTtl(5);
-            updateNetKeyIndex(mNetKey = mViewModel.getNetworkLiveData().getMeshNetwork().getPrimaryNetworkKey());
-            if (node != null) {
-                final Features features = node.getNodeFeatures();
-                updateFeatures(features.isRelayFeatureSupported(), features.getRelay(),
-                        features.isProxyFeatureSupported(), features.getProxy(),
-                        features.isFriendFeatureSupported(), features.getFriend(), features.getFriend());
-            }
-        }
+//        if (meshModel.getHeartbeatPublication() != null) {
+//            final HeartbeatPublication publication = meshModel.getHeartbeatPublication();
+//            updateCountLog(publication.getCountLog());
+//            updatePeriodLog(publication.getPeriodLog());
+//            updateDestinationAddress(publication.getDst());
+//            updateTtl(publication.getTtl());
+//            updateNetKeyIndex(mNetKey = mViewModel.getNetworkLiveData().getMeshNetwork().getNetKey(publication.getNetKeyIndex()));
+//            final Features features = publication.getFeatures();
+//            updateFeatures(features.isRelayFeatureSupported(), features.getRelay(),
+//                    features.isProxyFeatureSupported(), features.getProxy(),
+//                    features.isFriendFeatureSupported(), features.getFriend(),
+//                    features.getFriend());
+//        } ]else {
+//            updateCountLog(COUNT_MIN);
+//            updatePeriodLog(PERIOD_LOG_MIN);
+//            updateDestinationAddress(mDestination);
+//            updateTtl(5);
+//            updateNetKeyIndex(mNetKey = mViewModel.getNetworkLiveData().getMeshNetwork().getPrimaryNetworkKey());
+//            if (node != null) {
+//                final Features features = node.getNodeFeatures();
+//                updateFeatures(features.isRelayFeatureSupported(), features.getRelay(),
+//                        features.isProxyFeatureSupported(), features.getProxy(),
+//                        features.isFriendFeatureSupported(), features.getFriend(), features.getFriend());
+//            }
+//        }
     }
 
     @Override

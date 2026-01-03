@@ -37,9 +37,11 @@
         android:theme="@style/AppTheme"
         tools:ignore="GoogleAppIndexingWarning">
         <activity
-            android:name=".ble.adapter.FullConfigureActivity"
+            android:name=".widgets.TestActivity"
             android:exported="false" />
-        <!-- ✅ CUSTOM SPLASH ACTIVITY (LAUNCHER) -->
+        <activity
+            android:name=".ble.adapter.FullConfigureActivity"
+            android:exported="false" /> <!-- ✅ CUSTOM SPLASH ACTIVITY (LAUNCHER) -->
         <activity
             android:name=".SplashActivity"
             android:exported="true"

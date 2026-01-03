@@ -49,7 +49,7 @@ import no.nordicsemi.android.mesh.ApplicationKey;
 import no.nordicsemi.android.mesh.Group;
 import no.nordicsemi.android.mesh.MeshNetwork;
 import no.nordicsemi.android.mesh.models.ConfigurationClientModel;
-import no.nordicsemi.android.mesh.models.ConfigurationServerModel;
+//import no.nordicsemi.android.mesh.models.ConfigurationServerModel;
 import no.nordicsemi.android.mesh.models.SigModel;
 import no.nordicsemi.android.mesh.models.SigModelParser;
 import no.nordicsemi.android.mesh.transport.ConfigModelAppBind;
@@ -369,17 +369,17 @@ public abstract class BaseModelConfigurationActivity extends BaseActivity implem
         final Element element = mViewModel.getSelectedElement().getValue();
         if (node != null && element != null && model != null) {
             if (model instanceof SigModel) {
-                if (!(model instanceof ConfigurationServerModel) && !(model instanceof ConfigurationClientModel)) {
-                    mViewModel.displaySnackBar(this, mContainer, getString(R.string.listing_model_configuration), Snackbar.LENGTH_LONG);
-                    mViewModel.getMessageQueue().add(new ConfigSigModelAppGet(element.getElementAddress(), model.getModelId()));
-                    if (model.getModelId() != SigModelParser.SCENE_SETUP_SERVER) {
-                        mViewModel.getMessageQueue().add(new ConfigSigModelSubscriptionGet(element.getElementAddress(), model.getModelId()));
-                        queuePublicationGetMessage(element.getElementAddress(), model.getModelId());
-                    }
-                    sendQueuedMessage(node.getUnicastAddress());
-                } else {
-                    mSwipe.setRefreshing(false);
-                }
+//                if (!(model instanceof ConfigurationServerModel) && !(model instanceof ConfigurationClientModel)) {
+//                    mViewModel.displaySnackBar(this, mContainer, getString(R.string.listing_model_configuration), Snackbar.LENGTH_LONG);
+//                    mViewModel.getMessageQueue().add(new ConfigSigModelAppGet(element.getElementAddress(), model.getModelId()));
+//                    if (model.getModelId() != SigModelParser.SCENE_SETUP_SERVER) {
+//                        mViewModel.getMessageQueue().add(new ConfigSigModelSubscriptionGet(element.getElementAddress(), model.getModelId()));
+//                        queuePublicationGetMessage(element.getElementAddress(), model.getModelId());
+//                    }
+//                    sendQueuedMessage(node.getUnicastAddress());
+//                } else {
+//                    mSwipe.setRefreshing(false);
+//                }
 
             } else {
                 mViewModel.displaySnackBar(this, mContainer, getString(R.string.listing_model_configuration), Snackbar.LENGTH_LONG);

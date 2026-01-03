@@ -72,6 +72,7 @@
     <string name="provision_action">Provision</string>
     <string name="identify_action">Identify</string>
 
+
     <string name="ok">OK</string>
 
     <string name="title_node_details">Node Details</string>
@@ -518,6 +519,7 @@
         \n\nThis step cannot be undone and you will have to manually reset the node. \n\nWould you like to continue?</string>
     <string name="node_deleted">Node deleted.</string>
     <string name="interval">Interval</string>
+    <string name="init_config_error_composition_msg">Interval</string>
     <string name="adding_net_key">Adding net key…</string>
     <string name="deleting_net_key">Deleting net key…</string>
     <string name="adding_app_key">Adding app key…</string>
