@@ -95,7 +95,6 @@ public class NrfMeshRepository implements MeshProvisioningStatusCallbacks, MeshS
 
     private static final String TAG = NrfMeshRepository.class.getSimpleName();
     private static final int ATTENTION_TIMER = 5;
-    private static final int AUTO_RECONNECT_DELAY_MS = 4000; // 4 seconds delay before auto-reconnect
     static final String EXPORT_PATH = Environment.getExternalStorageDirectory() + File.separator +
             "Nordic Semiconductor" + File.separator + "nRF Mesh" + File.separator;
 
@@ -110,9 +109,6 @@ public class NrfMeshRepository implements MeshProvisioningStatusCallbacks, MeshS
 
     // Updates the connection state while connecting to a peripheral
     private final MutableLiveData<String> mConnectionState = new MutableLiveData<>();
-
-    // LiveData for toast messages
-    private final SingleLiveEvent<String> mToastMessage = new SingleLiveEvent<>();
 
     // Flag to determine if a reconnection is in the progress when provisioning has completed
     private final SingleLiveEvent<Boolean> mIsReconnecting = new SingleLiveEvent<>();
@@ -194,13 +190,6 @@ public class NrfMeshRepository implements MeshProvisioningStatusCallbacks, MeshS
      */
     LiveData<String> getConnectionState() {
         return mConnectionState;
-    }
-
-    /**
-     * Returns {@link SingleLiveEvent} containing toast messages.
-     */
-    LiveData<String> getToastMessage() {
-        return mToastMessage;
     }
 
     /**
@@ -660,23 +649,11 @@ public class NrfMeshRepository implements MeshProvisioningStatusCallbacks, MeshS
     private void onProvisioningCompleted(final ProvisionedMeshNode node) {
         mIsProvisioningComplete = true;
         mProvisionedMeshNode = node;
-
-        // Show toast message for provisioning completion
-        mToastMessage.postValue("Provisioning Complete!");
-
-        // Show connection state message
-        mConnectionState.postValue("Provisioning Complete! Auto-reconnecting in 4 seconds...");
-
-        // Disconnect first
+        mIsReconnecting.postValue(true);
         mBleMeshManager.disconnect().enqueue();
         loadNodes();
-
-        // Wait 4 seconds then start auto-reconnection for configuration
-        mHandler.postDelayed(() -> {
-            mIsReconnecting.postValue(true);
-            mHandler.post(() -> mConnectionState.postValue("Scanning for provisioned node for configuration..."));
-            mHandler.postDelayed(mReconnectRunnable, 1000);
-        }, AUTO_RECONNECT_DELAY_MS);
+        mHandler.post(() -> mConnectionState.postValue("Scanning for provisioned node"));
+        mHandler.postDelayed(mReconnectRunnable, 1000); //Added a slight delay to disconnect and refresh the cache
     }
 
     /**
@@ -829,7 +806,7 @@ public class NrfMeshRepository implements MeshProvisioningStatusCallbacks, MeshS
                 //    if (appKey != null) {
                 //        mHandler.postDelayed(() -> {
                 //            // We should use the app key's boundNetKeyIndex as the network key index when adding the default app key
-                //            final NetworkKey networkKey = mMeshManagerApi.getMeshNetwork().getNetKeys().get(appKey.getBoundNetKeyIndex());
+                //            final NetworkKey networkKey = mMeshNetwork.getNetKeys().get(appKey.getBoundNetKeyIndex());
                 //            final ConfigAppKeyAdd configAppKeyAdd = new ConfigAppKeyAdd(networkKey, appKey);
                 //            mMeshManagerApi.createMeshPdu(node.getUnicastAddress(), configAppKeyAdd);
                 //        }, 1500);
