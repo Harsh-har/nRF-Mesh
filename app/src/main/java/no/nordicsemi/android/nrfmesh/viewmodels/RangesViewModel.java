@@ -1,9 +1,10 @@
 package no.nordicsemi.android.nrfmesh.viewmodels;
 
-import javax.inject.Inject;
-
 import androidx.annotation.NonNull;
 import androidx.lifecycle.LiveData;
+
+import javax.inject.Inject;
+
 import dagger.hilt.android.lifecycle.HiltViewModel;
 import no.nordicsemi.android.mesh.Provisioner;
 

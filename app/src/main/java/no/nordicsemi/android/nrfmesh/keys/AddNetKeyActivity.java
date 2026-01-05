@@ -27,13 +27,14 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 
-import com.google.android.material.snackbar.Snackbar;
-
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 import androidx.lifecycle.ViewModelProvider;
+
+import com.google.android.material.snackbar.Snackbar;
+
 import dagger.hilt.android.AndroidEntryPoint;
 import no.nordicsemi.android.mesh.NetworkKey;
 import no.nordicsemi.android.mesh.utils.MeshParserUtils;

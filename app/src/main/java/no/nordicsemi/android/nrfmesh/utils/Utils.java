@@ -33,14 +33,15 @@ import android.os.ParcelUuid;
 import android.preference.PreferenceManager;
 import android.provider.Settings;
 
-import java.util.Comparator;
-import java.util.UUID;
-
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+
+import java.util.Comparator;
+import java.util.UUID;
+
 import no.nordicsemi.android.mesh.ApplicationKey;
 import no.nordicsemi.android.mesh.NetworkKey;
 import no.nordicsemi.android.mesh.Scene;

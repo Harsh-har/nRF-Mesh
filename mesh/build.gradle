@@ -1,5 +1,4 @@
 apply plugin: 'com.android.library'
-apply plugin: 'org.jetbrains.kotlin.android'
 
 android {
 
@@ -47,9 +46,6 @@ android {
         sourceCompatibility JavaVersion.VERSION_17
         targetCompatibility JavaVersion.VERSION_17
     }
-    kotlinOptions {
-        jvmTarget = '17'
-    }
 }
 
 dependencies {
@@ -67,7 +63,6 @@ dependencies {
 
     // -------------------- Room (minSdk safe) --------------------
     implementation 'androidx.room:room-runtime:2.8.4'
-    implementation 'androidx.core:core-ktx:1.17.0'
     annotationProcessor 'androidx.room:room-compiler:2.8.4'
     androidTestImplementation 'androidx.room:room-testing:2.8.4'
 

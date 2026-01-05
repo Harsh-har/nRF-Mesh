@@ -1,5 +1,10 @@
 package no.nordicsemi.android.nrfmesh.node.dialog;
 
+import static no.nordicsemi.android.mesh.utils.NetworkTransmitSettings.MAX_TRANSMISSION_INTERVAL_STEPS;
+import static no.nordicsemi.android.mesh.utils.NetworkTransmitSettings.MAX_TRANSMIT_COUNT;
+import static no.nordicsemi.android.mesh.utils.NetworkTransmitSettings.MIN_TRANSMISSION_INTERVAL_STEPS;
+import static no.nordicsemi.android.mesh.utils.NetworkTransmitSettings.MIN_TRANSMIT_COUNT;
+
 import android.app.Dialog;
 import android.content.DialogInterface;
 import android.os.Bundle;
@@ -8,13 +13,9 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.DialogFragment;
+
 import no.nordicsemi.android.nrfmesh.R;
 import no.nordicsemi.android.nrfmesh.databinding.DialogFragmentNetworkTransmitSettingsBinding;
-
-import static no.nordicsemi.android.mesh.utils.NetworkTransmitSettings.MAX_TRANSMISSION_INTERVAL_STEPS;
-import static no.nordicsemi.android.mesh.utils.NetworkTransmitSettings.MAX_TRANSMIT_COUNT;
-import static no.nordicsemi.android.mesh.utils.NetworkTransmitSettings.MIN_TRANSMISSION_INTERVAL_STEPS;
-import static no.nordicsemi.android.mesh.utils.NetworkTransmitSettings.MIN_TRANSMIT_COUNT;
 
 
 public class DialogFragmentNetworkTransmitSettings extends DialogFragment {
@@ -73,7 +74,7 @@ public class DialogFragmentNetworkTransmitSettings extends DialogFragment {
 
         final AlertDialog alertDialog = alertDialogBuilder.show();
         alertDialog.getButton(DialogInterface.BUTTON_POSITIVE).setOnClickListener(v -> {
-            ((DialogFragmentNetworkTransmitSettings.DialogFragmentNetworkTransmitSettingsListener) requireActivity())
+            ((DialogFragmentNetworkTransmitSettingsListener) requireActivity())
                     .onNetworkTransmitSettingsEntered(mTransmitCount, mTransmitIntervalSteps);
             dismiss();
         });

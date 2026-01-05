@@ -28,10 +28,11 @@ import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.TextView;
 
+import androidx.annotation.NonNull;
+
 import java.util.ArrayList;
 import java.util.List;
 
-import androidx.annotation.NonNull;
 import no.nordicsemi.android.mesh.Group;
 import no.nordicsemi.android.mesh.utils.MeshAddress;
 import no.nordicsemi.android.nrfmesh.databinding.GroupSubscriptionItemBinding;

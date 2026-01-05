@@ -767,7 +767,7 @@ public class NrfMeshRepository implements MeshProvisioningStatusCallbacks, MeshS
                     updateNode(node);
                 }
             } else if (meshMessage.getOpCode() == CONFIG_DEFAULT_TTL_STATUS) {
-                final ConfigDefaultTtlStatus status = (ConfigDefaultTtlStatus) meshMessage;
+              final ConfigDefaultTtlStatus status = (ConfigDefaultTtlStatus) meshMessage;
                 if (mSetupProvisionedNode) {
                     mIsDefaultTtlReceived = true;
                     if(mMeshNetworkLiveData.getAppKeys().isEmpty()){

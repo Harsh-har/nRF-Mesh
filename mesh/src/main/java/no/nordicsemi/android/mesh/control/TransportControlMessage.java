@@ -34,7 +34,7 @@ public abstract class TransportControlMessage {
         LOWER_TRANSPORT_BLOCK_ACKNOWLEDGEMENT(TransportLayerOpCodes.SAR_ACK_OPCODE),
         LOWER_TRANSPORT_HEARTBEAT_MESSAGE(TransportLayerOpCodes.HEARTBEAT_OPCODE);
 
-        private final int state;
+        private int state;
 
         TransportControlMessageState(final int state) {
             this.state = state;

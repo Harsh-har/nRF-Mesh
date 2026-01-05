@@ -1,15 +1,20 @@
 package no.nordicsemi.android.nrfmesh.node;
 
-import android.os.Bundle;
+import static android.view.View.GONE;
+import static android.view.View.VISIBLE;
+import static no.nordicsemi.android.mesh.models.SigModelParser.SCENE_SERVER;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
+import android.os.Bundle;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.DefaultItemAnimator;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
+
 import dagger.hilt.android.AndroidEntryPoint;
 import no.nordicsemi.android.mesh.ApplicationKey;
 import no.nordicsemi.android.mesh.Scene;
@@ -27,10 +32,6 @@ import no.nordicsemi.android.nrfmesh.scenes.adapter.SceneUiState;
 import no.nordicsemi.android.nrfmesh.scenes.adapter.StoredScenesAdapter;
 import no.nordicsemi.android.nrfmesh.scenes.dialog.BottomSheetSceneRecallDialogFragment;
 import no.nordicsemi.android.nrfmesh.viewmodels.ModelConfigurationViewModel;
-
-import static android.view.View.GONE;
-import static android.view.View.VISIBLE;
-import static no.nordicsemi.android.mesh.models.SigModelParser.SCENE_SERVER;
 
 @AndroidEntryPoint
 public class SceneServerModelActivity extends ModelConfigurationActivity implements

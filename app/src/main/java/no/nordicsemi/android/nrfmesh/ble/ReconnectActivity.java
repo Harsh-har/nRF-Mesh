@@ -34,8 +34,6 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.lifecycle.ViewModelProvider;
 
-import java.util.Objects;
-
 import dagger.hilt.android.AndroidEntryPoint;
 import no.nordicsemi.android.nrfmesh.R;
 import no.nordicsemi.android.nrfmesh.adapter.ExtendedBluetoothDevice;
@@ -60,13 +58,12 @@ public class ReconnectActivity extends AppCompatActivity {
 
         final Intent intent = getIntent();
         final ExtendedBluetoothDevice device = intent.getParcelableExtra(Utils.EXTRA_DEVICE);
-        assert device != null;
         final String deviceName = device.getName();
         final String deviceAddress = device.getAddress();
 
         final Toolbar toolbar = binding.toolbar;
         setSupportActionBar(toolbar);
-        Objects.requireNonNull(getSupportActionBar()).setDisplayHomeAsUpEnabled(true);
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         getSupportActionBar().setTitle(deviceName);
         getSupportActionBar().setSubtitle(deviceAddress);
         final TextView connectionState = findViewById(R.id.connection_state);

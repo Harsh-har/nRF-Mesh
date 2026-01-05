@@ -22,19 +22,20 @@
 
 package no.nordicsemi.android.nrfmesh.node;
 
+import static no.nordicsemi.android.mesh.utils.MeshAddress.formatAddress;
+import static no.nordicsemi.android.mesh.utils.MeshAddress.isValidGroupAddress;
+import static no.nordicsemi.android.mesh.utils.MeshAddress.isValidVirtualAddress;
+import static no.nordicsemi.android.nrfmesh.utils.Utils.BIND_APP_KEY;
+import static no.nordicsemi.android.nrfmesh.utils.Utils.EXTRA_DATA;
+import static no.nordicsemi.android.nrfmesh.utils.Utils.MESSAGE_TIME_OUT;
+import static no.nordicsemi.android.nrfmesh.utils.Utils.RESULT_KEY;
+
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ProgressBar;
 import android.widget.TextView;
-
-import com.google.android.material.snackbar.Snackbar;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Locale;
-import java.util.UUID;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
@@ -45,11 +46,19 @@ import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
+
+import com.google.android.material.snackbar.Snackbar;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+import java.util.UUID;
+
 import no.nordicsemi.android.mesh.ApplicationKey;
 import no.nordicsemi.android.mesh.Group;
 import no.nordicsemi.android.mesh.MeshNetwork;
 import no.nordicsemi.android.mesh.models.ConfigurationClientModel;
-//import no.nordicsemi.android.mesh.models.ConfigurationServerModel;
+import no.nordicsemi.android.mesh.models.ConfigurationServerModel;
 import no.nordicsemi.android.mesh.models.SigModel;
 import no.nordicsemi.android.mesh.models.SigModelParser;
 import no.nordicsemi.android.mesh.transport.ConfigModelAppBind;
@@ -86,14 +95,6 @@ import no.nordicsemi.android.nrfmesh.viewmodels.ModelConfigurationViewModel;
 import no.nordicsemi.android.nrfmesh.widgets.ItemTouchHelperAdapter;
 import no.nordicsemi.android.nrfmesh.widgets.RemovableItemTouchHelperCallback;
 import no.nordicsemi.android.nrfmesh.widgets.RemovableViewHolder;
-
-import static no.nordicsemi.android.mesh.utils.MeshAddress.formatAddress;
-import static no.nordicsemi.android.mesh.utils.MeshAddress.isValidGroupAddress;
-import static no.nordicsemi.android.mesh.utils.MeshAddress.isValidVirtualAddress;
-import static no.nordicsemi.android.nrfmesh.utils.Utils.BIND_APP_KEY;
-import static no.nordicsemi.android.nrfmesh.utils.Utils.EXTRA_DATA;
-import static no.nordicsemi.android.nrfmesh.utils.Utils.MESSAGE_TIME_OUT;
-import static no.nordicsemi.android.nrfmesh.utils.Utils.RESULT_KEY;
 
 public abstract class BaseModelConfigurationActivity extends BaseActivity implements
         GroupCallbacks,
@@ -369,17 +370,17 @@ public abstract class BaseModelConfigurationActivity extends BaseActivity implem
         final Element element = mViewModel.getSelectedElement().getValue();
         if (node != null && element != null && model != null) {
             if (model instanceof SigModel) {
-//                if (!(model instanceof ConfigurationServerModel) && !(model instanceof ConfigurationClientModel)) {
-//                    mViewModel.displaySnackBar(this, mContainer, getString(R.string.listing_model_configuration), Snackbar.LENGTH_LONG);
-//                    mViewModel.getMessageQueue().add(new ConfigSigModelAppGet(element.getElementAddress(), model.getModelId()));
-//                    if (model.getModelId() != SigModelParser.SCENE_SETUP_SERVER) {
-//                        mViewModel.getMessageQueue().add(new ConfigSigModelSubscriptionGet(element.getElementAddress(), model.getModelId()));
-//                        queuePublicationGetMessage(element.getElementAddress(), model.getModelId());
-//                    }
-//                    sendQueuedMessage(node.getUnicastAddress());
-//                } else {
-//                    mSwipe.setRefreshing(false);
-//                }
+                if (!(model instanceof ConfigurationServerModel) && !(model instanceof ConfigurationClientModel)) {
+                    mViewModel.displaySnackBar(this, mContainer, getString(R.string.listing_model_configuration), Snackbar.LENGTH_LONG);
+                    mViewModel.getMessageQueue().add(new ConfigSigModelAppGet(element.getElementAddress(), model.getModelId()));
+                    if (model.getModelId() != SigModelParser.SCENE_SETUP_SERVER) {
+                        mViewModel.getMessageQueue().add(new ConfigSigModelSubscriptionGet(element.getElementAddress(), model.getModelId()));
+                        queuePublicationGetMessage(element.getElementAddress(), model.getModelId());
+                    }
+                    sendQueuedMessage(node.getUnicastAddress());
+                } else {
+                    mSwipe.setRefreshing(false);
+                }
 
             } else {
                 mViewModel.displaySnackBar(this, mContainer, getString(R.string.listing_model_configuration), Snackbar.LENGTH_LONG);

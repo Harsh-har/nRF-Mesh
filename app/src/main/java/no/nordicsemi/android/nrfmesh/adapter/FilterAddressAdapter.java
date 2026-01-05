@@ -27,13 +27,14 @@ import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.TextView;
 
+import androidx.annotation.NonNull;
+import androidx.recyclerview.widget.AsyncListDiffer;
+import androidx.recyclerview.widget.RecyclerView;
+
 import com.google.android.material.elevation.ElevationOverlayProvider;
 
 import java.util.ArrayList;
 
-import androidx.annotation.NonNull;
-import androidx.recyclerview.widget.AsyncListDiffer;
-import androidx.recyclerview.widget.RecyclerView;
 import no.nordicsemi.android.mesh.utils.AddressArray;
 import no.nordicsemi.android.mesh.utils.MeshAddress;
 import no.nordicsemi.android.mesh.utils.MeshParserUtils;
@@ -64,13 +65,13 @@ public class FilterAddressAdapter extends RecyclerView.Adapter<FilterAddressAdap
 
     @NonNull
     @Override
-    public FilterAddressAdapter.ViewHolder onCreateViewHolder(@NonNull final ViewGroup parent, final int viewType) {
+    public ViewHolder onCreateViewHolder(@NonNull final ViewGroup parent, final int viewType) {
         final AddressItemBinding binding = AddressItemBinding.inflate(LayoutInflater.from(parent.getContext()), parent, false);
         return new ViewHolder(binding);
     }
 
     @Override
-    public void onBindViewHolder(@NonNull final FilterAddressAdapter.ViewHolder holder, int position) {
+    public void onBindViewHolder(@NonNull final ViewHolder holder, int position) {
         final byte[] address = differ.getCurrentList().get(position).getAddress();
         holder.address.setText(MeshParserUtils.bytesToHex(address, true));
         if (MeshAddress.isValidGroupAddress(address)) {

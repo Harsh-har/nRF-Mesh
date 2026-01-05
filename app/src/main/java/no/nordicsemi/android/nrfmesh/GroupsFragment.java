@@ -133,7 +133,7 @@ public class GroupsFragment extends Fragment implements
         final int position = viewHolder.getAbsoluteAdapterPosition();
         final MeshNetwork network = mViewModel.getNetworkLiveData().getMeshNetwork();
         final Group group = network.getGroups().get(position);
-        if (network.getModels(group).isEmpty()) {
+        if (network.getModels(group).size() == 0) {
             network.removeGroup(group);
             final View.OnClickListener action = v -> {
                 binding.empty.getRoot().setVisibility(View.INVISIBLE);

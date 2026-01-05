@@ -24,10 +24,11 @@ package no.nordicsemi.android.nrfmesh.viewmodels;
 
 import android.text.TextUtils;
 
-import java.util.List;
-
 import androidx.annotation.NonNull;
 import androidx.lifecycle.LiveData;
+
+import java.util.List;
+
 import no.nordicsemi.android.mesh.ApplicationKey;
 import no.nordicsemi.android.mesh.MeshNetwork;
 import no.nordicsemi.android.mesh.NetworkKey;

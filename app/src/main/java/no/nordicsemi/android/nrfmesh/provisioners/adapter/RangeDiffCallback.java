@@ -2,6 +2,7 @@ package no.nordicsemi.android.nrfmesh.provisioners.adapter;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.DiffUtil;
+
 import no.nordicsemi.android.mesh.AllocatedGroupRange;
 import no.nordicsemi.android.mesh.AllocatedSceneRange;
 import no.nordicsemi.android.mesh.AllocatedUnicastRange;

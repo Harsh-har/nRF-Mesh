@@ -103,7 +103,7 @@ public class SecureNetworkBeacon extends MeshBeacon {
         dest.writeByteArray(beaconData);
     }
 
-    public static final Parcelable.Creator<SecureNetworkBeacon> CREATOR = new Parcelable.Creator<SecureNetworkBeacon>() {
+    public static final Creator<SecureNetworkBeacon> CREATOR = new Creator<SecureNetworkBeacon>() {
         @SuppressWarnings("ConstantConditions")
         @Override
         public SecureNetworkBeacon createFromParcel(final Parcel source) {

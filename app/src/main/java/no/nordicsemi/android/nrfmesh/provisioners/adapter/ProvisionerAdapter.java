@@ -27,15 +27,16 @@ import android.view.LayoutInflater;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
+import androidx.annotation.NonNull;
+import androidx.core.content.ContextCompat;
+import androidx.recyclerview.widget.AsyncListDiffer;
+import androidx.recyclerview.widget.RecyclerView;
+
 import com.google.android.material.elevation.ElevationOverlayProvider;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import androidx.annotation.NonNull;
-import androidx.core.content.ContextCompat;
-import androidx.recyclerview.widget.AsyncListDiffer;
-import androidx.recyclerview.widget.RecyclerView;
 import no.nordicsemi.android.mesh.MeshNetwork;
 import no.nordicsemi.android.mesh.Provisioner;
 import no.nordicsemi.android.mesh.utils.MeshAddress;
@@ -63,18 +64,18 @@ public class ProvisionerAdapter extends RecyclerView.Adapter<ProvisionerAdapter.
         }
     }
 
-    public void setOnItemClickListener(final ProvisionerAdapter.OnItemClickListener listener) {
+    public void setOnItemClickListener(final OnItemClickListener listener) {
         mOnItemClickListener = listener;
     }
 
     @NonNull
     @Override
-    public ProvisionerAdapter.ViewHolder onCreateViewHolder(@NonNull final ViewGroup parent, final int viewType) {
-        return new ProvisionerAdapter.ViewHolder(RemovableRowItemProvisionerBinding.inflate(LayoutInflater.from(parent.getContext()), parent, false));
+    public ViewHolder onCreateViewHolder(@NonNull final ViewGroup parent, final int viewType) {
+        return new ViewHolder(RemovableRowItemProvisionerBinding.inflate(LayoutInflater.from(parent.getContext()), parent, false));
     }
 
     @Override
-    public void onBindViewHolder(@NonNull final ProvisionerAdapter.ViewHolder holder, final int position) {
+    public void onBindViewHolder(@NonNull final ViewHolder holder, final int position) {
         final Provisioner provisioner = differ.getCurrentList().get(position);
         holder.provisionerName.setText(provisioner.getProvisionerName());
         final Context context = holder.provisionerName.getContext();

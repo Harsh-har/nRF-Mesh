@@ -31,13 +31,14 @@ import android.location.LocationManager;
 import android.os.ParcelUuid;
 import android.util.Log;
 
+import androidx.annotation.NonNull;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
 import javax.inject.Inject;
 
-import androidx.annotation.NonNull;
 import dagger.hilt.android.qualifiers.ApplicationContext;
 import no.nordicsemi.android.mesh.MeshManagerApi;
 import no.nordicsemi.android.mesh.MeshNetwork;

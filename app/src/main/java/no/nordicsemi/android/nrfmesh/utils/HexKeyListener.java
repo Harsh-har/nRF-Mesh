@@ -22,9 +22,10 @@
 
 package no.nordicsemi.android.nrfmesh.utils;
 
-import androidx.annotation.NonNull;
 import android.text.InputType;
 import android.text.method.NumberKeyListener;
+
+import androidx.annotation.NonNull;
 
 public class HexKeyListener extends NumberKeyListener {
 	@Override

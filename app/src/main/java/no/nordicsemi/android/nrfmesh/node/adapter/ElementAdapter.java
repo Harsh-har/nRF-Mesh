@@ -31,13 +31,14 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import androidx.annotation.NonNull;
 import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.recyclerview.widget.AsyncListDiffer;
 import androidx.recyclerview.widget.RecyclerView;
+
+import java.util.ArrayList;
+import java.util.List;
+
 import no.nordicsemi.android.mesh.models.VendorModel;
 import no.nordicsemi.android.mesh.transport.Element;
 import no.nordicsemi.android.mesh.transport.MeshModel;
@@ -68,7 +69,7 @@ public class ElementAdapter extends RecyclerView.Adapter<ElementAdapter.ViewHold
         return elements;
     }
 
-    public void setOnItemClickListener(@NonNull final ElementAdapter.OnItemClickListener listener) {
+    public void setOnItemClickListener(@NonNull final OnItemClickListener listener) {
         mOnItemClickListener = listener;
     }
 

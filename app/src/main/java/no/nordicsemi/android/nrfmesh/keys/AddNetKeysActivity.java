@@ -24,10 +24,11 @@ package no.nordicsemi.android.nrfmesh.keys;
 
 import android.os.Bundle;
 
-import com.google.android.material.snackbar.Snackbar;
-
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+
+import com.google.android.material.snackbar.Snackbar;
+
 import dagger.hilt.android.AndroidEntryPoint;
 import no.nordicsemi.android.mesh.NetworkKey;
 import no.nordicsemi.android.mesh.transport.ConfigNetKeyAdd;

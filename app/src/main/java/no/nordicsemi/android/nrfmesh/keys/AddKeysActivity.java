@@ -27,8 +27,6 @@ import android.os.Handler;
 import android.os.Looper;
 import android.view.View;
 
-import com.google.android.material.snackbar.Snackbar;
-
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.lifecycle.ViewModelProvider;
@@ -36,6 +34,9 @@ import androidx.recyclerview.widget.DefaultItemAnimator;
 import androidx.recyclerview.widget.DividerItemDecoration;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
+
+import com.google.android.material.snackbar.Snackbar;
+
 import no.nordicsemi.android.mesh.transport.ConfigAppKeyList;
 import no.nordicsemi.android.mesh.transport.ConfigAppKeyStatus;
 import no.nordicsemi.android.mesh.transport.ConfigNetKeyStatus;

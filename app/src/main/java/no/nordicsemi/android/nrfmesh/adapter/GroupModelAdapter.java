@@ -30,14 +30,15 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
 import androidx.annotation.NonNull;
 import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.RecyclerView;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
 import no.nordicsemi.android.mesh.Group;
 import no.nordicsemi.android.mesh.models.SigModelParser;
 import no.nordicsemi.android.mesh.transport.Element;
@@ -74,7 +75,7 @@ public class GroupModelAdapter extends RecyclerView.Adapter<GroupModelAdapter.Vi
      *
      * @param listener {@link OnItemClickListener}
      */
-    public void setOnItemClickListener(@NonNull final GroupModelAdapter.OnItemClickListener listener) {
+    public void setOnItemClickListener(@NonNull final OnItemClickListener listener) {
         mOnItemClickListener = listener;
     }
 

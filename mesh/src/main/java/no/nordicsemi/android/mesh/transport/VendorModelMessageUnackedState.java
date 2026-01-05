@@ -61,7 +61,7 @@ class VendorModelMessageUnackedState extends ApplicationMessageState {
     }
 
     @Override
-    public MeshMessageState.MessageState getState() {
+    public MessageState getState() {
         return MessageState.VENDOR_MODEL_UNACKNOWLEDGED_STATE;
     }
 

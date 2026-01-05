@@ -27,16 +27,17 @@ import android.view.ViewGroup;
 import android.widget.CheckBox;
 import android.widget.TextView;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-
 import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
 import androidx.lifecycle.LifecycleOwner;
 import androidx.lifecycle.LiveData;
 import androidx.recyclerview.widget.AsyncListDiffer;
 import androidx.recyclerview.widget.RecyclerView;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
 import no.nordicsemi.android.mesh.ApplicationKey;
 import no.nordicsemi.android.mesh.NodeKey;
 import no.nordicsemi.android.mesh.transport.ProvisionedMeshNode;
@@ -71,7 +72,7 @@ public class AddedAppKeyAdapter extends RecyclerView.Adapter<AddedAppKeyAdapter.
         });
     }
 
-    public void setOnItemClickListener(final AddedAppKeyAdapter.OnItemClickListener listener) {
+    public void setOnItemClickListener(final OnItemClickListener listener) {
         mOnItemClickListener = listener;
     }
 
@@ -82,12 +83,12 @@ public class AddedAppKeyAdapter extends RecyclerView.Adapter<AddedAppKeyAdapter.
 
     @NonNull
     @Override
-    public AddedAppKeyAdapter.ViewHolder onCreateViewHolder(@NonNull final ViewGroup parent, final int viewType) {
-        return new AddedAppKeyAdapter.ViewHolder(CheckableRowItemBinding.inflate(LayoutInflater.from(parent.getContext()), parent, false));
+    public ViewHolder onCreateViewHolder(@NonNull final ViewGroup parent, final int viewType) {
+        return new ViewHolder(CheckableRowItemBinding.inflate(LayoutInflater.from(parent.getContext()), parent, false));
     }
 
     @Override
-    public void onBindViewHolder(@NonNull final AddedAppKeyAdapter.ViewHolder holder, final int position) {
+    public void onBindViewHolder(@NonNull final ViewHolder holder, final int position) {
         final ApplicationKey key = differ.getCurrentList().get(position);
         holder.keyName.setText(key.getName());
         final String appKey = MeshParserUtils.bytesToHex(key.getKey(), false);

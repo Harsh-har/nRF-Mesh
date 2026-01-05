@@ -1,8 +1,21 @@
 package no.nordicsemi.android.nrfmesh.viewmodels;
 
+import static no.nordicsemi.android.mesh.models.SigModelParser.CONFIGURATION_CLIENT;
+import static no.nordicsemi.android.mesh.models.SigModelParser.CONFIGURATION_SERVER;
+import static no.nordicsemi.android.mesh.models.SigModelParser.GENERIC_LEVEL_SERVER;
+import static no.nordicsemi.android.mesh.models.SigModelParser.GENERIC_ON_OFF_SERVER;
+import static no.nordicsemi.android.mesh.models.SigModelParser.SCENE_SERVER;
+import static no.nordicsemi.android.mesh.models.SigModelParser.SCENE_SETUP_SERVER;
+import static no.nordicsemi.android.mesh.models.SigModelParser.SENSOR_SERVER;
+
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+
+import androidx.annotation.NonNull;
+import androidx.coordinatorlayout.widget.CoordinatorLayout;
+import androidx.lifecycle.LiveData;
+import androidx.lifecycle.ViewModel;
 
 import com.google.android.material.snackbar.Snackbar;
 
@@ -10,10 +23,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
 
-import androidx.annotation.NonNull;
-import androidx.coordinatorlayout.widget.CoordinatorLayout;
-import androidx.lifecycle.LiveData;
-import androidx.lifecycle.ViewModel;
 import no.nordicsemi.android.mesh.MeshManagerApi;
 import no.nordicsemi.android.mesh.models.VendorModel;
 import no.nordicsemi.android.mesh.transport.Element;
@@ -34,14 +43,6 @@ import no.nordicsemi.android.nrfmesh.node.SceneSetupServerModelActivity;
 import no.nordicsemi.android.nrfmesh.node.SensorServerActivity;
 import no.nordicsemi.android.nrfmesh.node.VendorModelActivity;
 import no.nordicsemi.android.nrfmesh.utils.Utils;
-
-import static no.nordicsemi.android.mesh.models.SigModelParser.CONFIGURATION_CLIENT;
-import static no.nordicsemi.android.mesh.models.SigModelParser.CONFIGURATION_SERVER;
-import static no.nordicsemi.android.mesh.models.SigModelParser.GENERIC_LEVEL_SERVER;
-import static no.nordicsemi.android.mesh.models.SigModelParser.GENERIC_ON_OFF_SERVER;
-import static no.nordicsemi.android.mesh.models.SigModelParser.SCENE_SERVER;
-import static no.nordicsemi.android.mesh.models.SigModelParser.SCENE_SETUP_SERVER;
-import static no.nordicsemi.android.mesh.models.SigModelParser.SENSOR_SERVER;
 
 /**
  * abstract base class for ViewModels
@@ -96,7 +97,6 @@ public abstract class BaseViewModel extends ViewModel {
      * @param context                 Activity context
      * @param withProvisioningService Scan with provisioning service
      */
-
     public void navigateToScannerActivity(@NonNull final Context context, final boolean withProvisioningService) {
         final Intent intent = new Intent(context, ScannerActivity.class);
         intent.putExtra(Utils.EXTRA_DATA_PROVISIONING_SERVICE, withProvisioningService);

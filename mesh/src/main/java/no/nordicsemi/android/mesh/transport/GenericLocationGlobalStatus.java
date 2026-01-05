@@ -27,7 +27,7 @@ public final class GenericLocationGlobalStatus extends ApplicationStatusMessage 
     private GlobalLongitude longitude = GlobalLongitude.notConfigured();
     private GlobalAltitude altitude = GlobalAltitude.notConfigured();
 
-    private static final Parcelable.Creator<GenericLocationGlobalStatus> CREATOR = new Parcelable.Creator<GenericLocationGlobalStatus>() {
+    private static final Creator<GenericLocationGlobalStatus> CREATOR = new Creator<GenericLocationGlobalStatus>() {
         @Override
         public GenericLocationGlobalStatus createFromParcel(Parcel in) {
             final AccessMessage message = in.readParcelable(AccessMessage.class.getClassLoader());

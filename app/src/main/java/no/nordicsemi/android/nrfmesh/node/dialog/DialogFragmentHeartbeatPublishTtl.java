@@ -22,12 +22,12 @@
 
 package no.nordicsemi.android.nrfmesh.node.dialog;
 
+import static android.view.View.GONE;
+
 import android.app.Dialog;
 import android.os.Bundle;
 
 import androidx.annotation.NonNull;
-
-import static android.view.View.GONE;
 
 public class DialogFragmentHeartbeatPublishTtl extends DialogFragmentTtl {
 

@@ -22,6 +22,14 @@
 
 package no.nordicsemi.android.nrfmesh.node.dialog;
 
+import static no.nordicsemi.android.mesh.utils.AddressType.ALL_FRIENDS;
+import static no.nordicsemi.android.mesh.utils.AddressType.ALL_NODES;
+import static no.nordicsemi.android.mesh.utils.AddressType.ALL_PROXIES;
+import static no.nordicsemi.android.mesh.utils.AddressType.ALL_RELAYS;
+import static no.nordicsemi.android.mesh.utils.AddressType.GROUP_ADDRESS;
+import static no.nordicsemi.android.mesh.utils.AddressType.UNICAST_ADDRESS;
+import static no.nordicsemi.android.mesh.utils.AddressType.VIRTUAL_ADDRESS;
+
 import android.app.Dialog;
 import android.content.DialogInterface;
 import android.os.Bundle;
@@ -33,14 +41,15 @@ import android.view.View;
 import android.widget.AdapterView;
 import android.widget.Button;
 
-import java.util.ArrayList;
-import java.util.Locale;
-import java.util.UUID;
-
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.DialogFragment;
+
+import java.util.ArrayList;
+import java.util.Locale;
+import java.util.UUID;
+
 import no.nordicsemi.android.mesh.Group;
 import no.nordicsemi.android.mesh.transport.PublicationSettings;
 import no.nordicsemi.android.mesh.utils.AddressType;
@@ -52,14 +61,6 @@ import no.nordicsemi.android.nrfmesh.adapter.GroupAdapterSpinner;
 import no.nordicsemi.android.nrfmesh.databinding.DialogFragmentGroupSubscriptionBinding;
 import no.nordicsemi.android.nrfmesh.utils.HexKeyListener;
 import no.nordicsemi.android.nrfmesh.utils.Utils;
-
-import static no.nordicsemi.android.mesh.utils.AddressType.ALL_FRIENDS;
-import static no.nordicsemi.android.mesh.utils.AddressType.ALL_NODES;
-import static no.nordicsemi.android.mesh.utils.AddressType.ALL_PROXIES;
-import static no.nordicsemi.android.mesh.utils.AddressType.ALL_RELAYS;
-import static no.nordicsemi.android.mesh.utils.AddressType.GROUP_ADDRESS;
-import static no.nordicsemi.android.mesh.utils.AddressType.UNICAST_ADDRESS;
-import static no.nordicsemi.android.mesh.utils.AddressType.VIRTUAL_ADDRESS;
 
 public class DialogFragmentPublishAddress extends DialogFragment {
 

@@ -28,7 +28,7 @@ import android.os.Parcelable;
 @SuppressWarnings("WeakerAccess")
 public class ConfigurationClientModel extends SigModel {
 
-    public static final Parcelable.Creator<ConfigurationClientModel> CREATOR = new Parcelable.Creator<ConfigurationClientModel>() {
+    public static final Creator<ConfigurationClientModel> CREATOR = new Creator<ConfigurationClientModel>() {
         @Override
         public ConfigurationClientModel createFromParcel(final Parcel source) {
             return new ConfigurationClientModel(source);

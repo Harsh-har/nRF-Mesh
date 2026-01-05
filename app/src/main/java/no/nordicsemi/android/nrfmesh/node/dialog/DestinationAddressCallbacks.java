@@ -1,6 +1,7 @@
 package no.nordicsemi.android.nrfmesh.node.dialog;
 
 import androidx.annotation.NonNull;
+
 import no.nordicsemi.android.mesh.Group;
 
 /**

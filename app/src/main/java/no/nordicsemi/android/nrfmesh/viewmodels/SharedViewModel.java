@@ -22,12 +22,13 @@
 
 package no.nordicsemi.android.nrfmesh.viewmodels;
 
+import androidx.annotation.NonNull;
+import androidx.lifecycle.LiveData;
+
 import java.io.OutputStream;
 
 import javax.inject.Inject;
 
-import androidx.annotation.NonNull;
-import androidx.lifecycle.LiveData;
 import dagger.hilt.android.lifecycle.HiltViewModel;
 import no.nordicsemi.android.nrfmesh.GroupsFragment;
 import no.nordicsemi.android.nrfmesh.NetworkFragment;

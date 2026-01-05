@@ -22,14 +22,15 @@
 
 package no.nordicsemi.android.nrfmesh.scenes;
 
+import static no.nordicsemi.android.nrfmesh.utils.Utils.EXTRA_DATA;
+import static no.nordicsemi.android.nrfmesh.utils.Utils.SELECT_SCENE;
+
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.MenuItem;
 import android.view.View;
-
-import com.google.android.material.snackbar.Snackbar;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -40,6 +41,9 @@ import androidx.recyclerview.widget.DividerItemDecoration;
 import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+
+import com.google.android.material.snackbar.Snackbar;
+
 import dagger.hilt.android.AndroidEntryPoint;
 import no.nordicsemi.android.mesh.MeshNetwork;
 import no.nordicsemi.android.mesh.Scene;
@@ -52,9 +56,6 @@ import no.nordicsemi.android.nrfmesh.viewmodels.ScenesViewModel;
 import no.nordicsemi.android.nrfmesh.widgets.ItemTouchHelperAdapter;
 import no.nordicsemi.android.nrfmesh.widgets.RemovableItemTouchHelperCallback;
 import no.nordicsemi.android.nrfmesh.widgets.RemovableViewHolder;
-
-import static no.nordicsemi.android.nrfmesh.utils.Utils.EXTRA_DATA;
-import static no.nordicsemi.android.nrfmesh.utils.Utils.SELECT_SCENE;
 
 @AndroidEntryPoint
 public class ScenesActivity extends AppCompatActivity implements

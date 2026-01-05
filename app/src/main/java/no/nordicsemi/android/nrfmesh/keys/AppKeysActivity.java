@@ -22,15 +22,19 @@
 
 package no.nordicsemi.android.nrfmesh.keys;
 
+import static no.nordicsemi.android.nrfmesh.utils.Utils.ADD_APP_KEY;
+import static no.nordicsemi.android.nrfmesh.utils.Utils.BIND_APP_KEY;
+import static no.nordicsemi.android.nrfmesh.utils.Utils.EDIT_KEY;
+import static no.nordicsemi.android.nrfmesh.utils.Utils.EXTRA_DATA;
+import static no.nordicsemi.android.nrfmesh.utils.Utils.PUBLICATION_APP_KEY;
+import static no.nordicsemi.android.nrfmesh.utils.Utils.RESULT_KEY;
+import static no.nordicsemi.android.nrfmesh.utils.Utils.RESULT_KEY_INDEX;
+
 import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.MenuItem;
 import android.view.View;
-
-import com.google.android.material.snackbar.Snackbar;
-
-import java.util.List;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -41,6 +45,11 @@ import androidx.recyclerview.widget.DividerItemDecoration;
 import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+
+import com.google.android.material.snackbar.Snackbar;
+
+import java.util.List;
+
 import dagger.hilt.android.AndroidEntryPoint;
 import no.nordicsemi.android.mesh.ApplicationKey;
 import no.nordicsemi.android.mesh.MeshNetwork;
@@ -53,14 +62,6 @@ import no.nordicsemi.android.nrfmesh.viewmodels.AppKeysViewModel;
 import no.nordicsemi.android.nrfmesh.widgets.ItemTouchHelperAdapter;
 import no.nordicsemi.android.nrfmesh.widgets.RemovableItemTouchHelperCallback;
 import no.nordicsemi.android.nrfmesh.widgets.RemovableViewHolder;
-
-import static no.nordicsemi.android.nrfmesh.utils.Utils.ADD_APP_KEY;
-import static no.nordicsemi.android.nrfmesh.utils.Utils.BIND_APP_KEY;
-import static no.nordicsemi.android.nrfmesh.utils.Utils.EDIT_KEY;
-import static no.nordicsemi.android.nrfmesh.utils.Utils.EXTRA_DATA;
-import static no.nordicsemi.android.nrfmesh.utils.Utils.PUBLICATION_APP_KEY;
-import static no.nordicsemi.android.nrfmesh.utils.Utils.RESULT_KEY;
-import static no.nordicsemi.android.nrfmesh.utils.Utils.RESULT_KEY_INDEX;
 
 @AndroidEntryPoint
 public class AppKeysActivity extends AppCompatActivity implements

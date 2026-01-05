@@ -1,6 +1,7 @@
 package no.nordicsemi.android.nrfmesh.scenes;
 
 import androidx.annotation.NonNull;
+
 import no.nordicsemi.android.mesh.Scene;
 
 public interface SceneCallbacks {

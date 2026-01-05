@@ -1,5 +1,12 @@
 package no.nordicsemi.android.nrfmesh.node;
 
+import static android.view.View.GONE;
+import static android.view.View.VISIBLE;
+import static no.nordicsemi.android.mesh.transport.ProvisionedMeshNode.DISABLED;
+import static no.nordicsemi.android.mesh.transport.ProvisionedMeshNode.ENABLED;
+import static no.nordicsemi.android.mesh.transport.ProvisionedMeshNode.UNSUPPORTED;
+import static no.nordicsemi.android.mesh.utils.MeshAddress.formatAddress;
+
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
@@ -7,13 +14,14 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 
-import com.google.android.material.snackbar.Snackbar;
-import com.google.android.material.switchmaterial.SwitchMaterial;
-
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.cardview.widget.CardView;
+
+import com.google.android.material.snackbar.Snackbar;
+import com.google.android.material.switchmaterial.SwitchMaterial;
+
 import dagger.hilt.android.AndroidEntryPoint;
 import no.nordicsemi.android.mesh.Features;
 import no.nordicsemi.android.mesh.NetworkKey;
@@ -47,13 +55,6 @@ import no.nordicsemi.android.nrfmesh.databinding.LayoutConfigServerModelBinding;
 import no.nordicsemi.android.nrfmesh.node.dialog.DialogFragmentNetworkTransmitSettings;
 import no.nordicsemi.android.nrfmesh.node.dialog.DialogRelayRetransmitSettings;
 import no.nordicsemi.android.nrfmesh.viewmodels.ModelConfigurationViewModel;
-
-import static android.view.View.GONE;
-import static android.view.View.VISIBLE;
-import static no.nordicsemi.android.mesh.transport.ProvisionedMeshNode.DISABLED;
-import static no.nordicsemi.android.mesh.transport.ProvisionedMeshNode.ENABLED;
-import static no.nordicsemi.android.mesh.transport.ProvisionedMeshNode.UNSUPPORTED;
-import static no.nordicsemi.android.mesh.utils.MeshAddress.formatAddress;
 
 @AndroidEntryPoint
 public class ConfigurationServerActivity extends BaseModelConfigurationActivity implements

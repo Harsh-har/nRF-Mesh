@@ -1,19 +1,24 @@
 package no.nordicsemi.android.nrfmesh.node;
 
+import static no.nordicsemi.android.mesh.utils.MeshParserUtils.USE_DEFAULT_TTL;
+import static no.nordicsemi.android.mesh.utils.MeshParserUtils.isDefaultPublishTtl;
+import static no.nordicsemi.android.nrfmesh.utils.Utils.RESULT_KEY;
+
 import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Locale;
-import java.util.UUID;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.lifecycle.ViewModelProvider;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+import java.util.UUID;
+
 import dagger.hilt.android.AndroidEntryPoint;
 import no.nordicsemi.android.mesh.ApplicationKey;
 import no.nordicsemi.android.mesh.Group;
@@ -35,10 +40,6 @@ import no.nordicsemi.android.nrfmesh.node.dialog.DialogFragmentTtl;
 import no.nordicsemi.android.nrfmesh.utils.Utils;
 import no.nordicsemi.android.nrfmesh.viewmodels.BaseActivity;
 import no.nordicsemi.android.nrfmesh.viewmodels.PublicationViewModel;
-
-import static no.nordicsemi.android.mesh.utils.MeshParserUtils.USE_DEFAULT_TTL;
-import static no.nordicsemi.android.mesh.utils.MeshParserUtils.isDefaultPublishTtl;
-import static no.nordicsemi.android.nrfmesh.utils.Utils.RESULT_KEY;
 
 @AndroidEntryPoint
 public class PublicationSettingsActivity extends BaseActivity implements

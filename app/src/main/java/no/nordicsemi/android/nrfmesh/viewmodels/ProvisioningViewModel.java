@@ -24,10 +24,11 @@ package no.nordicsemi.android.nrfmesh.viewmodels;
 
 import android.content.Context;
 
-import javax.inject.Inject;
-
 import androidx.annotation.NonNull;
 import androidx.lifecycle.LiveData;
+
+import javax.inject.Inject;
+
 import dagger.hilt.android.lifecycle.HiltViewModel;
 import no.nordicsemi.android.mesh.provisionerstates.ProvisioningCapabilities;
 import no.nordicsemi.android.mesh.provisionerstates.UnprovisionedMeshNode;
