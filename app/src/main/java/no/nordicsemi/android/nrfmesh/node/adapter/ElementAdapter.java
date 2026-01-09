@@ -99,10 +99,7 @@ public class ElementAdapter extends RecyclerView.Adapter<ElementAdapter.ViewHold
         return count;
     }
 
-    /**
-     * ✅ Inflate ONLY Generic OnOff Server
-     * ❌ All other models hidden from user
-     */
+
     private void inflateModelViews(final ViewHolder holder,
                                    final List<MeshModel> models) {
 
