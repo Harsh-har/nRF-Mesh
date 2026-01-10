@@ -22,10 +22,18 @@
 
 package no.nordicsemi.android.nrfmesh.scenes.adapter;
 
+import static android.view.View.INVISIBLE;
+import static android.view.View.VISIBLE;
+
 import android.view.LayoutInflater;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
+
+import androidx.annotation.NonNull;
+import androidx.core.content.ContextCompat;
+import androidx.recyclerview.widget.AsyncListDiffer;
+import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.elevation.ElevationOverlayProvider;
 
@@ -34,16 +42,9 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 
-import androidx.annotation.NonNull;
-import androidx.core.content.ContextCompat;
-import androidx.recyclerview.widget.AsyncListDiffer;
-import androidx.recyclerview.widget.RecyclerView;
 import no.nordicsemi.android.nrfmesh.R;
 import no.nordicsemi.android.nrfmesh.databinding.RemovableRowItemBinding;
 import no.nordicsemi.android.nrfmesh.widgets.RemovableViewHolder;
-
-import static android.view.View.INVISIBLE;
-import static android.view.View.VISIBLE;
 
 public class StoredScenesAdapter extends RecyclerView.Adapter<StoredScenesAdapter.ViewHolder> {
 
@@ -63,12 +64,12 @@ public class StoredScenesAdapter extends RecyclerView.Adapter<StoredScenesAdapte
 
     @NonNull
     @Override
-    public StoredScenesAdapter.ViewHolder onCreateViewHolder(@NonNull final ViewGroup parent, final int viewType) {
-        return new StoredScenesAdapter.ViewHolder(RemovableRowItemBinding.inflate(LayoutInflater.from(parent.getContext()), parent, false));
+    public ViewHolder onCreateViewHolder(@NonNull final ViewGroup parent, final int viewType) {
+        return new ViewHolder(RemovableRowItemBinding.inflate(LayoutInflater.from(parent.getContext()), parent, false));
     }
 
     @Override
-    public void onBindViewHolder(@NonNull final StoredScenesAdapter.ViewHolder holder, final int position) {
+    public void onBindViewHolder(@NonNull final ViewHolder holder, final int position) {
         final SceneUiState scene = differ.getCurrentList().get(position);
         holder.sceneName.setText(scene.getName());
         final String number = "0x" + String.format(Locale.US, "%04X", scene.getNumber());

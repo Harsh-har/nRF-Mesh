@@ -22,6 +22,15 @@
 
 package no.nordicsemi.android.nrfmesh.node.dialog;
 
+import static android.view.View.GONE;
+import static android.view.View.VISIBLE;
+import static no.nordicsemi.android.mesh.utils.AddressType.ALL_FRIENDS;
+import static no.nordicsemi.android.mesh.utils.AddressType.ALL_NODES;
+import static no.nordicsemi.android.mesh.utils.AddressType.ALL_PROXIES;
+import static no.nordicsemi.android.mesh.utils.AddressType.ALL_RELAYS;
+import static no.nordicsemi.android.mesh.utils.AddressType.GROUP_ADDRESS;
+import static no.nordicsemi.android.mesh.utils.AddressType.UNICAST_ADDRESS;
+
 import android.app.Dialog;
 import android.content.DialogInterface;
 import android.os.Bundle;
@@ -32,11 +41,12 @@ import android.text.method.KeyListener;
 import android.view.View;
 import android.widget.AdapterView;
 
-import java.util.ArrayList;
-
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.DialogFragment;
+
+import java.util.ArrayList;
+
 import no.nordicsemi.android.mesh.Group;
 import no.nordicsemi.android.mesh.utils.AddressType;
 import no.nordicsemi.android.mesh.utils.MeshAddress;
@@ -47,15 +57,6 @@ import no.nordicsemi.android.nrfmesh.adapter.GroupAdapterSpinner;
 import no.nordicsemi.android.nrfmesh.databinding.DialogFragmentGroupSubscriptionBinding;
 import no.nordicsemi.android.nrfmesh.utils.HexKeyListener;
 import no.nordicsemi.android.nrfmesh.utils.Utils;
-
-import static android.view.View.GONE;
-import static android.view.View.VISIBLE;
-import static no.nordicsemi.android.mesh.utils.AddressType.ALL_FRIENDS;
-import static no.nordicsemi.android.mesh.utils.AddressType.ALL_NODES;
-import static no.nordicsemi.android.mesh.utils.AddressType.ALL_PROXIES;
-import static no.nordicsemi.android.mesh.utils.AddressType.ALL_RELAYS;
-import static no.nordicsemi.android.mesh.utils.AddressType.GROUP_ADDRESS;
-import static no.nordicsemi.android.mesh.utils.AddressType.UNICAST_ADDRESS;
 
 public class DialogFragmentHeartbeatDestination extends DialogFragment {
 

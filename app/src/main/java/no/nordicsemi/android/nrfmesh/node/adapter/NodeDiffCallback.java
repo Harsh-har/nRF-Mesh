@@ -4,6 +4,7 @@ import android.annotation.SuppressLint;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.DiffUtil;
+
 import no.nordicsemi.android.mesh.transport.ProvisionedMeshNode;
 
 public class NodeDiffCallback extends DiffUtil.ItemCallback<ProvisionedMeshNode> {

@@ -149,7 +149,7 @@ public class PublicationSettings implements Parcelable {
         publishRetransmitIntervalSteps = in.readInt();
     }
 
-    public static final Parcelable.Creator<PublicationSettings> CREATOR = new Creator<PublicationSettings>() {
+    public static final Creator<PublicationSettings> CREATOR = new Creator<PublicationSettings>() {
         @Override
         public PublicationSettings createFromParcel(Parcel in) {
             return new PublicationSettings(in);

@@ -22,16 +22,17 @@
 
 package no.nordicsemi.android.nrfmesh.scenes.dialog;
 
+import static android.content.DialogInterface.BUTTON_POSITIVE;
+
 import android.app.Dialog;
 import android.os.Bundle;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
+
 import no.nordicsemi.android.mesh.Scene;
 import no.nordicsemi.android.nrfmesh.R;
 import no.nordicsemi.android.nrfmesh.scenes.SceneCallbacks;
-
-import static android.content.DialogInterface.BUTTON_POSITIVE;
 
 
 public class DialogFragmentEditScene extends DialogFragmentScene {

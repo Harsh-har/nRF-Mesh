@@ -29,6 +29,7 @@ import android.widget.BaseAdapter;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+
 import no.nordicsemi.android.mesh.utils.AddressType;
 import no.nordicsemi.android.nrfmesh.R;
 import no.nordicsemi.android.nrfmesh.databinding.AddressTypeItemBinding;

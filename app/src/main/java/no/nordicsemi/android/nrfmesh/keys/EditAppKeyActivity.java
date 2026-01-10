@@ -22,11 +22,12 @@
 
 package no.nordicsemi.android.nrfmesh.keys;
 
+import static no.nordicsemi.android.mesh.utils.MeshParserUtils.bytesToHex;
+import static no.nordicsemi.android.nrfmesh.utils.Utils.EDIT_KEY;
+
 import android.os.Bundle;
 import android.view.MenuItem;
 import android.view.View;
-
-import com.google.android.material.snackbar.Snackbar;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -35,6 +36,9 @@ import androidx.core.content.ContextCompat;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.DefaultItemAnimator;
 import androidx.recyclerview.widget.LinearLayoutManager;
+
+import com.google.android.material.snackbar.Snackbar;
+
 import dagger.hilt.android.AndroidEntryPoint;
 import no.nordicsemi.android.mesh.NetworkKey;
 import no.nordicsemi.android.nrfmesh.R;
@@ -43,9 +47,6 @@ import no.nordicsemi.android.nrfmesh.keys.adapter.ManageBoundNetKeyAdapter;
 import no.nordicsemi.android.nrfmesh.keys.dialogs.DialogFragmentEditAppKey;
 import no.nordicsemi.android.nrfmesh.keys.dialogs.DialogFragmentKeyName;
 import no.nordicsemi.android.nrfmesh.viewmodels.EditAppKeyViewModel;
-
-import static no.nordicsemi.android.mesh.utils.MeshParserUtils.bytesToHex;
-import static no.nordicsemi.android.nrfmesh.utils.Utils.EDIT_KEY;
 
 @AndroidEntryPoint
 public class EditAppKeyActivity extends AppCompatActivity implements

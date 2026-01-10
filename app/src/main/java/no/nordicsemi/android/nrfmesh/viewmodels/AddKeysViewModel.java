@@ -1,8 +1,9 @@
 package no.nordicsemi.android.nrfmesh.viewmodels;
 
+import androidx.annotation.NonNull;
+
 import javax.inject.Inject;
 
-import androidx.annotation.NonNull;
 import dagger.hilt.android.lifecycle.HiltViewModel;
 import no.nordicsemi.android.mesh.transport.ProvisionedMeshNode;
 import no.nordicsemi.android.mesh.utils.MeshParserUtils;

@@ -22,6 +22,8 @@
 
 package no.nordicsemi.android.nrfmesh.keys.dialogs;
 
+import static no.nordicsemi.android.mesh.utils.MeshParserUtils.validateKeyInput;
+
 import android.app.Dialog;
 import android.content.DialogInterface;
 import android.os.Bundle;
@@ -33,11 +35,10 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.DialogFragment;
+
 import no.nordicsemi.android.mesh.utils.SecureUtils;
 import no.nordicsemi.android.nrfmesh.R;
 import no.nordicsemi.android.nrfmesh.databinding.DialogFragmentKeyInputBinding;
-
-import static no.nordicsemi.android.mesh.utils.MeshParserUtils.validateKeyInput;
 
 public class DialogFragmentAddKey extends DialogFragment {
 

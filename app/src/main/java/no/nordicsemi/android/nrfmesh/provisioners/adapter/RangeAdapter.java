@@ -26,12 +26,13 @@ import android.view.LayoutInflater;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.AsyncListDiffer;
 import androidx.recyclerview.widget.RecyclerView;
+
+import java.util.ArrayList;
+import java.util.List;
+
 import no.nordicsemi.android.mesh.AddressRange;
 import no.nordicsemi.android.mesh.AllocatedGroupRange;
 import no.nordicsemi.android.mesh.AllocatedSceneRange;
@@ -57,7 +58,7 @@ public class RangeAdapter<T extends Range> extends RecyclerView.Adapter<RangeAda
         differ.submitList(new ArrayList<>(ranges));
     }
 
-    public void setOnItemClickListener(final RangeAdapter.OnItemClickListener listener) {
+    public void setOnItemClickListener(final OnItemClickListener listener) {
         mOnItemClickListener = listener;
     }
 
@@ -82,12 +83,12 @@ public class RangeAdapter<T extends Range> extends RecyclerView.Adapter<RangeAda
 
     @NonNull
     @Override
-    public RangeAdapter<T>.ViewHolder onCreateViewHolder(@NonNull final ViewGroup parent, final int viewType) {
-        return new RangeAdapter<T>.ViewHolder(RangeItemBinding.inflate(LayoutInflater.from(parent.getContext()), parent, false));
+    public ViewHolder onCreateViewHolder(@NonNull final ViewGroup parent, final int viewType) {
+        return new ViewHolder(RangeItemBinding.inflate(LayoutInflater.from(parent.getContext()), parent, false));
     }
 
     @Override
-    public void onBindViewHolder(@NonNull final RangeAdapter.ViewHolder holder, final int position) {
+    public void onBindViewHolder(@NonNull final ViewHolder holder, final int position) {
         final Range range = differ.getCurrentList().get(position);
         final String low, high;
         if (range instanceof AddressRange) {

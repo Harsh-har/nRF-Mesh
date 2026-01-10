@@ -24,7 +24,7 @@ public final class TimeZoneStatus extends ApplicationStatusMessage implements Pa
     private TimeZoneOffset newTimeZoneOffset = TimeZoneOffset.of((byte) 0x40);
     private long timeOfChange = 0x0;
 
-    private static final Parcelable.Creator<TimeZoneStatus> CREATOR = new Parcelable.Creator<TimeZoneStatus>() {
+    private static final Creator<TimeZoneStatus> CREATOR = new Creator<TimeZoneStatus>() {
         @Override
         public TimeZoneStatus createFromParcel(Parcel in) {
             final AccessMessage message = in.readParcelable(AccessMessage.class.getClassLoader());

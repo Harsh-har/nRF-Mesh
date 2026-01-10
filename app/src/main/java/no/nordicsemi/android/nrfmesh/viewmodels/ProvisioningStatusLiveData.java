@@ -22,9 +22,10 @@
 
 package no.nordicsemi.android.nrfmesh.viewmodels;
 
+import androidx.lifecycle.LiveData;
+
 import java.util.ArrayList;
 
-import androidx.lifecycle.LiveData;
 import no.nordicsemi.android.nrfmesh.R;
 import no.nordicsemi.android.nrfmesh.utils.ProvisionerStates;
 
@@ -43,7 +44,7 @@ public class ProvisioningStatusLiveData extends LiveData<ProvisioningStatusLiveD
 
 
     public ProvisionerProgress getProvisionerProgress() {
-        if (mProvisioningProgress.isEmpty())
+        if (mProvisioningProgress.size() == 0)
             return null;
         return mProvisioningProgress.get(mProvisioningProgress.size() - 1);
     }
@@ -52,15 +53,15 @@ public class ProvisioningStatusLiveData extends LiveData<ProvisioningStatusLiveD
         final ProvisionerProgress provisioningProgress;
         switch (state) {
             case PROVISIONING_INVITE:
-                provisioningProgress = new ProvisionerProgress(state, "Chl ra kaam...", R.drawable.ic_arrow_forward);
+                provisioningProgress = new ProvisionerProgress(state, "Sending provisioning invite...", R.drawable.ic_arrow_forward);
                 mProvisioningProgress.add(provisioningProgress);
                 break;
             case PROVISIONING_CAPABILITIES:
-                provisioningProgress = new ProvisionerProgress(state, "Provisioning  received...", R.drawable.ic_arrow_back);
+                provisioningProgress = new ProvisionerProgress(state, "Provisioning capabilities received...", R.drawable.ic_arrow_back);
                 mProvisioningProgress.add(provisioningProgress);
                 break;
             case PROVISIONING_START:
-                provisioningProgress = new ProvisionerProgress(state, "ho  rha hai provisioning start...", R.drawable.ic_arrow_forward);
+                provisioningProgress = new ProvisionerProgress(state, "Sending provisioning start...", R.drawable.ic_arrow_forward);
                 mProvisioningProgress.add(provisioningProgress);
                 break;
             case PROVISIONING_PUBLIC_KEY_SENT:
@@ -74,11 +75,11 @@ public class ProvisioningStatusLiveData extends LiveData<ProvisioningStatusLiveD
             case PROVISIONING_AUTHENTICATION_STATIC_OOB_WAITING:
             case PROVISIONING_AUTHENTICATION_OUTPUT_OOB_WAITING:
             case PROVISIONING_AUTHENTICATION_INPUT_OOB_WAITING:
-                provisioningProgress = new ProvisionerProgress(state, "Wait kar for user authentication input...", R.drawable.ic_arrow_forward);
+                provisioningProgress = new ProvisionerProgress(state, "Waiting for user authentication input...", R.drawable.ic_arrow_forward);
                 mProvisioningProgress.add(provisioningProgress);
                 break;
             case PROVISIONING_AUTHENTICATION_INPUT_ENTERED:
-                provisioningProgress = new ProvisionerProgress(state, "O authentication entered...", R.drawable.ic_arrow_forward);
+                provisioningProgress = new ProvisionerProgress(state, "OOB authentication entered...", R.drawable.ic_arrow_forward);
                 mProvisioningProgress.add(provisioningProgress);
                 break;
             case PROVISIONING_INPUT_COMPLETE:

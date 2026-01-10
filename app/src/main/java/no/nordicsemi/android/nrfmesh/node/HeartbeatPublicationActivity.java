@@ -1,16 +1,23 @@
 package no.nordicsemi.android.nrfmesh.node;
 
+import static no.nordicsemi.android.mesh.Features.DISABLED;
+import static no.nordicsemi.android.mesh.Features.ENABLED;
+import static no.nordicsemi.android.mesh.utils.Heartbeat.COUNT_MIN;
+import static no.nordicsemi.android.mesh.utils.Heartbeat.DEFAULT_PUBLICATION_TTL;
+import static no.nordicsemi.android.mesh.utils.Heartbeat.PERIOD_LOG_MIN;
+import static no.nordicsemi.android.mesh.utils.Heartbeat.calculateHeartbeatCount;
+import static no.nordicsemi.android.mesh.utils.Heartbeat.calculateHeartbeatPeriod;
+import static no.nordicsemi.android.mesh.utils.Heartbeat.periodToTime;
+import static no.nordicsemi.android.nrfmesh.utils.Utils.EXTRA_DATA;
+import static no.nordicsemi.android.nrfmesh.utils.Utils.HEARTBEAT_PUBLICATION_NET_KEY;
+import static no.nordicsemi.android.nrfmesh.utils.Utils.RESULT_KEY;
+
 import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
-
-import com.google.android.material.snackbar.Snackbar;
-
-import java.util.ArrayList;
-import java.util.UUID;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
@@ -19,6 +26,12 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.widget.NestedScrollView;
 import androidx.lifecycle.ViewModelProvider;
+
+import com.google.android.material.snackbar.Snackbar;
+
+import java.util.ArrayList;
+import java.util.UUID;
+
 import dagger.hilt.android.AndroidEntryPoint;
 import no.nordicsemi.android.mesh.Features;
 import no.nordicsemi.android.mesh.Group;
@@ -43,18 +56,6 @@ import no.nordicsemi.android.nrfmesh.node.dialog.DialogFragmentHeartbeatDestinat
 import no.nordicsemi.android.nrfmesh.node.dialog.DialogFragmentHeartbeatPublishTtl;
 import no.nordicsemi.android.nrfmesh.node.dialog.DialogFragmentTtl;
 import no.nordicsemi.android.nrfmesh.viewmodels.HeartbeatViewModel;
-
-import static no.nordicsemi.android.mesh.Features.DISABLED;
-import static no.nordicsemi.android.mesh.Features.ENABLED;
-import static no.nordicsemi.android.mesh.utils.Heartbeat.COUNT_MIN;
-import static no.nordicsemi.android.mesh.utils.Heartbeat.DEFAULT_PUBLICATION_TTL;
-import static no.nordicsemi.android.mesh.utils.Heartbeat.PERIOD_LOG_MIN;
-import static no.nordicsemi.android.mesh.utils.Heartbeat.calculateHeartbeatCount;
-import static no.nordicsemi.android.mesh.utils.Heartbeat.calculateHeartbeatPeriod;
-import static no.nordicsemi.android.mesh.utils.Heartbeat.periodToTime;
-import static no.nordicsemi.android.nrfmesh.utils.Utils.EXTRA_DATA;
-import static no.nordicsemi.android.nrfmesh.utils.Utils.HEARTBEAT_PUBLICATION_NET_KEY;
-import static no.nordicsemi.android.nrfmesh.utils.Utils.RESULT_KEY;
 
 @AndroidEntryPoint
 public class HeartbeatPublicationActivity extends AppCompatActivity implements

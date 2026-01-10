@@ -2,6 +2,7 @@ package no.nordicsemi.android.nrfmesh.adapter;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.DiffUtil;
+
 import no.nordicsemi.android.mesh.Group;
 
 public class GroupDiffCallback extends DiffUtil.ItemCallback<Group> {

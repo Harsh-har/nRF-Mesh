@@ -33,6 +33,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.DialogFragment;
+
 import no.nordicsemi.android.nrfmesh.R;
 import no.nordicsemi.android.nrfmesh.databinding.DialogFragmentNameBinding;
 
@@ -62,7 +63,7 @@ public class DialogFragmentNodeName extends DialogFragment {
     @NonNull
     @Override
     public Dialog onCreateDialog(final Bundle savedInstanceState) {
-        binding = no.nordicsemi.android.nrfmesh.databinding.DialogFragmentNameBinding.inflate(getLayoutInflater());
+        binding = DialogFragmentNameBinding.inflate(getLayoutInflater());
 
         binding.textInputLayout.setHint(getString(R.string.hint_friendly_name));
         binding.textInput.setText(mNodeName);

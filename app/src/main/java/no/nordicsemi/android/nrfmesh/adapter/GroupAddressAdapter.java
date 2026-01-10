@@ -28,17 +28,18 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import com.google.android.material.elevation.ElevationOverlayProvider;
-
-import java.util.ArrayList;
-import java.util.List;
-
 import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
 import androidx.lifecycle.LifecycleOwner;
 import androidx.lifecycle.LiveData;
 import androidx.recyclerview.widget.AsyncListDiffer;
 import androidx.recyclerview.widget.RecyclerView;
+
+import com.google.android.material.elevation.ElevationOverlayProvider;
+
+import java.util.ArrayList;
+import java.util.List;
+
 import no.nordicsemi.android.mesh.Group;
 import no.nordicsemi.android.mesh.MeshNetwork;
 import no.nordicsemi.android.mesh.transport.MeshModel;
@@ -68,7 +69,7 @@ public class GroupAddressAdapter extends RecyclerView.Adapter<GroupAddressAdapte
 
     @NonNull
     @Override
-    public GroupAddressAdapter.ViewHolder onCreateViewHolder(@NonNull final ViewGroup parent,
+    public ViewHolder onCreateViewHolder(@NonNull final ViewGroup parent,
                                                              final int viewType) {
         return new ViewHolder(
                 AddressItemBinding.inflate(LayoutInflater.from(parent.getContext()), parent,
@@ -76,7 +77,7 @@ public class GroupAddressAdapter extends RecyclerView.Adapter<GroupAddressAdapte
     }
 
     @Override
-    public void onBindViewHolder(@NonNull final GroupAddressAdapter.ViewHolder holder,
+    public void onBindViewHolder(@NonNull final ViewHolder holder,
                                  final int position) {
         final int address = differ.getCurrentList().get(position);
         if (address == MeshAddress.ALL_PROXIES_ADDRESS) {

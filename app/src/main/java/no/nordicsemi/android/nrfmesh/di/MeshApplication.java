@@ -24,6 +24,7 @@ package no.nordicsemi.android.nrfmesh.di;
 
 import androidx.appcompat.app.AppCompatDelegate;
 import androidx.multidex.MultiDexApplication;
+
 import dagger.hilt.android.HiltAndroidApp;
 
 @HiltAndroidApp

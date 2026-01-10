@@ -22,12 +22,13 @@
 
 package no.nordicsemi.android.nrfmesh.viewmodels;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.lifecycle.LiveData;
+
+import java.util.ArrayList;
+import java.util.List;
+
 import no.nordicsemi.android.mesh.MeshBeacon;
 import no.nordicsemi.android.nrfmesh.adapter.ExtendedBluetoothDevice;
 import no.nordicsemi.android.support.v18.scanner.ScanResult;

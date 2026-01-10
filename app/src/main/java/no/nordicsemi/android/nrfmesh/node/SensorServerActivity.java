@@ -7,6 +7,7 @@ import android.util.Log;
 import android.view.View;
 
 import androidx.core.content.ContextCompat;
+
 import dagger.hilt.android.AndroidEntryPoint;
 import no.nordicsemi.android.mesh.ApplicationKey;
 import no.nordicsemi.android.mesh.models.SensorServer;

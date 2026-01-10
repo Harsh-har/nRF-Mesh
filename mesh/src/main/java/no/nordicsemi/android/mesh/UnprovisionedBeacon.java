@@ -79,7 +79,7 @@ public class UnprovisionedBeacon extends MeshBeacon {
         dest.writeByteArray(beaconData);
     }
 
-    public static final Parcelable.Creator<UnprovisionedBeacon> CREATOR = new Parcelable.Creator<UnprovisionedBeacon>() {
+    public static final Creator<UnprovisionedBeacon> CREATOR = new Creator<UnprovisionedBeacon>() {
         @SuppressWarnings("ConstantConditions")
         @Override
         public UnprovisionedBeacon createFromParcel(final Parcel source) {

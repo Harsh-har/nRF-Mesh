@@ -2,6 +2,7 @@ package no.nordicsemi.android.nrfmesh.scenes.adapter;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.DiffUtil;
+
 import no.nordicsemi.android.mesh.Scene;
 
 public class SceneDiffCallback extends DiffUtil.ItemCallback<Scene> {

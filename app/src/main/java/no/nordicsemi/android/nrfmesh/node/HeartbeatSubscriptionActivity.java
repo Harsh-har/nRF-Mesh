@@ -1,20 +1,23 @@
 package no.nordicsemi.android.nrfmesh.node;
 
+import static no.nordicsemi.android.mesh.utils.Heartbeat.calculateHeartbeatPeriod;
+
 import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.lifecycle.ViewModelProvider;
+
 import com.google.android.material.snackbar.Snackbar;
 
 import java.util.ArrayList;
 import java.util.UUID;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.lifecycle.ViewModelProvider;
 import dagger.hilt.android.AndroidEntryPoint;
 import no.nordicsemi.android.mesh.Group;
 import no.nordicsemi.android.mesh.MeshNetwork;
@@ -34,8 +37,6 @@ import no.nordicsemi.android.nrfmesh.node.dialog.DestinationAddressCallbacks;
 import no.nordicsemi.android.nrfmesh.node.dialog.DialogFragmentHeartbeatDestination;
 import no.nordicsemi.android.nrfmesh.node.dialog.DialogFragmentHeartbeatSource;
 import no.nordicsemi.android.nrfmesh.viewmodels.HeartbeatViewModel;
-
-import static no.nordicsemi.android.mesh.utils.Heartbeat.calculateHeartbeatPeriod;
 
 @AndroidEntryPoint
 public class HeartbeatSubscriptionActivity extends AppCompatActivity implements

@@ -3,13 +3,14 @@ package no.nordicsemi.android.nrfmesh.utils;
 import android.os.AsyncTask;
 import android.util.Log;
 
+import androidx.annotation.NonNull;
+
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.OutputStream;
 
-import androidx.annotation.NonNull;
 import no.nordicsemi.android.mesh.MeshManagerApi;
 
 public class NetworkExportUtils {
@@ -52,7 +53,7 @@ public class NetworkExportUtils {
 
     private static class NetworkExportAsyncTask extends AsyncTask<Void, Void, Boolean> {
 
-        private static final String TAG = NetworkExportUtils.NetworkExportAsyncTask.class.getSimpleName();
+        private static final String TAG = NetworkExportAsyncTask.class.getSimpleName();
         private final MeshManagerApi meshManagerApi;
         private final OutputStream outputStream;
         private final NetworkExportCallbacks callbacks;
@@ -105,7 +106,7 @@ public class NetworkExportUtils {
 
     private static class NetworkExportAsyncTask2 extends AsyncTask<Void, Void, Boolean> {
 
-        private static final String TAG = NetworkExportUtils.NetworkExportAsyncTask.class.getSimpleName();
+        private static final String TAG = NetworkExportAsyncTask.class.getSimpleName();
         private final MeshManagerApi meshManagerApi;
         private final String path;
         private final String fileName;

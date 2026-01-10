@@ -22,13 +22,20 @@
 
 package no.nordicsemi.android.nrfmesh.viewmodels;
 
+import static no.nordicsemi.android.mesh.transport.PublicationSettings.parseRetransmitIntervalSteps;
+import static no.nordicsemi.android.mesh.utils.MeshParserUtils.RESOLUTION_100_MS;
+import static no.nordicsemi.android.mesh.utils.MeshParserUtils.RESOLUTION_10_M;
+import static no.nordicsemi.android.mesh.utils.MeshParserUtils.RESOLUTION_10_S;
+import static no.nordicsemi.android.mesh.utils.MeshParserUtils.RESOLUTION_1_S;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+
 import java.util.List;
 import java.util.UUID;
 
 import javax.inject.Inject;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import dagger.hilt.android.lifecycle.HiltViewModel;
 import no.nordicsemi.android.mesh.transport.ConfigModelPublicationSet;
 import no.nordicsemi.android.mesh.transport.ConfigModelPublicationVirtualAddressSet;
@@ -41,12 +48,6 @@ import no.nordicsemi.android.mesh.utils.MeshAddress;
 import no.nordicsemi.android.mesh.utils.MeshParserUtils;
 import no.nordicsemi.android.nrfmesh.R;
 import no.nordicsemi.android.nrfmesh.node.PublicationSettingsActivity;
-
-import static no.nordicsemi.android.mesh.transport.PublicationSettings.parseRetransmitIntervalSteps;
-import static no.nordicsemi.android.mesh.utils.MeshParserUtils.RESOLUTION_100_MS;
-import static no.nordicsemi.android.mesh.utils.MeshParserUtils.RESOLUTION_10_M;
-import static no.nordicsemi.android.mesh.utils.MeshParserUtils.RESOLUTION_10_S;
-import static no.nordicsemi.android.mesh.utils.MeshParserUtils.RESOLUTION_1_S;
 
 /**
  * View Model class for {@link PublicationSettingsActivity}
