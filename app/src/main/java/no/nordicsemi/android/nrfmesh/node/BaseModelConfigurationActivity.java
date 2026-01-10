@@ -664,10 +664,9 @@ public abstract class BaseModelConfigurationActivity extends BaseActivity implem
 
     private void sendGenericOnOffCommand() {
         final ProvisionedMeshNode node = mViewModel.getSelectedMeshNode().getValue();
-        final Element element = mViewModel.getSelectedElement().getValue();
         final MeshModel model = mViewModel.getSelectedModel().getValue();
 
-        if (node == null || element == null || model == null) {
+        if (node == null || model == null) {
             mViewModel.displaySnackBar(this, mContainer, "Node/Element/Model not selected", Snackbar.LENGTH_SHORT);
             return;
         }
@@ -683,6 +682,18 @@ public abstract class BaseModelConfigurationActivity extends BaseActivity implem
         try {
             final int command = Integer.parseInt(commandStr);
             final int state = Integer.parseInt(stateStr);
+
+            // Validate state range (0-255)
+            if (state < 0 || state > 255) {
+                mViewModel.displaySnackBar(this, mContainer, "State must be between 0 and 255", Snackbar.LENGTH_SHORT);
+                return;
+            }
+
+            // Validate command range (0-255)
+            if (command < 0 || command > 255) {
+                mViewModel.displaySnackBar(this, mContainer, "Command must be between 0 and 255", Snackbar.LENGTH_SHORT);
+                return;
+            }
 
             List<Integer> boundAppKeys = model.getBoundAppKeyIndexes();
             if (boundAppKeys.isEmpty()) {
@@ -705,12 +716,18 @@ public abstract class BaseModelConfigurationActivity extends BaseActivity implem
                 return;
             }
 
-            final int tId = new Random().nextInt(255);
-            final GenericOnOffSet onOffSetMessage = new GenericOnOffSet(appKey, true, state, tId, command, null);
+            // Generate random TID (0-255)
+            final int tId = new Random().nextInt(256);
+
+            // Create the message using the updated constructor: appKey, command, tid, state
+            final GenericOnOffSet onOffSetMessage = new GenericOnOffSet(appKey, command, tId, state);
+
             sendAcknowledgedMessage(node.getUnicastAddress(), onOffSetMessage);
 
         } catch (NumberFormatException e) {
-            mViewModel.displaySnackBar(this, mContainer, "Invalid command or state value", Snackbar.LENGTH_SHORT);
+            mViewModel.displaySnackBar(this, mContainer, "Invalid command or state value. Please enter numbers only.", Snackbar.LENGTH_SHORT);
+        } catch (IllegalArgumentException e) {
+            mViewModel.displaySnackBar(this, mContainer, e.getMessage(), Snackbar.LENGTH_SHORT);
         }
     }
 
