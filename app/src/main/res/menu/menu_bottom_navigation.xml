@@ -27,7 +27,7 @@
     <item
         android:id="@+id/action_network"
         android:enabled="true"
-        android:icon="@drawable/ic_mesh_black"
+        android:icon="@drawable/networkmesh"
         android:title="@string/network"
         app:showAsAction="always"
         tools:ignore="AlwaysShowAction"/>

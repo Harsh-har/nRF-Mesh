@@ -33,9 +33,9 @@
         android:name=".di.MeshApplication"
         android:allowBackup="true"
         android:fullBackupContent="true"
-        android:icon="@drawable/network"
+        android:icon="@drawable/networkmesh"
         android:label="@string/app_name"
-        android:roundIcon="@drawable/network"
+        android:roundIcon="@drawable/networkmesh"
         android:theme="@style/AppTheme"
         tools:ignore="GoogleAppIndexingWarning">
 

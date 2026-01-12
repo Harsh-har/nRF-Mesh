@@ -6,7 +6,8 @@
     android:layout_height="wrap_content"
     android:clipChildren="false"
     android:clipToPadding="false"
-    android:orientation="vertical">
+    android:orientation="vertical"
+    >
 
     <com.google.android.material.appbar.MaterialToolbar
         android:id="@+id/node_controls_tool_bar"

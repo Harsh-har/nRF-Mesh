@@ -1,7 +1,6 @@
 
 package no.nordicsemi.android.nrfmesh.node;
 
-import static no.nordicsemi.android.mesh.data.ScheduleEntry.Hour.Random;
 import static no.nordicsemi.android.mesh.utils.MeshAddress.formatAddress;
 import static no.nordicsemi.android.mesh.utils.MeshAddress.isValidGroupAddress;
 import static no.nordicsemi.android.mesh.utils.MeshAddress.isValidVirtualAddress;
@@ -9,14 +8,12 @@ import static no.nordicsemi.android.nrfmesh.utils.Utils.BIND_APP_KEY;
 import static no.nordicsemi.android.nrfmesh.utils.Utils.EXTRA_DATA;
 import static no.nordicsemi.android.nrfmesh.utils.Utils.MESSAGE_TIME_OUT;
 import static no.nordicsemi.android.nrfmesh.utils.Utils.RESULT_KEY;
-
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ProgressBar;
 import android.widget.TextView;
-
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
@@ -26,15 +23,12 @@ import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
-
 import com.google.android.material.snackbar.Snackbar;
 import com.google.android.material.textfield.TextInputEditText;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
-
 import no.nordicsemi.android.mesh.ApplicationKey;
 import no.nordicsemi.android.mesh.Group;
 import no.nordicsemi.android.mesh.MeshNetwork;
@@ -64,8 +58,6 @@ import no.nordicsemi.android.mesh.utils.CompositionDataParser;
 import no.nordicsemi.android.nrfmesh.GroupCallbacks;
 import no.nordicsemi.android.nrfmesh.R;
 import java.util.Random;
-import java.util.Random;
-
 import no.nordicsemi.android.nrfmesh.adapter.GroupAddressAdapter;
 import no.nordicsemi.android.nrfmesh.databinding.ActivityModelConfigurationBinding;
 import no.nordicsemi.android.nrfmesh.dialog.DialogFragmentConfigStatus;
@@ -658,11 +650,6 @@ public abstract class BaseModelConfigurationActivity extends BaseActivity implem
         }
     }
 
-
-
-
-
-
     private void sendGenericOnOffCommand() {
         final ProvisionedMeshNode node = mViewModel.getSelectedMeshNode().getValue();
         final MeshModel model = mViewModel.getSelectedModel().getValue();
@@ -684,13 +671,13 @@ public abstract class BaseModelConfigurationActivity extends BaseActivity implem
             final int command = Integer.parseInt(commandStr);
             final int state = Integer.parseInt(stateStr);
 
-            // Validate state range (0-255)
+
             if (state < 0 || state > 255) {
                 mViewModel.displaySnackBar(this, mContainer, "State must be between 0 and 255", Snackbar.LENGTH_SHORT);
                 return;
             }
 
-            // Validate command range (0-255)
+
             if (command < 0 || command > 255) {
                 mViewModel.displaySnackBar(this, mContainer, "Command must be between 0 and 255", Snackbar.LENGTH_SHORT);
                 return;
@@ -717,7 +704,7 @@ public abstract class BaseModelConfigurationActivity extends BaseActivity implem
                 return;
             }
 
-            // Generate random TID (0-255)
+
             final int tId = new Random().nextInt(256);
 
             // Create the message using the updated constructor: appKey, command, tid, state
@@ -727,13 +714,10 @@ public abstract class BaseModelConfigurationActivity extends BaseActivity implem
 
         } catch (NumberFormatException e) {
             mViewModel.displaySnackBar(this, mContainer, "Invalid command or state value. Please enter numbers only.", Snackbar.LENGTH_SHORT);
-        } catch (IllegalArgumentException e) {
+        }
+        catch (IllegalArgumentException e) {
             mViewModel.displaySnackBar(this, mContainer, e.getMessage(), Snackbar.LENGTH_SHORT);
         }
     }
-
-
-
-
 
 }
