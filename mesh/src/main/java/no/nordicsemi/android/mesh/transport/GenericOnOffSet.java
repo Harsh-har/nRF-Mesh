@@ -1,10 +1,8 @@
 package no.nordicsemi.android.mesh.transport;
 
 import no.nordicsemi.android.mesh.logger.MeshLogger;
-
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import no.nordicsemi.android.mesh.ApplicationKey;
@@ -22,8 +20,8 @@ public class GenericOnOffSet extends ApplicationMessage {
     private static final int GENERIC_ON_OFF_SET_PARAMS_LENGTH = 4;
 
     private final int mCommand;
-    private final int mTid;
     private final int mState;
+    private final int mTid;
 
     /**
      * Constructs GenericOnOffSet message with 4 integer parameters (legacy constructor for backward compatibility).
@@ -34,9 +32,9 @@ public class GenericOnOffSet extends ApplicationMessage {
      * @throws IllegalArgumentException if any illegal arguments are passed
      */
     public GenericOnOffSet(@NonNull final ApplicationKey appKey,
-                           final boolean state,
+                           final int state,
                            final int tId) throws IllegalArgumentException {
-        this(appKey, 1, tId, state ? 1 : 0);
+        this(appKey, 1,  state,tId);
     }
 
     /**
@@ -109,6 +107,13 @@ public class GenericOnOffSet extends ApplicationMessage {
     }
 
     /**
+     * Gets the state value.
+     * @return State as integer (0-255)
+     */
+    public int getState() {
+        return mState;
+    }
+    /**
      * Gets the transaction ID.
      * @return Transaction ID as integer (0-255)
      */
@@ -116,13 +121,7 @@ public class GenericOnOffSet extends ApplicationMessage {
         return mTid;
     }
 
-    /**
-     * Gets the state value.
-     * @return State as integer (0-255)
-     */
-    public int getState() {
-        return mState;
-    }
+
 
     @Override
     void assembleMessageParameters() {
@@ -132,13 +131,14 @@ public class GenericOnOffSet extends ApplicationMessage {
                 .order(ByteOrder.LITTLE_ENDIAN);
 
         MeshLogger.verbose(TAG, "Command: " + mCommand);
-        MeshLogger.verbose(TAG, "Transaction ID: " + mTid);
         MeshLogger.verbose(TAG, "State: " + mState);
+        MeshLogger.verbose(TAG, "Transaction ID: " + mTid);
+
 
         // Add all parameters as bytes
         paramsBuffer.put((byte) mCommand);
-        paramsBuffer.put((byte) mTid);
         paramsBuffer.put((byte) mState);
+        paramsBuffer.put((byte) mTid);
 
         mParameters = paramsBuffer.array();
     }
@@ -147,8 +147,8 @@ public class GenericOnOffSet extends ApplicationMessage {
     public String toString() {
         return "GenericOnOffSet{" +
                 "command=" + mCommand +
-                ", tid=" + mTid +
                 ", state=" + mState +
+                ", tid=" + mTid +
                 '}';
     }
 }

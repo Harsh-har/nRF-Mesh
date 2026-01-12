@@ -8,9 +8,6 @@ import android.widget.TextView;
 
 import com.google.android.material.slider.Slider;
 import com.google.android.material.snackbar.Snackbar;
-
-import java.util.Random;
-
 import androidx.annotation.NonNull;
 import dagger.hilt.android.AndroidEntryPoint;
 import no.nordicsemi.android.mesh.ApplicationKey;
@@ -37,6 +34,8 @@ public class GenericOnOffServerActivity extends ModelConfigurationActivity {
     private Button mActionOnOff;
     protected int mTransitionStepResolution;
     protected int mTransitionSteps;
+    private int mTid = 1;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -214,25 +213,59 @@ public class GenericOnOffServerActivity extends ModelConfigurationActivity {
      * @param delay message execution delay in 5ms steps. After this delay milliseconds the model will execute the required behaviour.
      */
     public void sendGenericOnOff(final boolean state, final Integer delay) {
+
         if (!checkConnectivity(mContainer)) return;
-        final ProvisionedMeshNode node = mViewModel.getSelectedMeshNode().getValue();
-        if (node != null) {
-            final Element element = mViewModel.getSelectedElement().getValue();
-            if (element != null) {
-                final MeshModel model = mViewModel.getSelectedModel().getValue();
-                if (model != null) {
-                    if (!model.getBoundAppKeyIndexes().isEmpty()) {
-                        final int appKeyIndex = model.getBoundAppKeyIndexes().get(0);
-                        final ApplicationKey appKey = mViewModel.getNetworkLiveData().getMeshNetwork().getAppKey(appKeyIndex);
-                        final int address = element.getElementAddress();
-                        final GenericOnOffSet genericOnOffSet = new GenericOnOffSet(appKey, state,
-                                new Random().nextInt(), mTransitionSteps, mTransitionStepResolution, delay);
-                        sendAcknowledgedMessage(address, genericOnOffSet);
-                    } else {
-                        mViewModel.displaySnackBar(this, mContainer, getString(R.string.error_no_app_keys_bound), Snackbar.LENGTH_LONG);
-                    }
-                }
-            }
+
+        final ProvisionedMeshNode node =
+                mViewModel.getSelectedMeshNode().getValue();
+        final Element element =
+                mViewModel.getSelectedElement().getValue();
+        final MeshModel model =
+                mViewModel.getSelectedModel().getValue();
+
+        if (node == null || element == null || model == null) {
+            mViewModel.displaySnackBar(
+                    this,
+                    mContainer,
+                    "Node / Element / Model not selected",
+                    Snackbar.LENGTH_SHORT
+            );
+            return;
         }
+
+        if (model.getBoundAppKeyIndexes().isEmpty()) {
+            mViewModel.displaySnackBar(
+                    this,
+                    mContainer,
+                    getString(R.string.error_no_app_keys_bound),
+                    Snackbar.LENGTH_LONG
+            );
+            return;
+        }
+
+        final int appKeyIndex = model.getBoundAppKeyIndexes().get(0);
+        final ApplicationKey appKey =
+                mViewModel.getNetworkLiveData()
+                        .getMeshNetwork()
+                        .getAppKey(appKeyIndex);
+
+        final int address = element.getElementAddress();
+
+        // ✅ Incrementing TID (0–255 wrap)
+        final int tid = mTid & 0xFF;
+        mTid = (mTid + 1) & 0xFF;
+
+        final GenericOnOffSet genericOnOffSet =
+                new GenericOnOffSet(
+                        appKey,
+                        state,
+                        tid,
+                        mTransitionSteps,
+                        mTransitionStepResolution,
+                        delay
+                );
+
+        sendAcknowledgedMessage(address, genericOnOffSet);
     }
+
 }

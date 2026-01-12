@@ -21,23 +21,25 @@ public class GenericLevelSet extends ApplicationMessage {
 
     // level (2 bytes) + tid (1 byte) + command (1 byte)
     private static final int GENERIC_LEVEL_SET_PARAMS_LENGTH = 4;
-
+    private final int mCommand;
     private final int mState;
     private final int tId;
-    private final int mCommand;
+
 
     /**
      * Constructs GenericLevelSet message.
      *
      * @param appKey  {@link ApplicationKey} key for this message
+     * @param command Command ID
      * @param state   Level value (-32768 to 32767)
      * @param tId     Transaction ID
-     * @param command Command ID
+     *
      */
     public GenericLevelSet(@NonNull final ApplicationKey appKey,
+                           final int command,
                            final int state,
-                           final int tId,
-                           final int command) {
+                           final int tId
+                          ) {
         super(appKey);
 
         if (state < Short.MIN_VALUE || state > Short.MAX_VALUE) {
@@ -46,9 +48,10 @@ public class GenericLevelSet extends ApplicationMessage {
             );
         }
 
+        this.mCommand = command;
         this.mState = state;
         this.tId = tId;
-        this.mCommand = command;
+
 
         assembleMessageParameters();
     }
@@ -62,17 +65,19 @@ public class GenericLevelSet extends ApplicationMessage {
     void assembleMessageParameters() {
         mAid = SecureUtils.calculateK4(mAppKey.getKey());
 
+        MeshLogger.verbose(TAG, "Command: " + mCommand);
         MeshLogger.verbose(TAG, "Level: " + mState);
         MeshLogger.verbose(TAG, "TID: " + tId);
-        MeshLogger.verbose(TAG, "Command: " + mCommand);
+
 
         ByteBuffer paramsBuffer = ByteBuffer
                 .allocate(GENERIC_LEVEL_SET_PARAMS_LENGTH)
                 .order(ByteOrder.LITTLE_ENDIAN);
 
+        paramsBuffer.put((byte) mCommand);      // 1 byte
         paramsBuffer.putShort((short) mState); // 2 bytes
         paramsBuffer.put((byte) tId);          // 1 byte
-        paramsBuffer.put((byte) mCommand);      // 1 byte
+
 
         mParameters = paramsBuffer.array();
     }

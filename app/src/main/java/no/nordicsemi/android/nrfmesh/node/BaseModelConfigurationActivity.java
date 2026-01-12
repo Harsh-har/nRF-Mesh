@@ -163,9 +163,10 @@ public abstract class BaseModelConfigurationActivity extends BaseActivity implem
         mSwipe = binding.swipeRefresh;
 
         // Node controls references
-        mSendButton = binding.actionOn; // SEND button
         mCommandEditText = binding.etCommand; // Command input
         mStateEditText = binding.etState;    // State input
+        mSendButton = binding.actionOn; // SEND button
+
 
 
         mViewModel = new ViewModelProvider(this).get(ModelConfigurationViewModel.class);

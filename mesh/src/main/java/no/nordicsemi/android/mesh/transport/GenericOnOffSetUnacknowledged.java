@@ -4,7 +4,6 @@ import androidx.annotation.NonNull;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-
 import no.nordicsemi.android.mesh.ApplicationKey;
 import no.nordicsemi.android.mesh.logger.MeshLogger;
 import no.nordicsemi.android.mesh.opcodes.ApplicationMessageOpCodes;
@@ -20,21 +19,23 @@ public class GenericOnOffSetUnacknowledged extends ApplicationMessage {
 
     // State (1) + TID (1) + Command (1)
     private static final int PARAM_LENGTH = 3;
-
+    private final int mCommand;
     private final int mState;
     private final int mTid;
-    private final int mCommand;
+
 
     public GenericOnOffSetUnacknowledged(
             @NonNull ApplicationKey appKey,
+            int command,
             int state,
-            int tid,
-            int command
+            int tid
+
     ) {
         super(appKey);
+        this.mCommand = command;
         this.mState = state;
         this.mTid = tid;
-        this.mCommand = command;
+
         assembleMessageParameters();
     }
 
@@ -47,17 +48,19 @@ public class GenericOnOffSetUnacknowledged extends ApplicationMessage {
     void assembleMessageParameters() {
         mAid = SecureUtils.calculateK4(mAppKey.getKey());
 
+        MeshLogger.verbose(TAG, "Command: " + mCommand);
         MeshLogger.verbose(TAG, "State: " + mState);
         MeshLogger.verbose(TAG, "TID: " + mTid);
-        MeshLogger.verbose(TAG, "Command: " + mCommand);
+
 
         ByteBuffer buffer = ByteBuffer
                 .allocate(PARAM_LENGTH)
                 .order(ByteOrder.LITTLE_ENDIAN);
 
+        buffer.put((byte) mCommand);
         buffer.put((byte) mState);
         buffer.put((byte) mTid);
-        buffer.put((byte) mCommand);
+
 
         mParameters = buffer.array();
     }

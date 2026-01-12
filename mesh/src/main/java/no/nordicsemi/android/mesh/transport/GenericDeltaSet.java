@@ -4,7 +4,6 @@ import androidx.annotation.NonNull;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-
 import no.nordicsemi.android.mesh.ApplicationKey;
 import no.nordicsemi.android.mesh.logger.MeshLogger;
 import no.nordicsemi.android.mesh.opcodes.ApplicationMessageOpCodes;
@@ -26,28 +25,31 @@ public class GenericDeltaSet extends ApplicationMessage {
 
     // delta(2) + tid(1) + command(1) = 4 bytes
     private static final int PARAMS_LENGTH = 4;
-
+    private final int mCommand;
     private final int mState;
     private final int mTid;
-    private final int mCommand;
+
 
     /**
      * Constructor (NO transition params)
      *
      * @param appKey   {@link ApplicationKey}
+     * @param command  Custom command ID
      * @param state    Level delta value
      * @param tId      Transaction ID
-     * @param command  Custom command ID
+     *
      */
     public GenericDeltaSet(@NonNull final ApplicationKey appKey,
+                           final int command,
                            final int state,
-                           final int tId,
-                           final int command) {
+                           final int tId
+                           ) {
 
         super(appKey);
+        this.mCommand = command;
         this.mState = state;
         this.mTid = tId;
-        this.mCommand = command;
+
         assembleMessageParameters();
     }
 
@@ -60,17 +62,20 @@ public class GenericDeltaSet extends ApplicationMessage {
     void assembleMessageParameters() {
         mAid = SecureUtils.calculateK4(mAppKey.getKey());
 
-        MeshLogger.verbose(TAG, "Delta: " + mState);
-        MeshLogger.verbose(TAG, "TID: " + mTid);
         MeshLogger.verbose(TAG, "Command: " + mCommand);
+        MeshLogger.verbose(TAG, "State: " + mState);
+        MeshLogger.verbose(TAG, "TID: " + mTid);
+
 
         final ByteBuffer buffer = ByteBuffer
                 .allocate(PARAMS_LENGTH)
                 .order(ByteOrder.LITTLE_ENDIAN);
 
+
+        buffer.put((byte) mCommand);        // uint8
         buffer.putShort((short) mState);   // int16
         buffer.put((byte) mTid);            // uint8
-        buffer.put((byte) mCommand);        // uint8
+
 
         mParameters = buffer.array();
     }

@@ -27,23 +27,25 @@ public class GenericPowerLevelSetUnacknowledged extends ApplicationMessage {
 
     // state(2) + tid(1) + command(1) = 4 bytes
     private static final int PARAMS_LENGTH = 4;
-
+    private final int mCommand;
     private final int mState;
     private final int mTid;
-    private final int mCommand;
+
 
     /**
      * Constructor (NO transition params)
      *
      * @param appKey      {@link ApplicationKey}
-     * @param state  state level (0–65535)
-     * @param tid         Transaction ID
      * @param command     Custom command ID
+     * @param state   state level
+     * @param tid         Transaction ID
+     *
      */
     public GenericPowerLevelSetUnacknowledged(@NonNull final ApplicationKey appKey,
+                                              final int command,
                                               final int state,
-                                              final int tid,
-                                              final int command) {
+                                              final int tid
+                                             ) {
 
         super(appKey);
 
@@ -52,9 +54,10 @@ public class GenericPowerLevelSetUnacknowledged extends ApplicationMessage {
                     "Generic power level must be between 0 and 65535");
         }
 
+        this.mCommand = command;
         this.mState = state;
         this.mTid = tid;
-        this.mCommand = command;
+
 
         assembleMessageParameters();
     }
@@ -68,17 +71,19 @@ public class GenericPowerLevelSetUnacknowledged extends ApplicationMessage {
     void assembleMessageParameters() {
         mAid = SecureUtils.calculateK4(mAppKey.getKey());
 
+        MeshLogger.verbose(TAG, "Command: " + mCommand);
         MeshLogger.verbose(TAG, "Power level: " + mState);
         MeshLogger.verbose(TAG, "TID: " + mTid);
-        MeshLogger.verbose(TAG, "Command: " + mCommand);
+
 
         final ByteBuffer buffer = ByteBuffer
                 .allocate(PARAMS_LENGTH)
                 .order(ByteOrder.LITTLE_ENDIAN);
 
+        buffer.put((byte) mCommand);          // uint8
         buffer.putShort((short) mState); // uint16
         buffer.put((byte) mTid);              // uint8
-        buffer.put((byte) mCommand);          // uint8
+
 
         mParameters = buffer.array();
     }

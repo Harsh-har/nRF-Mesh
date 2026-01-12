@@ -29,23 +29,25 @@ public class GenericLevelSetUnacknowledged extends ApplicationMessage {
 
     // level(2) + tid(1) + command(1)
     private static final int PARAMS_LENGTH = 4;
-
+    private final int mCommand;
     private final int mState;
     private final int mTid;
-    private final int mCommand;
+
 
     /**
      * Constructor (NO transition parameters)
      *
      * @param appKey {@link ApplicationKey}
+     * @param command    Command ID
      * @param state
      * @param tid    Transaction ID
-     * @param command    Transaction ID
+     *
      */
     public GenericLevelSetUnacknowledged(@NonNull final ApplicationKey appKey,
+                                         final int command,
                                          final int state,
-                                         final int tid,
-                                         final int command) {
+                                         final int tid
+                                        ) {
 
         super(appKey);
 
@@ -54,9 +56,10 @@ public class GenericLevelSetUnacknowledged extends ApplicationMessage {
                     "Generic level must be between -32768 and 32767");
         }
 
+        this.mCommand = command;
         this.mState = state;
         this.mTid = tid;
-        this.mCommand = command;
+
 
         assembleMessageParameters();
     }
@@ -70,17 +73,19 @@ public class GenericLevelSetUnacknowledged extends ApplicationMessage {
     void assembleMessageParameters() {
         mAid = SecureUtils.calculateK4(mAppKey.getKey());
 
+        MeshLogger.verbose(TAG, "Command: " + mCommand);
         MeshLogger.verbose(TAG, "State: " + mState);
         MeshLogger.verbose(TAG, "TID: " + mTid);
-        MeshLogger.verbose(TAG, "Command: " + mCommand);
+
 
         final ByteBuffer buffer = ByteBuffer
                 .allocate(PARAMS_LENGTH)
                 .order(ByteOrder.LITTLE_ENDIAN);
 
+        buffer.put((byte) mCommand);     // uint8
         buffer.putShort((short) mState); // int16
         buffer.put((byte) mTid);         // uint8
-        buffer.put((byte) mCommand);     // uint8
+
 
         mParameters = buffer.array();
     }
