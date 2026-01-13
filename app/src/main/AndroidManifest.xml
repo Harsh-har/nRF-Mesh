@@ -59,7 +59,7 @@
         <activity-alias
             android:name="SplashScreenActivity"
             android:targetActivity=".MainActivity"
-            android:icon="@drawable/network"
+            android:icon="@drawable/networkmesh"
             android:label="@string/feature_name"
             android:launchMode="singleTop"
             android:exported="true">

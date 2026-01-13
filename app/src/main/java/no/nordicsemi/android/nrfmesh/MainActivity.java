@@ -107,10 +107,10 @@ public class MainActivity extends AppCompatActivity implements
             ft.hide(mNetworkFragment).show(mGroupsFragment)
                     .hide(mProxyFilterFragment).hide(mSettingsFragment);
         }
-        else if (item.getItemId() == R.id.action_proxy) {
-            ft.hide(mNetworkFragment).hide(mGroupsFragment)
-                    .show(mProxyFilterFragment).hide(mSettingsFragment);
-        }
+//        else if (item.getItemId() == R.id.action_proxy) {
+//            ft.hide(mNetworkFragment).hide(mGroupsFragment)
+//                    .show(mProxyFilterFragment).hide(mSettingsFragment);
+//        }
         else if (item.getItemId() == R.id.action_settings) {
             ft.hide(mNetworkFragment).hide(mGroupsFragment)
                     .hide(mProxyFilterFragment).show(mSettingsFragment);

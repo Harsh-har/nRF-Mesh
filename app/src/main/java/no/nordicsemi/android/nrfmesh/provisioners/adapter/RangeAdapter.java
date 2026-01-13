@@ -1,38 +1,15 @@
-/*
- * Copyright (c) 2018, Nordic Semiconductor
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
- *
- * 1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
- *
- * 2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the
- * documentation and/or other materials provided with the distribution.
- *
- * 3. Neither the name of the copyright holder nor the names of its contributors may be used to endorse or promote products derived from this
- * software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE
- * USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+
 
 package no.nordicsemi.android.nrfmesh.provisioners.adapter;
 
 import android.view.LayoutInflater;
 import android.view.ViewGroup;
 import android.widget.TextView;
-
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.AsyncListDiffer;
 import androidx.recyclerview.widget.RecyclerView;
-
 import java.util.ArrayList;
 import java.util.List;
-
 import no.nordicsemi.android.mesh.AddressRange;
 import no.nordicsemi.android.mesh.AllocatedGroupRange;
 import no.nordicsemi.android.mesh.AllocatedSceneRange;
@@ -68,18 +45,7 @@ public class RangeAdapter<T extends Range> extends RecyclerView.Adapter<RangeAda
         differ.submitList((List<T>) a);
     }
 
-    private List<T> populateLists(@NonNull List<T> ranges) {
-        final List<Range> r = new ArrayList<>();
-        for (T range : ranges) {
-            try {
-                r.add(range.clone());
-            } catch (CloneNotSupportedException e) {
-                e.printStackTrace();
-            }
-        }
-        //noinspection unchecked
-        return (List<T>) r;
-    }
+
 
     @NonNull
     @Override
@@ -122,15 +88,6 @@ public class RangeAdapter<T extends Range> extends RecyclerView.Adapter<RangeAda
         return differ.getCurrentList().get(position);
     }
 
-    public void addItem(final int position, @NonNull final Range range) {
-        //mRanges.add(position, range);
-        notifyItemInserted(position);
-    }
-
-    public void removeItem(final int position) {
-        //mRanges.remove(position);
-        notifyItemRemoved(position);
-    }
 
     private void addOverlappingRanges(@NonNull final Range range, @NonNull final RangeView rangeView) {
         rangeView.clearOtherRanges();
