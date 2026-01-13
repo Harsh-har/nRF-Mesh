@@ -1,27 +1,6 @@
-/*
- * Copyright (c) 2018, Nordic Semiconductor
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
- *
- * 1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
- *
- * 2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the
- * documentation and/or other materials provided with the distribution.
- *
- * 3. Neither the name of the copyright holder nor the names of its contributors may be used to endorse or promote products derived from this
- * software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE
- * USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
-
 package no.nordicsemi.android.nrfmesh.node.adapter;
 
+import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -35,8 +14,10 @@ import androidx.recyclerview.widget.AsyncListDiffer;
 import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import no.nordicsemi.android.mesh.transport.Element;
 import no.nordicsemi.android.mesh.transport.ProvisionedMeshNode;
@@ -49,13 +30,17 @@ import no.nordicsemi.android.nrfmesh.widgets.RemovableViewHolder;
 
 public class NodeAdapter extends RecyclerView.Adapter<NodeAdapter.ViewHolder> {
 
-    private final AsyncListDiffer<ProvisionedMeshNode> differ = new AsyncListDiffer<>(this, new NodeDiffCallback());
+    private final AsyncListDiffer<ProvisionedMeshNode> differ =
+            new AsyncListDiffer<>(this, new NodeDiffCallback());
+
+    private final Set<Integer> expandedPositions = new HashSet<>();
     private OnItemClickListener mOnItemClickListener;
 
     public NodeAdapter(@NonNull final LifecycleOwner owner,
                        @NonNull final LiveData<List<ProvisionedMeshNode>> provisionedNodesLiveData) {
         provisionedNodesLiveData.observe(owner, nodes -> {
             if (nodes != null) {
+                expandedPositions.clear(); // reset expansion on data update
                 differ.submitList(new ArrayList<>(nodes));
             }
         });
@@ -68,31 +53,62 @@ public class NodeAdapter extends RecyclerView.Adapter<NodeAdapter.ViewHolder> {
     @NonNull
     @Override
     public ViewHolder onCreateViewHolder(@NonNull final ViewGroup parent, final int viewType) {
-        return new ViewHolder(NetworkItemBinding.inflate(LayoutInflater.from(parent.getContext()), parent, false));
+        return new ViewHolder(
+                NetworkItemBinding.inflate(LayoutInflater.from(parent.getContext()), parent, false)
+        );
     }
 
     @Override
     public void onBindViewHolder(@NonNull final ViewHolder holder, final int position) {
         final ProvisionedMeshNode node = differ.getCurrentList().get(position);
-        if (node != null) {
-            holder.name.setText(node.getNodeName());
-            holder.unicastAddress.setText(MeshParserUtils.bytesToHex(MeshAddress.addressIntToBytes(node.getUnicastAddress()), false));
-            final Map<Integer, Element> elements = node.getElements();
-            if (!elements.isEmpty()) {
-                holder.nodeInfoContainer.setVisibility(View.VISIBLE);
-                if (node.getCompanyIdentifier() != null) {
-                    holder.companyIdentifier.setText(CompanyIdentifiers.getCompanyName(node.getCompanyIdentifier().shortValue()));
-                } else {
-                    holder.companyIdentifier.setText(R.string.unknown);
-                }
-                holder.elements.setText(String.valueOf(elements.size()));
-                holder.models.setText(String.valueOf(getModels(elements)));
+        if (node == null) return;
+
+        // ---------- NODE NAME (EXPAND / COLLAPSE) ----------
+        holder.name.setText(node.getNodeName());
+
+        final boolean expanded = expandedPositions.contains(position);
+        holder.name.setMaxLines(expanded ? Integer.MAX_VALUE : 2);
+        holder.name.setEllipsize(expanded ? null : TextUtils.TruncateAt.END);
+
+        // ---------- NODE INFO ----------
+        holder.unicastAddress.setText(
+                MeshParserUtils.bytesToHex(
+                        MeshAddress.addressIntToBytes(node.getUnicastAddress()), false)
+        );
+
+        final Map<Integer, Element> elements = node.getElements();
+        if (!elements.isEmpty()) {
+            holder.nodeInfoContainer.setVisibility(View.VISIBLE);
+            if (node.getCompanyIdentifier() != null) {
+                holder.companyIdentifier.setText(
+                        CompanyIdentifiers.getCompanyName(node.getCompanyIdentifier().shortValue()));
             } else {
                 holder.companyIdentifier.setText(R.string.unknown);
-                holder.elements.setText(String.valueOf(node.getNumberOfElements()));
-                holder.models.setText(R.string.unknown);
             }
+            holder.elements.setText(String.valueOf(elements.size()));
+            holder.models.setText(String.valueOf(getModels(elements)));
+        } else {
+            holder.nodeInfoContainer.setVisibility(View.VISIBLE);
+            holder.companyIdentifier.setText(R.string.unknown);
+            holder.elements.setText(String.valueOf(node.getNumberOfElements()));
+            holder.models.setText(R.string.unknown);
         }
+
+        // ---------- CLICK HANDLING (EXPAND + CONFIGURE) ----------
+        holder.container.setOnClickListener(v -> {
+            // toggle expand
+            if (expanded) {
+                expandedPositions.remove(position);
+            } else {
+                expandedPositions.add(position);
+            }
+            notifyItemChanged(position);
+
+            // existing behavior preserved
+            if (mOnItemClickListener != null) {
+                mOnItemClickListener.onConfigureClicked(node);
+            }
+        });
     }
 
     @Override
@@ -133,7 +149,7 @@ public class NodeAdapter extends RecyclerView.Adapter<NodeAdapter.ViewHolder> {
         TextView elements;
         TextView models;
 
-        private ViewHolder(final @NonNull NetworkItemBinding binding) {
+        private ViewHolder(@NonNull final NetworkItemBinding binding) {
             super(binding.getRoot());
             container = binding.container;
             name = binding.nodeName;
@@ -142,11 +158,6 @@ public class NodeAdapter extends RecyclerView.Adapter<NodeAdapter.ViewHolder> {
             companyIdentifier = binding.companyIdentifier;
             elements = binding.elements;
             models = binding.models;
-            container.setOnClickListener(v -> {
-                if (mOnItemClickListener != null) {
-                    mOnItemClickListener.onConfigureClicked(differ.getCurrentList().get(getAbsoluteAdapterPosition()));
-                }
-            });
         }
     }
 }

@@ -52,7 +52,7 @@
                 android:layout_height="match_parent"
                 android:fillViewport="true"
                 android:clipToPadding="false"
-                android:paddingBottom="290dp"
+                android:paddingBottom="300dp"
                 >
 
                 <LinearLayout
