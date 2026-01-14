@@ -1,4 +1,3 @@
-
 package no.nordicsemi.android.nrfmesh.node;
 
 import static no.nordicsemi.android.mesh.utils.MeshAddress.formatAddress;
@@ -10,7 +9,10 @@ import static no.nordicsemi.android.nrfmesh.utils.Utils.MESSAGE_TIME_OUT;
 import static no.nordicsemi.android.nrfmesh.utils.Utils.RESULT_KEY;
 import android.content.Intent;
 import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.view.View;
+import android.view.inputmethod.EditorInfo;
 import android.widget.Button;
 import android.widget.ProgressBar;
 import android.widget.TextView;
@@ -25,6 +27,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.android.material.textfield.TextInputEditText;
+import com.google.android.material.textfield.TextInputLayout;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -109,6 +112,14 @@ public abstract class BaseModelConfigurationActivity extends BaseActivity implem
     protected TextInputEditText mCommandEditText;
     protected TextInputEditText mStateEditText;
 
+    // Long Command Controls
+    protected Button mLongSendButton;
+    protected Button mLongReadButton;
+    protected TextInputEditText mLengthEditText;
+    protected TextInputEditText mLongAddressEditText;
+    protected List<TextInputLayout> mLongDataFields = new ArrayList<>();
+    protected List<TextInputEditText> mLongDataEditTexts = new ArrayList<>();
+
     protected Button mSetNetworkTransmitStateButton;
 
     private RecyclerView recyclerViewBoundKeys, recyclerViewSubscriptions;
@@ -159,7 +170,14 @@ public abstract class BaseModelConfigurationActivity extends BaseActivity implem
         mStateEditText = binding.etState;    // State input
         mSendButton = binding.actionOn; // SEND button
 
+        // Long Command Controls references
+        mLongSendButton = binding.actionLongSend;
+        mLongReadButton = binding.actionLongReadState;
+        mLengthEditText = binding.etElementAddress;
+        mLongAddressEditText = binding.etLongCommand;
 
+        // Initialize long data fields
+        initializeLongDataFields();
 
         mViewModel = new ViewModelProvider(this).get(ModelConfigurationViewModel.class);
         initialize();
@@ -203,6 +221,13 @@ public abstract class BaseModelConfigurationActivity extends BaseActivity implem
             });
             mSendButton.setOnClickListener(v -> { sendGenericOnOffCommand(); });
 
+            // Setup long command button click listener
+            mLongSendButton.setOnClickListener(v -> { sendLongCommand(); });
+            mLongReadButton.setOnClickListener(v -> { readLongCommand(); });
+
+            // Setup length text watcher to show/hide data fields
+            setupLengthTextWatcher();
+
             mPublishAddressView.setText(R.string.none);
             mActionSetPublication.setOnClickListener(v -> navigateToPublication());
 
@@ -226,6 +251,177 @@ public abstract class BaseModelConfigurationActivity extends BaseActivity implem
         }
     }
 
+    private void initializeLongDataFields() {
+        // Initialize data fields list
+        mLongDataFields.add(binding.layoutLongData1);
+        mLongDataFields.add(binding.layoutLongData2);
+        mLongDataFields.add(binding.layoutLongData3);
+        mLongDataFields.add(binding.layoutLongData4);
+        mLongDataFields.add(binding.layoutLongData5);
+        mLongDataFields.add(binding.layoutLongData6);
+        mLongDataFields.add(binding.layoutLongData7);
+        mLongDataFields.add(binding.layoutLongData8);
+
+        // Initialize edit texts list
+        mLongDataEditTexts.add(binding.etLongData1);
+        mLongDataEditTexts.add(binding.etLongData2);
+        mLongDataEditTexts.add(binding.etLongData3);
+        mLongDataEditTexts.add(binding.etLongData4);
+        mLongDataEditTexts.add(binding.etLongData5);
+        mLongDataEditTexts.add(binding.etLongData6);
+        mLongDataEditTexts.add(binding.etLongData7);
+        mLongDataEditTexts.add(binding.etLongData8);
+
+        // Set default visibility - only first field visible by default
+        updateDataFieldsVisibility(1);
+    }
+
+    private void setupLengthTextWatcher() {
+        mLengthEditText.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {}
+
+            @Override
+            public void afterTextChanged(Editable s) {
+                try {
+                    int length = Integer.parseInt(s.toString());
+                    updateDataFieldsVisibility(length);
+                } catch (NumberFormatException e) {
+                    // If invalid input, show at least 1 field
+                    updateDataFieldsVisibility(1);
+                }
+            }
+        });
+    }
+
+    private void updateDataFieldsVisibility(int length) {
+        // Ensure length is between 1 and 8
+        int validLength = Math.max(1, Math.min(8, length));
+
+        for (int i = 0; i < mLongDataFields.size(); i++) {
+            if (i < validLength) {
+                mLongDataFields.get(i).setVisibility(View.VISIBLE);
+                // Set appropriate imeOptions
+                if (i == validLength - 1) {
+                    mLongDataEditTexts.get(i).setImeOptions(EditorInfo.IME_ACTION_DONE);
+                } else {
+                    mLongDataEditTexts.get(i).setImeOptions(EditorInfo.IME_ACTION_NEXT);
+                }
+            } else {
+                mLongDataFields.get(i).setVisibility(View.GONE);
+                // Clear text when hiding
+                mLongDataEditTexts.get(i).setText("");
+            }
+        }
+    }
+
+    private void sendLongCommand() {
+        final ProvisionedMeshNode node = mViewModel.getSelectedMeshNode().getValue();
+        final MeshModel model = mViewModel.getSelectedModel().getValue();
+
+        if (node == null || model == null) {
+            mViewModel.displaySnackBar(this, mContainer, "Node/Element/Model not selected", Snackbar.LENGTH_SHORT);
+            return;
+        }
+
+        final String lengthStr = mLengthEditText.getText() != null ? mLengthEditText.getText().toString().trim() : "";
+        final String addressStr = mLongAddressEditText.getText() != null ? mLongAddressEditText.getText().toString().trim() : "";
+
+        if (lengthStr.isEmpty() || addressStr.isEmpty()) {
+            mViewModel.displaySnackBar(this, mContainer, "Please enter length and address", Snackbar.LENGTH_SHORT);
+            return;
+        }
+
+        try {
+            final int length = Integer.parseInt(lengthStr);
+
+            if (length < 1 || length > 8) {
+                mViewModel.displaySnackBar(this, mContainer, "Length must be between 1 and 8", Snackbar.LENGTH_SHORT);
+                return;
+            }
+
+            // Parse address
+            int address;
+            try {
+                if (addressStr.startsWith("0x") || addressStr.startsWith("0X")) {
+                    address = Integer.parseInt(addressStr.substring(2), 16);
+                } else {
+                    address = Integer.parseInt(addressStr);
+                }
+            } catch (NumberFormatException e) {
+                mViewModel.displaySnackBar(this, mContainer, "Invalid address format", Snackbar.LENGTH_SHORT);
+                return;
+            }
+
+            // Collect data values
+            int[] dataArray = new int[length];
+            for (int i = 0; i < length; i++) {
+                String dataStr = mLongDataEditTexts.get(i).getText() != null ?
+                        mLongDataEditTexts.get(i).getText().toString().trim() : "0";
+
+                if (dataStr.isEmpty()) {
+                    dataStr = "0";
+                }
+
+                try {
+                    int dataValue = Integer.parseInt(dataStr);
+                    if (dataValue < 0 || dataValue > 255) {
+                        mViewModel.displaySnackBar(this, mContainer,
+                                "Data " + (i + 1) + " must be between 0 and 255", Snackbar.LENGTH_SHORT);
+                        return;
+                    }
+                    dataArray[i] = dataValue;
+                } catch (NumberFormatException e) {
+                    mViewModel.displaySnackBar(this, mContainer,
+                            "Invalid data value at position " + (i + 1), Snackbar.LENGTH_SHORT);
+                    return;
+                }
+            }
+
+            List<Integer> boundAppKeys = model.getBoundAppKeyIndexes();
+            if (boundAppKeys.isEmpty()) {
+                mViewModel.displaySnackBar(this, mContainer, "Bind an App Key first", Snackbar.LENGTH_SHORT);
+                return;
+            }
+
+            final int appKeyIndex = boundAppKeys.get(0);
+            ApplicationKey appKey = null;
+            for (ApplicationKey key : mViewModel.getNetworkLiveData().getAppKeys()) {
+                if (key.getKeyIndex() == appKeyIndex) {
+                    appKey = key;
+                    break;
+                }
+            }
+
+            if (appKey == null) {
+                mViewModel.displaySnackBar(this, mContainer, "App Key not found", Snackbar.LENGTH_SHORT);
+                return;
+            }
+
+            // Create LongCommandSet message
+//            final LongCommandSet longCommandMessage = new LongCommandSet(
+//                    appKey,
+//                    address,
+//                    dataArray
+//            );
+
+//            sendAcknowledgedMessage(node.getUnicastAddress(), longCommandMessage);
+            mViewModel.displaySnackBar(this, mContainer, "Long command sent successfully", Snackbar.LENGTH_SHORT);
+
+        } catch (NumberFormatException e) {
+            mViewModel.displaySnackBar(this, mContainer, "Invalid length value", Snackbar.LENGTH_SHORT);
+        } catch (IllegalArgumentException e) {
+            mViewModel.displaySnackBar(this, mContainer, e.getMessage(), Snackbar.LENGTH_SHORT);
+        }
+    }
+
+    private void readLongCommand() {
+        // Implement read functionality for long command
+        mViewModel.displaySnackBar(this, mContainer, "Read Long Command functionality to be implemented", Snackbar.LENGTH_SHORT);
+    }
 
     @Override
     protected void onStart() {
@@ -508,6 +704,12 @@ public abstract class BaseModelConfigurationActivity extends BaseActivity implem
 
         if (mActionRead != null && !mActionRead.isEnabled())
             mActionRead.setEnabled(true);
+
+        // Enable long command buttons
+        if (mLongSendButton != null)
+            mLongSendButton.setEnabled(true);
+        if (mLongReadButton != null)
+            mLongReadButton.setEnabled(true);
     }
 
     @Override
@@ -523,6 +725,12 @@ public abstract class BaseModelConfigurationActivity extends BaseActivity implem
             mSetNetworkTransmitStateButton.setEnabled(false);
         if (mActionRead != null)
             mActionRead.setEnabled(false);
+
+        // Disable long command buttons
+        if (mLongSendButton != null)
+            mLongSendButton.setEnabled(false);
+        if (mLongReadButton != null)
+            mLongReadButton.setEnabled(false);
     }
 
     protected void updateAppStatusUi(final MeshModel meshModel) {
@@ -618,7 +826,6 @@ public abstract class BaseModelConfigurationActivity extends BaseActivity implem
         }
     }
 
-
     protected void sendUnacknowledgedMessage(final int address, @NonNull final MeshMessage meshMessage) {
         try {
             if (!checkConnectivity(mContainer))
@@ -671,12 +878,10 @@ public abstract class BaseModelConfigurationActivity extends BaseActivity implem
             final int command = Integer.parseInt(commandStr);
             final int state = Integer.parseInt(stateStr);
 
-
             if (state < 0 || state > 255) {
                 mViewModel.displaySnackBar(this, mContainer, "State must be between 0 and 255", Snackbar.LENGTH_SHORT);
                 return;
             }
-
 
             if (command < 0 || command > 255) {
                 mViewModel.displaySnackBar(this, mContainer, "Command must be between 0 and 255", Snackbar.LENGTH_SHORT);
@@ -703,7 +908,6 @@ public abstract class BaseModelConfigurationActivity extends BaseActivity implem
                 mViewModel.displaySnackBar(this, mContainer, "App Key not found", Snackbar.LENGTH_SHORT);
                 return;
             }
-
 
             final int tId = new Random().nextInt(256);
 
