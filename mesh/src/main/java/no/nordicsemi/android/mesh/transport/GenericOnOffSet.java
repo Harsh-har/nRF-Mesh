@@ -9,66 +9,23 @@ import no.nordicsemi.android.mesh.ApplicationKey;
 import no.nordicsemi.android.mesh.opcodes.ApplicationMessageOpCodes;
 import no.nordicsemi.android.mesh.utils.SecureUtils;
 
-/**
- * To be used as a wrapper class when creating a GenericOnOffSet message.
- */
 @SuppressWarnings("unused")
 public class GenericOnOffSet extends ApplicationMessage {
 
     private static final String TAG = GenericOnOffSet.class.getSimpleName();
     private static final int OP_CODE = ApplicationMessageOpCodes.GENERIC_ON_OFF_SET;
-    private static final int GENERIC_ON_OFF_SET_PARAMS_LENGTH = 4;
+    private static final int REGULAR_COMMAND_LENGTH = 3; // command + state + tid
+    private static final int MAX_DATA_LENGTH = 8;
 
     private final int mCommand;
+    private final boolean mIsLongCommand;
+    private final int mLength; // For long command: 1-8
+    private final int[] mDataArray; // For long command: data array
     private final int mState;
     private final int mTid;
 
     /**
-     * Constructs GenericOnOffSet message with 4 integer parameters (legacy constructor for backward compatibility).
-     *
-     * @param appKey {@link ApplicationKey} key for this message
-     * @param state  Boolean state of the GenericOnOffModel
-     * @param tId    Transaction id
-     * @throws IllegalArgumentException if any illegal arguments are passed
-     */
-    public GenericOnOffSet(@NonNull final ApplicationKey appKey,
-                           final int state,
-                           final int tId) throws IllegalArgumentException {
-        this(appKey, 1,  state,tId);
-    }
-
-    /**
-     * Constructs GenericOnOffSet message with 4 integer parameters (legacy constructor for backward compatibility).
-     *
-     * @param appKey               {@link ApplicationKey} key for this message
-     * @param state                Boolean state of the GenericOnOffModel
-     * @param tId                  Transaction id
-     * @param transitionSteps      Transition steps for the level (ignored in new implementation)
-     * @param transitionResolution Transition resolution for the level (ignored in new implementation)
-     * @param delay                Delay for this message to be executed 0 - 1275 milliseconds (ignored in new implementation)
-     * @throws IllegalArgumentException if any illegal arguments are passed
-     */
-    public GenericOnOffSet(@NonNull final ApplicationKey appKey,
-                           final boolean state,
-                           final int tId,
-                           @Nullable final Integer transitionSteps,
-                           @Nullable final Integer transitionResolution,
-                           @Nullable final Integer delay) {
-        this(appKey, 1, tId, state ? 1 : 0);
-        // Log warning about ignored parameters
-        if (transitionSteps != null || transitionResolution != null || delay != null) {
-            MeshLogger.warn(TAG, "Transition parameters are ignored in new implementation");
-        }
-    }
-
-    /**
-     * New constructor with 4 integer parameters.
-     *
-     * @param appKey   {@link ApplicationKey} key for this message
-     * @param command  Command type (0-255)
-     * @param tId      Transaction id (0-255)
-     * @param state    State (0-255)
-     * @throws IllegalArgumentException if any illegal arguments are passed
+     * Regular command constructor (3 parameters)
      */
     public GenericOnOffSet(@NonNull final ApplicationKey appKey,
                            final int command,
@@ -76,21 +33,64 @@ public class GenericOnOffSet extends ApplicationMessage {
                            final int state) throws IllegalArgumentException {
         super(appKey);
 
-        // Validate parameter ranges
-        if (command < 0 || command > 255) {
-            throw new IllegalArgumentException("Command must be between 0 and 255");
+        validateRange("Command", command, 0, 255);
+        validateRange("Transaction ID", tId, 0, 255);
+        validateRange("State", state, 0, 255);
+
+        this.mCommand = command;
+        this.mIsLongCommand = false;
+        this.mLength = 0;
+        this.mDataArray = null;
+        this.mTid = tId;
+        this.mState = state;
+
+        assembleMessageParameters();
+    }
+
+    /**
+     * Long command constructor
+     */
+    public GenericOnOffSet(@NonNull final ApplicationKey appKey,
+                           final int command,
+                           final int length,
+                           @NonNull final int[] dataArray,
+                           final int tId) throws IllegalArgumentException {
+        super(appKey);
+
+        // Validate length
+        if (length < 1 || length > MAX_DATA_LENGTH) {
+            throw new IllegalArgumentException("Length must be between 1 and " + MAX_DATA_LENGTH);
         }
-        if (tId < 0 || tId > 255) {
-            throw new IllegalArgumentException("Transaction ID must be between 0 and 255");
+
+        validateRange("Command", command, 0, 255);
+        validateRange("Transaction ID", tId, 0, 255);
+
+        // Validate data array
+        if (dataArray == null || dataArray.length != MAX_DATA_LENGTH) {
+            throw new IllegalArgumentException("Data array must have exactly " + MAX_DATA_LENGTH + " elements");
         }
-        if (state < 0 || state > 255) {
-            throw new IllegalArgumentException("State must be between 0 and 255");
+
+        for (int i = 0; i < MAX_DATA_LENGTH; i++) {
+            validateRange("Data element " + (i + 1), dataArray[i], 0, 255);
         }
 
         this.mCommand = command;
+        this.mIsLongCommand = true;
+        this.mLength = length;
+        this.mDataArray = dataArray;
         this.mTid = tId;
-        this.mState = state;
+        this.mState = 0; // Not used in long command
+
         assembleMessageParameters();
+    }
+
+    /**
+     * Validation helper method
+     */
+    private void validateRange(String paramName, int value, int min, int max) {
+        if (value < min || value > max) {
+            throw new IllegalArgumentException(paramName + " must be between " + min + " and " + max);
+        }
     }
 
     @Override
@@ -98,57 +98,148 @@ public class GenericOnOffSet extends ApplicationMessage {
         return OP_CODE;
     }
 
-    /**
-     * Gets the command value.
-     * @return Command as integer (0-255)
-     */
-    public int getCommand() {
-        return mCommand;
-    }
-
-    /**
-     * Gets the state value.
-     * @return State as integer (0-255)
-     */
-    public int getState() {
-        return mState;
-    }
-    /**
-     * Gets the transaction ID.
-     * @return Transaction ID as integer (0-255)
-     */
-    public int getTid() {
-        return mTid;
-    }
-
-
-
     @Override
     void assembleMessageParameters() {
         mAid = SecureUtils.calculateK4(mAppKey.getKey());
 
-        final ByteBuffer paramsBuffer = ByteBuffer.allocate(GENERIC_ON_OFF_SET_PARAMS_LENGTH)
-                .order(ByteOrder.LITTLE_ENDIAN);
+        if (mIsLongCommand) {
+            // Long command structure: [command, length, data1...dataN, tid]
+            // Total bytes: 1 (command) + 1 (length) + length (data) + 1 (tid)
+            final int totalLength = 3 + mLength; // command + length + tid + data
 
-        MeshLogger.verbose(TAG, "Command: " + mCommand);
-        MeshLogger.verbose(TAG, "State: " + mState);
-        MeshLogger.verbose(TAG, "Transaction ID: " + mTid);
+            MeshLogger.verbose(TAG, "Assembling Long Command:");
+            MeshLogger.verbose(TAG, "  Command: " + mCommand);
+            MeshLogger.verbose(TAG, "  Length: " + mLength);
+            MeshLogger.verbose(TAG, "  TID: " + mTid);
 
+            final ByteBuffer paramsBuffer = ByteBuffer.allocate(totalLength)
+                    .order(ByteOrder.LITTLE_ENDIAN);
 
-        // Add all parameters as bytes
-        paramsBuffer.put((byte) mCommand);
-        paramsBuffer.put((byte) mState);
-        paramsBuffer.put((byte) mTid);
+            // Add command
+            paramsBuffer.put((byte) mCommand);
 
-        mParameters = paramsBuffer.array();
+            // Add length
+            paramsBuffer.put((byte) mLength);
+
+            // Add data (only first 'length' elements)
+            for (int i = 0; i < mLength; i++) {
+                MeshLogger.verbose(TAG, "  Data[" + i + "]: " + mDataArray[i]);
+                paramsBuffer.put((byte) mDataArray[i]);
+            }
+
+            // Add transaction ID
+            paramsBuffer.put((byte) mTid);
+
+            mParameters = paramsBuffer.array();
+
+            MeshLogger.verbose(TAG, "Total parameters length: " + mParameters.length);
+
+        } else {
+            // Regular command structure: [command, state, tid]
+            MeshLogger.verbose(TAG, "Assembling Regular Command:");
+            MeshLogger.verbose(TAG, "  Command: " + mCommand);
+            MeshLogger.verbose(TAG, "  State: " + mState);
+            MeshLogger.verbose(TAG, "  TID: " + mTid);
+
+            final ByteBuffer paramsBuffer = ByteBuffer.allocate(REGULAR_COMMAND_LENGTH)
+                    .order(ByteOrder.LITTLE_ENDIAN);
+
+            paramsBuffer.put((byte) mCommand);
+            paramsBuffer.put((byte) mState);
+            paramsBuffer.put((byte) mTid);
+
+            mParameters = paramsBuffer.array();
+        }
     }
+
+    // Getters remain the same...
+    public int getCommand() { return mCommand; }
+    public boolean isLongCommand() { return mIsLongCommand; }
+    public int getLength() { return mLength; }
+    public int[] getDataArray() { return mDataArray; }
+    public int getState() { return mState; }
+    public int getTid() { return mTid; }
 
     @Override
     public String toString() {
-        return "GenericOnOffSet{" +
-                "command=" + mCommand +
-                ", state=" + mState +
-                ", tid=" + mTid +
-                '}';
+        if (mIsLongCommand) {
+            StringBuilder dataStr = new StringBuilder("[");
+            for (int i = 0; i < mLength; i++) {
+                dataStr.append(mDataArray[i]);
+                if (i < mLength - 1) dataStr.append(", ");
+            }
+            dataStr.append("]");
+
+            return "GenericOnOffSet{" +
+                    "type=LONG_COMMAND" +
+                    ", command=" + mCommand +
+                    ", length=" + mLength +
+                    ", data=" + dataStr +
+                    ", tid=" + mTid +
+                    '}';
+        } else {
+            return "GenericOnOffSet{" +
+                    "type=REGULAR_COMMAND" +
+                    ", command=" + mCommand +
+                    ", state=" + mState +
+                    ", tid=" + mTid +
+                    '}';
+        }
+    }
+
+    /**
+     * Fixed Builder class
+     */
+    public static class Builder {
+        private ApplicationKey appKey;
+        private int command = 1;
+        private boolean isLongCommand = false;
+        private int length = 0;
+        private int[] dataArray = null;
+        private int state = 0;
+        private int tid = 0;
+
+        public Builder(@NonNull ApplicationKey appKey) {
+            this.appKey = appKey;
+        }
+
+        public Builder withCommand(int command) {
+            this.command = command;
+            return this;
+        }
+
+        public Builder asLongCommand(int length, int[] dataArray) {
+            this.isLongCommand = true;
+            this.length = length;
+            // Ensure we always have 8 elements
+            this.dataArray = new int[MAX_DATA_LENGTH];
+            if (dataArray != null) {
+                System.arraycopy(dataArray, 0, this.dataArray, 0,
+                        Math.min(length, dataArray.length));
+                // Fill remaining with 0
+                for (int i = length; i < MAX_DATA_LENGTH; i++) {
+                    this.dataArray[i] = 0;
+                }
+            }
+            return this;
+        }
+
+        public Builder withState(int state) {
+            this.state = state;
+            return this;
+        }
+
+        public Builder withTid(int tid) {
+            this.tid = tid;
+            return this;
+        }
+
+        public GenericOnOffSet build() {
+            if (isLongCommand) {
+                return new GenericOnOffSet(appKey, command, length, dataArray, tid);
+            } else {
+                return new GenericOnOffSet(appKey, command, tid, state);
+            }
+        }
     }
 }

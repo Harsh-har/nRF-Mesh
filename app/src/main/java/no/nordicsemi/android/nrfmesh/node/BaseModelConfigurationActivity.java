@@ -84,6 +84,10 @@ public abstract class BaseModelConfigurationActivity extends BaseActivity implem
 
     private static final String DIALOG_FRAGMENT_CONFIGURATION_STATUS = "DIALOG_FRAGMENT_CONFIGURATION_STATUS";
     private static final String PROGRESS_BAR_STATE = "PROGRESS_BAR_STATE";
+    private static final int DEFAULT_DATA_VALUE = 50;
+    private static final int MAX_LENGTH = 8;
+    private static final int MIN_LENGTH = 1;
+
     protected ActivityModelConfigurationBinding binding;
 
     CoordinatorLayout mContainer;
@@ -176,7 +180,7 @@ public abstract class BaseModelConfigurationActivity extends BaseActivity implem
         mLengthEditText = binding.etElementAddress;
         mLongAddressEditText = binding.etLongCommand;
 
-        // Initialize long data fields
+        // Initialize long data fields with default values
         initializeLongDataFields();
 
         mViewModel = new ViewModelProvider(this).get(ModelConfigurationViewModel.class);
@@ -225,7 +229,7 @@ public abstract class BaseModelConfigurationActivity extends BaseActivity implem
             mLongSendButton.setOnClickListener(v -> { sendLongCommand(); });
             mLongReadButton.setOnClickListener(v -> { readLongCommand(); });
 
-            // Setup length text watcher to show/hide data fields
+            // Setup length text watcher to update data fields based on length
             setupLengthTextWatcher();
 
             mPublishAddressView.setText(R.string.none);
@@ -272,8 +276,13 @@ public abstract class BaseModelConfigurationActivity extends BaseActivity implem
         mLongDataEditTexts.add(binding.etLongData7);
         mLongDataEditTexts.add(binding.etLongData8);
 
-        // Set default visibility - only first field visible by default
-        updateDataFieldsVisibility(1);
+        // Set default values (50) for all data fields
+        for (int i = 0; i < MAX_LENGTH; i++) {
+            mLongDataEditTexts.get(i).setText(String.valueOf(DEFAULT_DATA_VALUE));
+        }
+
+        // Show all 8 data fields by default
+        updateDataFieldsVisibility(MAX_LENGTH);
     }
 
     private void setupLengthTextWatcher() {
@@ -290,8 +299,8 @@ public abstract class BaseModelConfigurationActivity extends BaseActivity implem
                     int length = Integer.parseInt(s.toString());
                     updateDataFieldsVisibility(length);
                 } catch (NumberFormatException e) {
-                    // If invalid input, show at least 1 field
-                    updateDataFieldsVisibility(1);
+                    // If invalid input, show all fields
+                    updateDataFieldsVisibility(MAX_LENGTH);
                 }
             }
         });
@@ -299,122 +308,28 @@ public abstract class BaseModelConfigurationActivity extends BaseActivity implem
 
     private void updateDataFieldsVisibility(int length) {
         // Ensure length is between 1 and 8
-        int validLength = Math.max(1, Math.min(8, length));
+        int validLength = Math.max(MIN_LENGTH, Math.min(MAX_LENGTH, length));
 
-        for (int i = 0; i < mLongDataFields.size(); i++) {
-            if (i < validLength) {
-                mLongDataFields.get(i).setVisibility(View.VISIBLE);
-                // Set appropriate imeOptions
-                if (i == validLength - 1) {
-                    mLongDataEditTexts.get(i).setImeOptions(EditorInfo.IME_ACTION_DONE);
-                } else {
-                    mLongDataEditTexts.get(i).setImeOptions(EditorInfo.IME_ACTION_NEXT);
-                }
+        // First, hide all fields
+        for (int i = 0; i < MAX_LENGTH; i++) {
+            mLongDataFields.get(i).setVisibility(View.GONE);
+        }
+
+        // Then show only the required number of fields
+        for (int i = 0; i < validLength; i++) {
+            mLongDataFields.get(i).setVisibility(View.VISIBLE);
+
+            // Set appropriate imeOptions
+            if (i == validLength - 1) {
+                mLongDataEditTexts.get(i).setImeOptions(EditorInfo.IME_ACTION_DONE);
             } else {
-                mLongDataFields.get(i).setVisibility(View.GONE);
-                // Clear text when hiding
-                mLongDataEditTexts.get(i).setText("");
+                mLongDataEditTexts.get(i).setImeOptions(EditorInfo.IME_ACTION_NEXT);
             }
         }
-    }
 
-    private void sendLongCommand() {
-        final ProvisionedMeshNode node = mViewModel.getSelectedMeshNode().getValue();
-        final MeshModel model = mViewModel.getSelectedModel().getValue();
-
-        if (node == null || model == null) {
-            mViewModel.displaySnackBar(this, mContainer, "Node/Element/Model not selected", Snackbar.LENGTH_SHORT);
-            return;
-        }
-
-        final String lengthStr = mLengthEditText.getText() != null ? mLengthEditText.getText().toString().trim() : "";
-        final String addressStr = mLongAddressEditText.getText() != null ? mLongAddressEditText.getText().toString().trim() : "";
-
-        if (lengthStr.isEmpty() || addressStr.isEmpty()) {
-            mViewModel.displaySnackBar(this, mContainer, "Please enter length and address", Snackbar.LENGTH_SHORT);
-            return;
-        }
-
-        try {
-            final int length = Integer.parseInt(lengthStr);
-
-            if (length < 1 || length > 8) {
-                mViewModel.displaySnackBar(this, mContainer, "Length must be between 1 and 8", Snackbar.LENGTH_SHORT);
-                return;
-            }
-
-            // Parse address
-            int address;
-            try {
-                if (addressStr.startsWith("0x") || addressStr.startsWith("0X")) {
-                    address = Integer.parseInt(addressStr.substring(2), 16);
-                } else {
-                    address = Integer.parseInt(addressStr);
-                }
-            } catch (NumberFormatException e) {
-                mViewModel.displaySnackBar(this, mContainer, "Invalid address format", Snackbar.LENGTH_SHORT);
-                return;
-            }
-
-            // Collect data values
-            int[] dataArray = new int[length];
-            for (int i = 0; i < length; i++) {
-                String dataStr = mLongDataEditTexts.get(i).getText() != null ?
-                        mLongDataEditTexts.get(i).getText().toString().trim() : "0";
-
-                if (dataStr.isEmpty()) {
-                    dataStr = "0";
-                }
-
-                try {
-                    int dataValue = Integer.parseInt(dataStr);
-                    if (dataValue < 0 || dataValue > 255) {
-                        mViewModel.displaySnackBar(this, mContainer,
-                                "Data " + (i + 1) + " must be between 0 and 255", Snackbar.LENGTH_SHORT);
-                        return;
-                    }
-                    dataArray[i] = dataValue;
-                } catch (NumberFormatException e) {
-                    mViewModel.displaySnackBar(this, mContainer,
-                            "Invalid data value at position " + (i + 1), Snackbar.LENGTH_SHORT);
-                    return;
-                }
-            }
-
-            List<Integer> boundAppKeys = model.getBoundAppKeyIndexes();
-            if (boundAppKeys.isEmpty()) {
-                mViewModel.displaySnackBar(this, mContainer, "Bind an App Key first", Snackbar.LENGTH_SHORT);
-                return;
-            }
-
-            final int appKeyIndex = boundAppKeys.get(0);
-            ApplicationKey appKey = null;
-            for (ApplicationKey key : mViewModel.getNetworkLiveData().getAppKeys()) {
-                if (key.getKeyIndex() == appKeyIndex) {
-                    appKey = key;
-                    break;
-                }
-            }
-
-            if (appKey == null) {
-                mViewModel.displaySnackBar(this, mContainer, "App Key not found", Snackbar.LENGTH_SHORT);
-                return;
-            }
-
-            // Create LongCommandSet message
-//            final LongCommandSet longCommandMessage = new LongCommandSet(
-//                    appKey,
-//                    address,
-//                    dataArray
-//            );
-
-//            sendAcknowledgedMessage(node.getUnicastAddress(), longCommandMessage);
-            mViewModel.displaySnackBar(this, mContainer, "Long command sent successfully", Snackbar.LENGTH_SHORT);
-
-        } catch (NumberFormatException e) {
-            mViewModel.displaySnackBar(this, mContainer, "Invalid length value", Snackbar.LENGTH_SHORT);
-        } catch (IllegalArgumentException e) {
-            mViewModel.displaySnackBar(this, mContainer, e.getMessage(), Snackbar.LENGTH_SHORT);
+        // Ensure all hidden fields have default value
+        for (int i = validLength; i < MAX_LENGTH; i++) {
+            mLongDataEditTexts.get(i).setText(String.valueOf(DEFAULT_DATA_VALUE));
         }
     }
 
@@ -857,6 +772,8 @@ public abstract class BaseModelConfigurationActivity extends BaseActivity implem
         }
     }
 
+
+
     private void sendGenericOnOffCommand() {
         final ProvisionedMeshNode node = mViewModel.getSelectedMeshNode().getValue();
         final MeshModel model = mViewModel.getSelectedModel().getValue();
@@ -924,4 +841,101 @@ public abstract class BaseModelConfigurationActivity extends BaseActivity implem
         }
     }
 
+    private void sendLongCommand() {
+        final ProvisionedMeshNode node = mViewModel.getSelectedMeshNode().getValue();
+        final MeshModel model = mViewModel.getSelectedModel().getValue();
+
+        if (node == null || model == null) {
+            mViewModel.displaySnackBar(this, mContainer, "Node/Element/Model not selected", Snackbar.LENGTH_SHORT);
+            return;
+        }
+
+        final String lengthStr = mLengthEditText.getText() != null ? mLengthEditText.getText().toString().trim() : "";
+        if (lengthStr.isEmpty()) {
+            mViewModel.displaySnackBar(this, mContainer, "Please enter length", Snackbar.LENGTH_SHORT);
+            return;
+        }
+
+        try {
+            final int length = Integer.parseInt(lengthStr);
+            if (length < MIN_LENGTH || length > MAX_LENGTH) {
+                mViewModel.displaySnackBar(this, mContainer,
+                        "Length must be between " + MIN_LENGTH + " and " + MAX_LENGTH, Snackbar.LENGTH_SHORT);
+                return;
+            }
+
+            final String commandStr = mLongAddressEditText.getText() != null ? mLongAddressEditText.getText().toString().trim() : "";
+            if (commandStr.isEmpty()) {
+                mViewModel.displaySnackBar(this, mContainer, "Please enter command address", Snackbar.LENGTH_SHORT);
+                return;
+            }
+
+            final int command = Integer.parseInt(commandStr);
+
+            // Collect data values - always use all 8 fields, but send only 'length' number of values
+            int[] dataArray = new int[MAX_LENGTH]; // always 8
+
+            for (int i = 0; i < length; i++) {
+                String dataStr = mLongDataEditTexts.get(i).getText() != null ?
+                        mLongDataEditTexts.get(i).getText().toString().trim() : "0";
+
+                if (dataStr.isEmpty()) {
+                    dataStr = "0";
+                }
+
+                try {
+                    int dataValue = Integer.parseInt(dataStr);
+                    if (dataValue < 0 || dataValue > 255) {
+                        mViewModel.displaySnackBar(this, mContainer,
+                                "Data " + (i + 1) + " must be between 0 and 255", Snackbar.LENGTH_SHORT);
+                        return;
+                    }
+                    dataArray[i] = dataValue;
+                } catch (NumberFormatException e) {
+                    mViewModel.displaySnackBar(this, mContainer,
+                            "Invalid data value at position " + (i + 1), Snackbar.LENGTH_SHORT);
+                    return;
+                }
+            }
+
+            List<Integer> boundAppKeys = model.getBoundAppKeyIndexes();
+            if (boundAppKeys.isEmpty()) {
+                mViewModel.displaySnackBar(this, mContainer, "Bind an App Key first", Snackbar.LENGTH_SHORT);
+                return;
+            }
+
+            final int appKeyIndex = boundAppKeys.get(0);
+            ApplicationKey appKey = null;
+            for (ApplicationKey key : mViewModel.getNetworkLiveData().getAppKeys()) {
+                if (key.getKeyIndex() == appKeyIndex) {
+                    appKey = key;
+                    break;
+                }
+            }
+
+            if (appKey == null) {
+                mViewModel.displaySnackBar(this, mContainer, "App Key not found", Snackbar.LENGTH_SHORT);
+                return;
+            }
+
+            final Random random = new Random();
+            final int tid = random.nextInt(256); // Random TID between 0-255
+
+            final GenericOnOffSet longCommandMessage = new GenericOnOffSet(
+                    appKey,
+                    command,
+                    length,
+                    dataArray,
+                    tid
+            );
+
+            sendAcknowledgedMessage(node.getUnicastAddress(), longCommandMessage);
+            mViewModel.displaySnackBar(this, mContainer, "Long command sent successfully", Snackbar.LENGTH_SHORT);
+
+        } catch (NumberFormatException e) {
+            mViewModel.displaySnackBar(this, mContainer, "Invalid command or length value", Snackbar.LENGTH_SHORT);
+        } catch (IllegalArgumentException e) {
+            mViewModel.displaySnackBar(this, mContainer, e.getMessage(), Snackbar.LENGTH_SHORT);
+        }
+    }
 }

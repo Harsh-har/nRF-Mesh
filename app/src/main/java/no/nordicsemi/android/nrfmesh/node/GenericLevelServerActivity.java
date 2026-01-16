@@ -6,12 +6,9 @@ import android.view.View;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
-
 import com.google.android.material.slider.Slider;
 import com.google.android.material.snackbar.Snackbar;
-
 import java.util.Random;
-
 import dagger.hilt.android.AndroidEntryPoint;
 import no.nordicsemi.android.mesh.ApplicationKey;
 import no.nordicsemi.android.mesh.models.GenericLevelServerModel;
@@ -119,8 +116,7 @@ public class GenericLevelServerActivity extends ModelConfigurationActivity {
                 @Override
                 public void onStopTrackingTouch(@NonNull Slider slider) {
                     final int levelPercent = (int) slider.getValue();
-                    final int genericLevel =
-                            ((levelPercent * 65535) / 100) - 32768;
+                    final int genericLevel = ((levelPercent * 65535) / 100) - 32768;
                     sendGenericLevel(genericLevel);
                 }
             });
@@ -184,13 +180,12 @@ public class GenericLevelServerActivity extends ModelConfigurationActivity {
     }
 
     /**
-     * Send Generic Level Set (UPDATED – 4 params only)
+     * Send Generic Level Set (UPDATED for new constructor)
      */
     public void sendGenericLevel(final int levelValue) {
         if (!checkConnectivity(mContainer)) return;
 
-        final ProvisionedMeshNode node =
-                mViewModel.getSelectedMeshNode().getValue();
+        final ProvisionedMeshNode node = mViewModel.getSelectedMeshNode().getValue();
         if (node == null) return;
 
         final Element element = mViewModel.getSelectedElement().getValue();
@@ -200,15 +195,65 @@ public class GenericLevelServerActivity extends ModelConfigurationActivity {
         if (!model.getBoundAppKeyIndexes().isEmpty()) {
 
             final int appKeyIndex = model.getBoundAppKeyIndexes().get(0);
-            final ApplicationKey appKey =
-                    mViewModel.getNetworkLiveData().getMeshNetwork().getAppKey(appKeyIndex);
+            final ApplicationKey appKey = mViewModel.getNetworkLiveData().getMeshNetwork().getAppKey(appKeyIndex);
 
             final int address = element.getElementAddress();
-            final int tid = new Random().nextInt();
+            final int tid = new Random().nextInt(256); // TID must be 0-255
             final int command = 0x01; // custom command
 
-            final GenericLevelSet genericLevelSet =
-                    new GenericLevelSet(appKey, levelValue, tid, command);
+            // FIXED: Using the correct constructor order
+            // GenericLevelSet(ApplicationKey appKey, int command, int level, int tid)
+            final GenericLevelSet genericLevelSet = new GenericLevelSet(appKey, command, levelValue, tid);
+
+            // Alternatively, you can use the Builder pattern:
+            // final GenericLevelSet genericLevelSet = new GenericLevelSet.Builder(appKey)
+            //         .withCommand(command)
+            //         .withLevel(levelValue)
+            //         .withTid(tid)
+            //         .build();
+
+            sendAcknowledgedMessage(address, genericLevelSet);
+
+        } else {
+            mViewModel.displaySnackBar(
+                    this,
+                    mContainer,
+                    getString(R.string.error_no_app_keys_bound),
+                    Snackbar.LENGTH_LONG
+            );
+        }
+    }
+
+    /**
+     * NEW METHOD: Send Generic Long Level Command (with data array)
+     */
+    public void sendGenericLongLevel(final int command, final int length, final int[] dataArray) {
+        if (!checkConnectivity(mContainer)) return;
+
+        final ProvisionedMeshNode node = mViewModel.getSelectedMeshNode().getValue();
+        if (node == null) return;
+
+        final Element element = mViewModel.getSelectedElement().getValue();
+        final MeshModel model = mViewModel.getSelectedModel().getValue();
+        if (element == null || model == null) return;
+
+        if (!model.getBoundAppKeyIndexes().isEmpty()) {
+
+            final int appKeyIndex = model.getBoundAppKeyIndexes().get(0);
+            final ApplicationKey appKey = mViewModel.getNetworkLiveData().getMeshNetwork().getAppKey(appKeyIndex);
+
+            final int address = element.getElementAddress();
+            final int tid = new Random().nextInt(256); // TID must be 0-255
+
+            // Using the long command constructor
+            final GenericLevelSet genericLevelSet = new GenericLevelSet(appKey, command, length, dataArray, tid);
+
+            // Or using Builder pattern for long command:
+            // final GenericLevelSet genericLevelSet = new GenericLevelSet.Builder(appKey)
+            //         .withCommand(command)
+            //         .withTid(tid)
+            //         .asLongCommand(length, dataArray)
+            //         .build();
 
             sendAcknowledgedMessage(address, genericLevelSet);
 
