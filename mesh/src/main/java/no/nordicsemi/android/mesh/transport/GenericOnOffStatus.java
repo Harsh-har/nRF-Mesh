@@ -1,24 +1,4 @@
-/*
- * Copyright (c) 2018, Nordic Semiconductor
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
- *
- * 1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
- *
- * 2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the
- * documentation and/or other materials provided with the distribution.
- *
- * 3. Neither the name of the copyright holder nor the names of its contributors may be used to endorse or promote products derived from this
- * software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE
- * USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+
 
 package no.nordicsemi.android.mesh.transport;
 
@@ -75,20 +55,46 @@ public final class GenericOnOffStatus extends ApplicationStatusMessage implement
 
     @Override
     void parseStatusParameters() {
-        MeshLogger.verbose(TAG, "Received generic on off status from: " + MeshAddress.formatAddress(mMessage.getSrc(), true));
+        MeshLogger.verbose(TAG, "Received generic on off status from: " +
+                MeshAddress.formatAddress(mMessage.getSrc(), true));
+
+        // FIXED: Added null check and handle empty parameters
+        if (mParameters == null || mParameters.length == 0) {
+            MeshLogger.error(TAG, "Empty status parameters");
+            mPresentOn = false;
+            mTargetOn = null;
+            return;
+        }
+
         final ByteBuffer buffer = ByteBuffer.wrap(mParameters).order(ByteOrder.LITTLE_ENDIAN);
-        buffer.position(0);
-        mPresentOn = buffer.get() == GENERIC_ON_OFF_STATE_ON;
-        MeshLogger.verbose(TAG, "Present on: " + mPresentOn);
-        if (buffer.limit() > 1) {
-            mTargetOn = buffer.get() == GENERIC_ON_OFF_STATE_ON;
-            mRemainingTime = buffer.get() & 0xFF;
-            mTransitionSteps = (mRemainingTime & 0x3F);
-            mTransitionResolution = (mRemainingTime >> 6);
-            MeshLogger.verbose(TAG, "Target on: " + mTargetOn);
-            MeshLogger.verbose(TAG, "Remaining time, transition number of steps: " + mTransitionSteps);
-            MeshLogger.verbose(TAG, "Remaining time, transition number of step resolution: " + mTransitionResolution);
-            MeshLogger.verbose(TAG, "Remaining time: " + MeshParserUtils.getRemainingTime(mRemainingTime));
+
+        try {
+            // First byte is always present state
+            if (buffer.remaining() >= 1) {
+                mPresentOn = buffer.get() == GENERIC_ON_OFF_STATE_ON;
+                MeshLogger.verbose(TAG, "Present on: " + mPresentOn);
+            }
+
+            // FIXED: Check if we have target state (2nd byte)
+            if (buffer.remaining() >= 1) {
+                mTargetOn = buffer.get() == GENERIC_ON_OFF_STATE_ON;
+                MeshLogger.verbose(TAG, "Target on: " + mTargetOn);
+
+                // FIXED: Check if we have remaining time (3rd byte)
+                if (buffer.remaining() >= 1) {
+                    mRemainingTime = buffer.get() & 0xFF;
+                    mTransitionSteps = (mRemainingTime & 0x3F);
+                    mTransitionResolution = (mRemainingTime >> 6);
+                    MeshLogger.verbose(TAG, "Remaining time, transition number of steps: " + mTransitionSteps);
+                    MeshLogger.verbose(TAG, "Remaining time, transition number of step resolution: " + mTransitionResolution);
+                    MeshLogger.verbose(TAG, "Remaining time: " + MeshParserUtils.getRemainingTime(mRemainingTime));
+                }
+            }
+        } catch (Exception e) {
+            MeshLogger.error(TAG, "Error parsing status parameters: " + e.getMessage());
+            // Set defaults to avoid crashes
+            mPresentOn = false;
+            mTargetOn = null;
         }
     }
 

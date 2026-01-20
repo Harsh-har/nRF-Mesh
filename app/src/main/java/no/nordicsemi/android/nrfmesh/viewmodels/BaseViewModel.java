@@ -35,9 +35,9 @@ import no.nordicsemi.android.nrfmesh.ble.BleMeshManager;
 import no.nordicsemi.android.nrfmesh.ble.ScannerActivity;
 import no.nordicsemi.android.nrfmesh.node.ConfigurationClientActivity;
 import no.nordicsemi.android.nrfmesh.node.ConfigurationServerActivity;
-import no.nordicsemi.android.nrfmesh.node.GenericLevelServerActivity;
+//import no.nordicsemi.android.nrfmesh.node.GenericLevelServerActivity;
 import no.nordicsemi.android.nrfmesh.node.GenericModelConfigurationActivity;
-import no.nordicsemi.android.nrfmesh.node.GenericOnOffServerActivity;
+//import no.nordicsemi.android.nrfmesh.node.GenericOnOffServerActivity;
 import no.nordicsemi.android.nrfmesh.node.SceneServerModelActivity;
 import no.nordicsemi.android.nrfmesh.node.SceneSetupServerModelActivity;
 import no.nordicsemi.android.nrfmesh.node.SensorServerActivity;
@@ -117,11 +117,14 @@ public abstract class BaseViewModel extends ViewModel {
             intent = new Intent(context, ConfigurationServerActivity.class);
         } else if (model.getModelId() == CONFIGURATION_CLIENT) {
             intent = new Intent(context, ConfigurationClientActivity.class);
-        } else if (model.getModelId() == GENERIC_ON_OFF_SERVER) {
-            intent = new Intent(context, GenericOnOffServerActivity.class);
-        } else if (model.getModelId() == GENERIC_LEVEL_SERVER) {
-            intent = new Intent(context, GenericLevelServerActivity.class);
-        } else if (model.getModelId() == SCENE_SERVER) {
+        }
+//        else if (model.getModelId() == GENERIC_ON_OFF_SERVER) {
+//            intent = new Intent(context, GenericOnOffServerActivity.class);
+//        }
+//        else if (model.getModelId() == GENERIC_LEVEL_SERVER) {
+//            intent = new Intent(context, GenericLevelServerActivity.class);
+//        }
+        else if (model.getModelId() == SCENE_SERVER) {
             intent = new Intent(context, SceneServerModelActivity.class);
         } else if (model.getModelId() == SCENE_SETUP_SERVER) {
             intent = new Intent(context, SceneSetupServerModelActivity.class);

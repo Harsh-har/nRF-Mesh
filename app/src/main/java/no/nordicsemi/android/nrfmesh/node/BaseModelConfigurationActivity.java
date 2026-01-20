@@ -11,6 +11,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.util.Log;
 import android.view.View;
 import android.view.inputmethod.EditorInfo;
 import android.widget.Button;
@@ -29,9 +30,12 @@ import com.google.android.material.snackbar.Snackbar;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicInteger;
+
 import no.nordicsemi.android.mesh.ApplicationKey;
 import no.nordicsemi.android.mesh.Group;
 import no.nordicsemi.android.mesh.MeshNetwork;
@@ -52,6 +56,7 @@ import no.nordicsemi.android.mesh.transport.ConfigSigModelSubscriptionGet;
 import no.nordicsemi.android.mesh.transport.ConfigVendorModelAppGet;
 import no.nordicsemi.android.mesh.transport.ConfigVendorModelSubscriptionGet;
 import no.nordicsemi.android.mesh.transport.Element;
+import no.nordicsemi.android.mesh.transport.GenericLightSet;
 import no.nordicsemi.android.mesh.transport.GenericOnOffSet;
 import no.nordicsemi.android.mesh.transport.MeshMessage;
 import no.nordicsemi.android.mesh.transport.MeshModel;
@@ -60,7 +65,6 @@ import no.nordicsemi.android.mesh.transport.PublicationSettings;
 import no.nordicsemi.android.mesh.utils.CompositionDataParser;
 import no.nordicsemi.android.nrfmesh.GroupCallbacks;
 import no.nordicsemi.android.nrfmesh.R;
-import java.util.Random;
 import no.nordicsemi.android.nrfmesh.adapter.GroupAddressAdapter;
 import no.nordicsemi.android.nrfmesh.databinding.ActivityModelConfigurationBinding;
 import no.nordicsemi.android.nrfmesh.dialog.DialogFragmentConfigStatus;
@@ -84,9 +88,16 @@ public abstract class BaseModelConfigurationActivity extends BaseActivity implem
 
     private static final String DIALOG_FRAGMENT_CONFIGURATION_STATUS = "DIALOG_FRAGMENT_CONFIGURATION_STATUS";
     private static final String PROGRESS_BAR_STATE = "PROGRESS_BAR_STATE";
-    private static final int DEFAULT_DATA_VALUE = 50;
-    private static final int MAX_LENGTH = 8;
+    private static final int DEFAULT_BRIGHTNESS_VALUE = 30;
+    private static final int MIN_BRIGHTNESS = 0;
+    private static final int MAX_BRIGHTNESS = 255;
     private static final int MIN_LENGTH = 1;
+    private static final int MAX_LENGTH = 8;
+    private static final int MAX_TID = 255; // 8-bit TID (0-255)
+
+    // TID counters for different models/elements
+    private final AtomicInteger genericOnOffTidCounter = new AtomicInteger(0);
+    private final AtomicInteger genericLightTidCounter = new AtomicInteger(0);
 
     protected ActivityModelConfigurationBinding binding;
 
@@ -170,9 +181,9 @@ public abstract class BaseModelConfigurationActivity extends BaseActivity implem
         mSwipe = binding.swipeRefresh;
 
         // Node controls references
-        mCommandEditText = binding.etCommand; // Command input
-        mStateEditText = binding.etState;    // State input
-        mSendButton = binding.actionOn; // SEND button
+        mCommandEditText = binding.etCommand;
+        mStateEditText = binding.etState;
+        mSendButton = binding.actionOn;
 
         // Long Command Controls references
         mLongSendButton = binding.actionLongSend;
@@ -180,7 +191,7 @@ public abstract class BaseModelConfigurationActivity extends BaseActivity implem
         mLengthEditText = binding.etElementAddress;
         mLongAddressEditText = binding.etLongCommand;
 
-        // Initialize long data fields with default values
+        // Initialize long data fields with brightness values
         initializeLongDataFields();
 
         mViewModel = new ViewModelProvider(this).get(ModelConfigurationViewModel.class);
@@ -225,11 +236,11 @@ public abstract class BaseModelConfigurationActivity extends BaseActivity implem
             });
             mSendButton.setOnClickListener(v -> { sendGenericOnOffCommand(); });
 
-            // Setup long command button click listener
-            mLongSendButton.setOnClickListener(v -> { sendLongCommand(); });
+            // Setup long command button click listeners
+            mLongSendButton.setOnClickListener(v -> { sendLongBrightnessCommand(); });
             mLongReadButton.setOnClickListener(v -> { readLongCommand(); });
 
-            // Setup length text watcher to update data fields based on length
+            // Setup length text watcher to adjust brightness fields visibility
             setupLengthTextWatcher();
 
             mPublishAddressView.setText(R.string.none);
@@ -256,7 +267,6 @@ public abstract class BaseModelConfigurationActivity extends BaseActivity implem
     }
 
     private void initializeLongDataFields() {
-        // Initialize data fields list
         mLongDataFields.add(binding.layoutLongData1);
         mLongDataFields.add(binding.layoutLongData2);
         mLongDataFields.add(binding.layoutLongData3);
@@ -266,7 +276,6 @@ public abstract class BaseModelConfigurationActivity extends BaseActivity implem
         mLongDataFields.add(binding.layoutLongData7);
         mLongDataFields.add(binding.layoutLongData8);
 
-        // Initialize edit texts list
         mLongDataEditTexts.add(binding.etLongData1);
         mLongDataEditTexts.add(binding.etLongData2);
         mLongDataEditTexts.add(binding.etLongData3);
@@ -276,13 +285,32 @@ public abstract class BaseModelConfigurationActivity extends BaseActivity implem
         mLongDataEditTexts.add(binding.etLongData7);
         mLongDataEditTexts.add(binding.etLongData8);
 
-        // Set default values (50) for all data fields
+        // Set default brightness values for all 8 fields
         for (int i = 0; i < MAX_LENGTH; i++) {
-            mLongDataEditTexts.get(i).setText(String.valueOf(DEFAULT_DATA_VALUE));
+            mLongDataFields.get(i).setVisibility(View.VISIBLE);
+            mLongDataEditTexts.get(i).setText(String.valueOf(DEFAULT_BRIGHTNESS_VALUE));
+
+            // Add brightness validation
+            final int index = i;
+            mLongDataEditTexts.get(i).addTextChangedListener(new TextWatcher() {
+                @Override
+                public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+
+                @Override
+                public void onTextChanged(CharSequence s, int start, int before, int count) {}
+
+                @Override
+                public void afterTextChanged(Editable s) {
+                    validateBrightnessField(index);
+                }
+            });
+
+            mLongDataEditTexts.get(i).setImeOptions(EditorInfo.IME_ACTION_NEXT);
         }
 
-        // Show all 8 data fields by default
-        updateDataFieldsVisibility(MAX_LENGTH);
+        // Last field DONE
+        mLongDataEditTexts.get(MAX_LENGTH - 1)
+                .setImeOptions(EditorInfo.IME_ACTION_DONE);
     }
 
     private void setupLengthTextWatcher() {
@@ -295,47 +323,69 @@ public abstract class BaseModelConfigurationActivity extends BaseActivity implem
 
             @Override
             public void afterTextChanged(Editable s) {
-                try {
-                    int length = Integer.parseInt(s.toString());
-                    updateDataFieldsVisibility(length);
-                } catch (NumberFormatException e) {
-                    // If invalid input, show all fields
-                    updateDataFieldsVisibility(MAX_LENGTH);
-                }
+                adjustBrightnessFieldsVisibility();
             }
         });
     }
 
-    private void updateDataFieldsVisibility(int length) {
-        // Ensure length is between 1 and 8
-        int validLength = Math.max(MIN_LENGTH, Math.min(MAX_LENGTH, length));
+    private void adjustBrightnessFieldsVisibility() {
+        try {
+            int length = Integer.parseInt(mLengthEditText.getText().toString());
+            if (length < MIN_LENGTH || length > MAX_LENGTH) {
+                mLengthEditText.setError("Length must be between " + MIN_LENGTH + " and " + MAX_LENGTH);
+                return;
+            }
+            mLengthEditText.setError(null);
 
-        // First, hide all fields
-        for (int i = 0; i < MAX_LENGTH; i++) {
-            mLongDataFields.get(i).setVisibility(View.GONE);
-        }
-
-        // Then show only the required number of fields
-        for (int i = 0; i < validLength; i++) {
-            mLongDataFields.get(i).setVisibility(View.VISIBLE);
-
-            // Set appropriate imeOptions
-            if (i == validLength - 1) {
-                mLongDataEditTexts.get(i).setImeOptions(EditorInfo.IME_ACTION_DONE);
-            } else {
-                mLongDataEditTexts.get(i).setImeOptions(EditorInfo.IME_ACTION_NEXT);
+            // Show only the required number of brightness fields
+            for (int i = 0; i < MAX_LENGTH; i++) {
+                if (i < length) {
+                    mLongDataFields.get(i).setVisibility(View.VISIBLE);
+                } else {
+                    mLongDataFields.get(i).setVisibility(View.GONE);
+                }
+            }
+        } catch (NumberFormatException e) {
+            // Empty or invalid length - show all fields
+            for (int i = 0; i < MAX_LENGTH; i++) {
+                mLongDataFields.get(i).setVisibility(View.VISIBLE);
             }
         }
+    }
 
-        // Ensure all hidden fields have default value
-        for (int i = validLength; i < MAX_LENGTH; i++) {
-            mLongDataEditTexts.get(i).setText(String.valueOf(DEFAULT_DATA_VALUE));
+    private void validateBrightnessField(int index) {
+        try {
+            String text = mLongDataEditTexts.get(index).getText().toString();
+            if (!text.isEmpty()) {
+                int brightness = Integer.parseInt(text);
+                if (brightness < MIN_BRIGHTNESS || brightness > MAX_BRIGHTNESS) {
+                    mLongDataFields.get(index).setError(
+                            String.format("Brightness must be between %d and %d", MIN_BRIGHTNESS, MAX_BRIGHTNESS)
+                    );
+                } else {
+                    mLongDataFields.get(index).setError(null);
+                }
+            } else {
+                mLongDataFields.get(index).setError("Enter brightness value");
+            }
+        } catch (NumberFormatException e) {
+            mLongDataFields.get(index).setError("Invalid brightness value");
         }
     }
 
     private void readLongCommand() {
-        // Implement read functionality for long command
-        mViewModel.displaySnackBar(this, mContainer, "Read Long Command functionality to be implemented", Snackbar.LENGTH_SHORT);
+        final ProvisionedMeshNode node = mViewModel.getSelectedMeshNode().getValue();
+        final MeshModel model = mViewModel.getSelectedModel().getValue();
+
+        if (node == null || model == null) {
+            mViewModel.displaySnackBar(this, mContainer,
+                    "Node or model not selected", Snackbar.LENGTH_SHORT);
+            return;
+        }
+
+        mViewModel.displaySnackBar(this, mContainer,
+                "Reading brightness values from device...", Snackbar.LENGTH_SHORT);
+        // TODO: Implement actual read functionality for brightness values
     }
 
     @Override
@@ -772,7 +822,42 @@ public abstract class BaseModelConfigurationActivity extends BaseActivity implem
         }
     }
 
+    /**
+     * Gets the next TID for GenericOnOff model
+     * Increments from 0 to 255 and wraps around
+     */
+    private int getNextGenericOnOffTid() {
+        int current = genericOnOffTidCounter.getAndIncrement();
+        if (current > MAX_TID) {
+            genericOnOffTidCounter.set(0);
+            current = 0;
+        }
+        Log.d("TID", "GenericOnOff TID: " + current);
+        return current;
+    }
 
+    /**
+     * Gets the next TID for GenericLight model
+     * Increments from 0 to 255 and wraps around
+     */
+    private int getNextGenericLightTid() {
+        int current = genericLightTidCounter.getAndIncrement();
+        if (current > MAX_TID) {
+            genericLightTidCounter.set(0);
+            current = 0;
+        }
+        Log.d("TID", "GenericLight TID: " + current);
+        return current;
+    }
+
+    /**
+     * Reset TID counters (optional, can be called when needed)
+     */
+    public void resetTidCounters() {
+        genericOnOffTidCounter.set(0);
+        genericLightTidCounter.set(0);
+        Log.d("TID", "TID counters reset to 0");
+    }
 
     private void sendGenericOnOffCommand() {
         final ProvisionedMeshNode node = mViewModel.getSelectedMeshNode().getValue();
@@ -826,116 +911,150 @@ public abstract class BaseModelConfigurationActivity extends BaseActivity implem
                 return;
             }
 
-            final int tId = new Random().nextInt(256);
+            // Use sequential TID instead of random
+            final int tId = getNextGenericOnOffTid();
 
-            // Create the message using the updated constructor: appKey, command, tid, state
-            final GenericOnOffSet onOffSetMessage = new GenericOnOffSet(appKey, command, tId, state);
+            final GenericOnOffSet onOffSetMessage = new GenericOnOffSet(appKey, command, state, tId);
+
+            Log.d("CMD", "========== GenericOnOffSet ==========");
+            Log.d("CMD", "Command: " + command + " (0x" + String.format("%02X", command) + ")");
+            Log.d("CMD", "State: " + state + " (0x" + String.format("%02X", state) + ")");
+            Log.d("CMD", "TID: " + tId + " (0x" + String.format("%02X", tId) + ")");
+            Log.d("CMD", "====================================");
 
             sendAcknowledgedMessage(node.getUnicastAddress(), onOffSetMessage);
 
         } catch (NumberFormatException e) {
             mViewModel.displaySnackBar(this, mContainer, "Invalid command or state value. Please enter numbers only.", Snackbar.LENGTH_SHORT);
-        }
-        catch (IllegalArgumentException e) {
-            mViewModel.displaySnackBar(this, mContainer, e.getMessage(), Snackbar.LENGTH_SHORT);
-        }
-    }
-
-    private void sendLongCommand() {
-        final ProvisionedMeshNode node = mViewModel.getSelectedMeshNode().getValue();
-        final MeshModel model = mViewModel.getSelectedModel().getValue();
-
-        if (node == null || model == null) {
-            mViewModel.displaySnackBar(this, mContainer, "Node/Element/Model not selected", Snackbar.LENGTH_SHORT);
-            return;
-        }
-
-        final String lengthStr = mLengthEditText.getText() != null ? mLengthEditText.getText().toString().trim() : "";
-        if (lengthStr.isEmpty()) {
-            mViewModel.displaySnackBar(this, mContainer, "Please enter length", Snackbar.LENGTH_SHORT);
-            return;
-        }
-
-        try {
-            final int length = Integer.parseInt(lengthStr);
-            if (length < MIN_LENGTH || length > MAX_LENGTH) {
-                mViewModel.displaySnackBar(this, mContainer,
-                        "Length must be between " + MIN_LENGTH + " and " + MAX_LENGTH, Snackbar.LENGTH_SHORT);
-                return;
-            }
-
-            final String commandStr = mLongAddressEditText.getText() != null ? mLongAddressEditText.getText().toString().trim() : "";
-            if (commandStr.isEmpty()) {
-                mViewModel.displaySnackBar(this, mContainer, "Please enter command address", Snackbar.LENGTH_SHORT);
-                return;
-            }
-
-            final int command = Integer.parseInt(commandStr);
-
-            // Collect data values - always use all 8 fields, but send only 'length' number of values
-            int[] dataArray = new int[MAX_LENGTH]; // always 8
-
-            for (int i = 0; i < length; i++) {
-                String dataStr = mLongDataEditTexts.get(i).getText() != null ?
-                        mLongDataEditTexts.get(i).getText().toString().trim() : "0";
-
-                if (dataStr.isEmpty()) {
-                    dataStr = "0";
-                }
-
-                try {
-                    int dataValue = Integer.parseInt(dataStr);
-                    if (dataValue < 0 || dataValue > 255) {
-                        mViewModel.displaySnackBar(this, mContainer,
-                                "Data " + (i + 1) + " must be between 0 and 255", Snackbar.LENGTH_SHORT);
-                        return;
-                    }
-                    dataArray[i] = dataValue;
-                } catch (NumberFormatException e) {
-                    mViewModel.displaySnackBar(this, mContainer,
-                            "Invalid data value at position " + (i + 1), Snackbar.LENGTH_SHORT);
-                    return;
-                }
-            }
-
-            List<Integer> boundAppKeys = model.getBoundAppKeyIndexes();
-            if (boundAppKeys.isEmpty()) {
-                mViewModel.displaySnackBar(this, mContainer, "Bind an App Key first", Snackbar.LENGTH_SHORT);
-                return;
-            }
-
-            final int appKeyIndex = boundAppKeys.get(0);
-            ApplicationKey appKey = null;
-            for (ApplicationKey key : mViewModel.getNetworkLiveData().getAppKeys()) {
-                if (key.getKeyIndex() == appKeyIndex) {
-                    appKey = key;
-                    break;
-                }
-            }
-
-            if (appKey == null) {
-                mViewModel.displaySnackBar(this, mContainer, "App Key not found", Snackbar.LENGTH_SHORT);
-                return;
-            }
-
-            final Random random = new Random();
-            final int tid = random.nextInt(256); // Random TID between 0-255
-
-            final GenericOnOffSet longCommandMessage = new GenericOnOffSet(
-                    appKey,
-                    command,
-                    length,
-                    dataArray,
-                    tid
-            );
-
-            sendAcknowledgedMessage(node.getUnicastAddress(), longCommandMessage);
-            mViewModel.displaySnackBar(this, mContainer, "Long command sent successfully", Snackbar.LENGTH_SHORT);
-
-        } catch (NumberFormatException e) {
-            mViewModel.displaySnackBar(this, mContainer, "Invalid command or length value", Snackbar.LENGTH_SHORT);
         } catch (IllegalArgumentException e) {
             mViewModel.displaySnackBar(this, mContainer, e.getMessage(), Snackbar.LENGTH_SHORT);
         }
     }
+    private void sendLongBrightnessCommand() {
+
+        final ProvisionedMeshNode node = mViewModel.getSelectedMeshNode().getValue();
+        final Element element = mViewModel.getSelectedElement().getValue();
+        final MeshModel model = mViewModel.getSelectedModel().getValue();
+
+        if (node == null || element == null || model == null) {
+            mViewModel.displaySnackBar(
+                    this, mContainer,
+                    "Node / Element / Model not selected",
+                    Snackbar.LENGTH_SHORT
+            );
+            return;
+        }
+
+        try {
+            /* ---------- LENGTH ---------- */
+            final String lengthStr = mLengthEditText.getText().toString().trim();
+            if (lengthStr.isEmpty()) {
+                mViewModel.displaySnackBar(this, mContainer,
+                        "Please enter length (1–8)", Snackbar.LENGTH_SHORT);
+                return;
+            }
+
+            final int length = Integer.parseInt(lengthStr);
+            if (length < MIN_LENGTH || length > MAX_LENGTH) {
+                mViewModel.displaySnackBar(this, mContainer,
+                        "Length must be between 1 and 8",
+                        Snackbar.LENGTH_SHORT);
+                return;
+            }
+
+            /* ---------- COMMAND ---------- */
+            final String commandStr = mLongAddressEditText.getText().toString().trim();
+            if (commandStr.isEmpty()) {
+                mViewModel.displaySnackBar(this, mContainer,
+                        "Please enter command", Snackbar.LENGTH_SHORT);
+                return;
+            }
+
+            final int command = Integer.parseInt(commandStr);
+            if (command < 0 || command > 255) {
+                mViewModel.displaySnackBar(this, mContainer,
+                        "Command must be 0–255",
+                        Snackbar.LENGTH_SHORT);
+                return;
+            }
+
+            /* ---------- BRIGHTNESS ---------- */
+            final int[] brightness = new int[length];
+            for (int i = 0; i < length; i++) {
+                final String valueStr =
+                        mLongDataEditTexts.get(i).getText().toString().trim();
+
+                if (valueStr.isEmpty()) {
+                    mViewModel.displaySnackBar(this, mContainer,
+                            "Please enter brightness " + (i + 1),
+                            Snackbar.LENGTH_SHORT);
+                    return;
+                }
+
+                brightness[i] = Integer.parseInt(valueStr);
+                if (brightness[i] < MIN_BRIGHTNESS || brightness[i] > MAX_BRIGHTNESS) {
+                    mViewModel.displaySnackBar(this, mContainer,
+                            "Brightness must be 0–255",
+                            Snackbar.LENGTH_SHORT);
+                    return;
+                }
+            }
+
+            /* ---------- APP KEY ---------- */
+            final List<Integer> boundKeys = model.getBoundAppKeyIndexes();
+            if (boundKeys.isEmpty()) {
+                mViewModel.displaySnackBar(this, mContainer,
+                        "No AppKey bound to model",
+                        Snackbar.LENGTH_SHORT);
+                return;
+            }
+
+            final MeshNetwork network =
+                    mViewModel.getNetworkLiveData().getMeshNetwork();
+            final ApplicationKey appKey =
+                    network.getAppKey(boundKeys.get(0));
+
+            if (appKey == null) {
+                mViewModel.displaySnackBar(this, mContainer,
+                        "AppKey not found",
+                        Snackbar.LENGTH_SHORT);
+                return;
+            }
+
+            /* ---------- TID (SEQUENTIAL) ---------- */
+            final int tid = getNextGenericLightTid();
+
+            /* ---------- CREATE MESSAGE (LENGTH FIRST) ---------- */
+            final GenericLightSet message =
+                    new GenericLightSet(appKey, length, command, brightness, tid);
+
+            /* ---------- LOG ---------- */
+            Log.d("LONG_CMD", "========== GenericLightSet ==========");
+            Log.d("LONG_CMD", "Element Addr : " + element.getElementAddress());
+            Log.d("LONG_CMD", "Length       : " + length);
+            Log.d("LONG_CMD", "Command      : " + command + " (0x" + String.format("%02X", command) + ")");
+            Log.d("LONG_CMD", "Brightness   : " + Arrays.toString(brightness));
+            Log.d("LONG_CMD", "TID          : " + tid + " (0x" + String.format("%02X", tid) + ")");
+            Log.d("LONG_CMD", "Payload Size : " + message.getMessageSize() + " bytes");
+            Log.d("LONG_CMD", "Raw Payload  : " + Arrays.toString(message.toByteArray()));
+            Log.d("LONG_CMD", "====================================");
+
+            mViewModel.displaySnackBar(
+                    this, mContainer,
+                    String.format("Sending LEN=%d CMD=0x%02X TID=%d", length, command, tid),
+                    Snackbar.LENGTH_LONG
+            );
+
+            /* ---------- SEND ---------- */
+            sendAcknowledgedMessage(node.getUnicastAddress(), message);
+
+        } catch (Exception e) {
+            mViewModel.displaySnackBar(this, mContainer,
+                    "Failed to send command",
+                    Snackbar.LENGTH_SHORT);
+            Log.e("LONG_CMD", "Error", e);
+        }
+    }
+
+
 }

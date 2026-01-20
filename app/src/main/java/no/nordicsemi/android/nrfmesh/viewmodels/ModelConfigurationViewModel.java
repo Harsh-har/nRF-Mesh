@@ -41,16 +41,16 @@ import no.nordicsemi.android.mesh.transport.MeshModel;
 import no.nordicsemi.android.mesh.transport.SceneGet;
 import no.nordicsemi.android.nrfmesh.node.ConfigurationClientActivity;
 import no.nordicsemi.android.nrfmesh.node.ConfigurationServerActivity;
-import no.nordicsemi.android.nrfmesh.node.GenericLevelServerActivity;
+//import no.nordicsemi.android.nrfmesh.node.GenericLevelServerActivity;
 import no.nordicsemi.android.nrfmesh.node.GenericModelConfigurationActivity;
-import no.nordicsemi.android.nrfmesh.node.GenericOnOffServerActivity;
+//import no.nordicsemi.android.nrfmesh.node.GenericOnOffServerActivity;
 import no.nordicsemi.android.nrfmesh.node.VendorModelActivity;
 
-/**
- * Generic View Model class for {@link ConfigurationServerActivity},{@link ConfigurationClientActivity},
- * {@link GenericOnOffServerActivity}, {@link GenericLevelServerActivity}, {@link VendorModelActivity},
- * {@link GenericModelConfigurationActivity}
- */
+///**
+// * Generic View Model class for {@link ConfigurationServerActivity},{@link ConfigurationClientActivity},
+// * {@link GenericOnOffServerActivity}, {@link GenericLevelServerActivity}, {@link VendorModelActivity},
+// * {@link GenericModelConfigurationActivity}
+// */
 @HiltViewModel
 public class ModelConfigurationViewModel extends BaseViewModel {
 
