@@ -36,11 +36,15 @@ public class NodeAdapter extends RecyclerView.Adapter<NodeAdapter.ViewHolder> {
     private final Set<Integer> expandedPositions = new HashSet<>();
     private OnItemClickListener mOnItemClickListener;
 
+    // ---------- ADD: backup list for filtering ----------
+    private List<ProvisionedMeshNode> allNodes = new ArrayList<>();
+
     public NodeAdapter(@NonNull final LifecycleOwner owner,
                        @NonNull final LiveData<List<ProvisionedMeshNode>> provisionedNodesLiveData) {
         provisionedNodesLiveData.observe(owner, nodes -> {
             if (nodes != null) {
                 expandedPositions.clear(); // reset expansion on data update
+                allNodes = new ArrayList<>(nodes); // ADD: keep full list
                 differ.submitList(new ArrayList<>(nodes));
             }
         });
@@ -133,6 +137,23 @@ public class NodeAdapter extends RecyclerView.Adapter<NodeAdapter.ViewHolder> {
             models += element.getMeshModels().size();
         }
         return models;
+    }
+
+    // ---------- ADD: filter method ----------
+    public void filter(String query) {
+        final List<ProvisionedMeshNode> filteredList = new ArrayList<>();
+        if (query == null || query.trim().isEmpty()) {
+            filteredList.addAll(allNodes);
+        } else {
+            String lowerCaseQuery = query.toLowerCase();
+            for (ProvisionedMeshNode node : allNodes) {
+                if (node.getNodeName() != null && node.getNodeName().toLowerCase().contains(lowerCaseQuery)) {
+                    filteredList.add(node);
+                }
+            }
+        }
+        expandedPositions.clear(); // reset expansions when filtering
+        differ.submitList(filteredList);
     }
 
     @FunctionalInterface

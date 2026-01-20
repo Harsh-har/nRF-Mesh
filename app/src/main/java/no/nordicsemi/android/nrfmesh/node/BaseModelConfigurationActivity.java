@@ -190,6 +190,8 @@ public abstract class BaseModelConfigurationActivity extends BaseActivity implem
         mLongReadButton = binding.actionLongReadState;
         mLengthEditText = binding.etElementAddress;
         mLongAddressEditText = binding.etLongCommand;
+        mLengthEditText.setText(String.valueOf(MAX_LENGTH)); // default = 8
+
 
         // Initialize long data fields with brightness values
         initializeLongDataFields();
@@ -240,7 +242,7 @@ public abstract class BaseModelConfigurationActivity extends BaseActivity implem
             mLongSendButton.setOnClickListener(v -> { sendLongBrightnessCommand(); });
             mLongReadButton.setOnClickListener(v -> { readLongCommand(); });
 
-            // Setup length text watcher to adjust brightness fields visibility
+            // Setup length text watcher to show validation only
             setupLengthTextWatcher();
 
             mPublishAddressView.setText(R.string.none);
@@ -287,7 +289,7 @@ public abstract class BaseModelConfigurationActivity extends BaseActivity implem
 
         // Set default brightness values for all 8 fields
         for (int i = 0; i < MAX_LENGTH; i++) {
-            mLongDataFields.get(i).setVisibility(View.VISIBLE);
+            // Set default value
             mLongDataEditTexts.get(i).setText(String.valueOf(DEFAULT_BRIGHTNESS_VALUE));
 
             // Add brightness validation
@@ -311,6 +313,10 @@ public abstract class BaseModelConfigurationActivity extends BaseActivity implem
         // Last field DONE
         mLongDataEditTexts.get(MAX_LENGTH - 1)
                 .setImeOptions(EditorInfo.IME_ACTION_DONE);
+
+        for (int i = 0; i < MAX_LENGTH; i++) {
+            mLongDataFields.get(i).setVisibility(View.VISIBLE);
+        }
     }
 
     private void setupLengthTextWatcher() {
@@ -323,39 +329,66 @@ public abstract class BaseModelConfigurationActivity extends BaseActivity implem
 
             @Override
             public void afterTextChanged(Editable s) {
-                adjustBrightnessFieldsVisibility();
+                validateLengthField();
             }
         });
     }
 
-    private void adjustBrightnessFieldsVisibility() {
+    private void validateLengthField() {
         try {
-            int length = Integer.parseInt(mLengthEditText.getText().toString());
+            String lengthText = mLengthEditText.getText().toString().trim();
+            if (lengthText.isEmpty()) {
+                mLengthEditText.setError("Please enter length (1-8)");
+                return;
+            }
+
+            int length = Integer.parseInt(lengthText);
             if (length < MIN_LENGTH || length > MAX_LENGTH) {
                 mLengthEditText.setError("Length must be between " + MIN_LENGTH + " and " + MAX_LENGTH);
                 return;
             }
             mLengthEditText.setError(null);
 
-            // Show only the required number of brightness fields
-            for (int i = 0; i < MAX_LENGTH; i++) {
-                if (i < length) {
-                    mLongDataFields.get(i).setVisibility(View.VISIBLE);
-                } else {
-                    mLongDataFields.get(i).setVisibility(View.GONE);
-                }
-            }
+
+            updateFieldValidationsBasedOnLength(length);
+
         } catch (NumberFormatException e) {
-            // Empty or invalid length - show all fields
-            for (int i = 0; i < MAX_LENGTH; i++) {
-                mLongDataFields.get(i).setVisibility(View.VISIBLE);
+            mLengthEditText.setError("Invalid length value");
+        }
+    }
+
+    private void updateFieldValidationsBasedOnLength(int length) {
+        for (int i = 0; i < MAX_LENGTH; i++) {
+            if (i < length) {
+
+                String text = mLongDataEditTexts.get(i).getText().toString();
+                if (text.isEmpty()) {
+                    mLongDataFields.get(i).setError("Required for length " + length);
+                } else {
+                    validateBrightnessField(i);
+                }
+            } else {
+                // Ye field optional hai (length se bahar), error clear karo
+                mLongDataFields.get(i).setError(null);
             }
         }
     }
 
     private void validateBrightnessField(int index) {
         try {
-            String text = mLongDataEditTexts.get(index).getText().toString();
+            String text = mLongDataEditTexts.get(index).getText().toString().trim();
+
+
+            String lengthText = mLengthEditText.getText().toString().trim();
+            if (!lengthText.isEmpty()) {
+                int length = Integer.parseInt(lengthText);
+                if (index >= length) {
+                    // Agar field length se bahar hai, to validation nahi karna
+                    mLongDataFields.get(index).setError(null);
+                    return;
+                }
+            }
+
             if (!text.isEmpty()) {
                 int brightness = Integer.parseInt(text);
                 if (brightness < MIN_BRIGHTNESS || brightness > MAX_BRIGHTNESS) {
@@ -366,7 +399,17 @@ public abstract class BaseModelConfigurationActivity extends BaseActivity implem
                     mLongDataFields.get(index).setError(null);
                 }
             } else {
-                mLongDataFields.get(index).setError("Enter brightness value");
+                // Length check karo agar field required hai
+                if (!lengthText.isEmpty()) {
+                    int length = Integer.parseInt(lengthText);
+                    if (index < length) {
+                        mLongDataFields.get(index).setError("Enter brightness value");
+                    } else {
+                        mLongDataFields.get(index).setError(null);
+                    }
+                } else {
+                    mLongDataFields.get(index).setError("Enter brightness value");
+                }
             }
         } catch (NumberFormatException e) {
             mLongDataFields.get(index).setError("Invalid brightness value");
@@ -930,8 +973,8 @@ public abstract class BaseModelConfigurationActivity extends BaseActivity implem
             mViewModel.displaySnackBar(this, mContainer, e.getMessage(), Snackbar.LENGTH_SHORT);
         }
     }
-    private void sendLongBrightnessCommand() {
 
+    private void sendLongBrightnessCommand() {
         final ProvisionedMeshNode node = mViewModel.getSelectedMeshNode().getValue();
         final Element element = mViewModel.getSelectedElement().getValue();
         final MeshModel model = mViewModel.getSelectedModel().getValue();
@@ -978,7 +1021,7 @@ public abstract class BaseModelConfigurationActivity extends BaseActivity implem
                 return;
             }
 
-            /* ---------- BRIGHTNESS ---------- */
+            /* ---------- BRIGHTNESS  ---------- */
             final int[] brightness = new int[length];
             for (int i = 0; i < length; i++) {
                 final String valueStr =
@@ -986,7 +1029,7 @@ public abstract class BaseModelConfigurationActivity extends BaseActivity implem
 
                 if (valueStr.isEmpty()) {
                     mViewModel.displaySnackBar(this, mContainer,
-                            "Please enter brightness " + (i + 1),
+                            "Please enter brightness " + (i + 1) + " (required for length " + length + ")",
                             Snackbar.LENGTH_SHORT);
                     return;
                 }
@@ -994,7 +1037,7 @@ public abstract class BaseModelConfigurationActivity extends BaseActivity implem
                 brightness[i] = Integer.parseInt(valueStr);
                 if (brightness[i] < MIN_BRIGHTNESS || brightness[i] > MAX_BRIGHTNESS) {
                     mViewModel.displaySnackBar(this, mContainer,
-                            "Brightness must be 0–255",
+                            "Brightness " + (i + 1) + " must be 0–255",
                             Snackbar.LENGTH_SHORT);
                     return;
                 }
@@ -1055,6 +1098,4 @@ public abstract class BaseModelConfigurationActivity extends BaseActivity implem
             Log.e("LONG_CMD", "Error", e);
         }
     }
-
-
 }
