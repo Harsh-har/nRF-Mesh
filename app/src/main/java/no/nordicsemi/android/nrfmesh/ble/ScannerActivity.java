@@ -265,8 +265,8 @@ public class ScannerActivity extends AppCompatActivity implements
                 binding.noLocationPermission.actionPermissionSettings.setVisibility(deniedForever ? View.VISIBLE : View.GONE);
             }
 
-        }
-    }
+        }    }
+
 
     /**
      * stop scanning for bluetooth devices.
