@@ -1,18 +1,15 @@
+
 package no.nordicsemi.android.nrfmesh.ble.adapter;
 
 import android.text.TextUtils;
 import android.view.LayoutInflater;
-import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
-
 import androidx.annotation.NonNull;
 import androidx.lifecycle.LifecycleOwner;
 import androidx.recyclerview.widget.RecyclerView;
-
 import java.util.List;
-
 import no.nordicsemi.android.nrfmesh.R;
 import no.nordicsemi.android.nrfmesh.adapter.ExtendedBluetoothDevice;
 import no.nordicsemi.android.nrfmesh.databinding.DeviceItemBinding;
@@ -43,51 +40,19 @@ public class DevicesAdapter extends RecyclerView.Adapter<DevicesAdapter.ViewHold
         return new ViewHolder(DeviceItemBinding.inflate(LayoutInflater.from(parent.getContext()), parent, false));
     }
 
-
     @Override
     public void onBindViewHolder(@NonNull final ViewHolder holder, final int position) {
-
         final ExtendedBluetoothDevice device = mDevices.get(position);
         final String deviceName = device.getName();
 
-        holder.deviceName.setText(
-                TextUtils.isEmpty(deviceName)
-                        ? holder.itemView.getContext().getString(R.string.unknown_device)
-                        : deviceName
-        );
-
+        if (!TextUtils.isEmpty(deviceName))
+            holder.deviceName.setText(deviceName);
+        else
+            holder.deviceName.setText(R.string.unknown_device);
         holder.deviceAddress.setText(device.getAddress());
-
-        int rssi = device.getRssi();
-
-        // Convert RSSI to percentage
-        int rssiPercent =
-                (int) (100.0f * (127.0f + rssi) / (127.0f + 20.0f));
-
-        rssiPercent = Math.max(0, Math.min(100, rssiPercent));
-
-
-        if (rssiPercent >= 46) {
-
-            holder.itemView.setVisibility(View.VISIBLE);
-            holder.itemView.setLayoutParams(
-                    new RecyclerView.LayoutParams(
-                            ViewGroup.LayoutParams.MATCH_PARENT,
-                            ViewGroup.LayoutParams.WRAP_CONTENT
-                    )
-            );
-
-            holder.rssi.setImageLevel(rssiPercent);
-
-        } else {
-            //  HIDE out-of-range devices
-            holder.itemView.setVisibility(View.GONE);
-            holder.itemView.setLayoutParams(
-                    new RecyclerView.LayoutParams(0, 0)
-            );
-        }
+        final int rssiPercent = (int) (100.0f * (127.0f + device.getRssi()) / (127.0f + 20.0f));
+        holder.rssi.setImageLevel(rssiPercent);
     }
-
 
     @Override
     public long getItemId(final int position) {
