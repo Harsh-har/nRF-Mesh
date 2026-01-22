@@ -5,12 +5,12 @@ apply plugin: 'org.jetbrains.kotlin.android'
 
 android {
 
-    namespace 'no.nordicsemi.android.nrfmesh'
+    namespace 'no.nordicsemi.android.swaromesh'
 
     compileSdk 36
 
     defaultConfig {
-        applicationId "no.nordicsemi.android.nrfmeshprovisioner"
+        applicationId "no.nordicsemi.android.swaromeshprovisioner"
 
         minSdk 23
         targetSdk 35

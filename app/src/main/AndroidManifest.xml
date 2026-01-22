@@ -30,7 +30,7 @@
     <uses-sdk tools:overrideLibrary="androidx.core.splashscreen"/>
 
     <application
-        android:name=".di.MeshApplication"
+        android:name="no.nordicsemi.android.swaromesh.di.MeshApplication"
         android:allowBackup="true"
         android:fullBackupContent="true"
         android:icon="@drawable/networkmesh"
@@ -40,7 +40,7 @@
         tools:ignore="GoogleAppIndexingWarning">
 
         <activity
-            android:name=".MainActivity"
+            android:name="no.nordicsemi.android.swaromesh.MainActivity"
             android:theme="@style/AppTheme.SplashScreen"
             android:windowSoftInputMode="adjustPan"
             android:launchMode="singleTop"
@@ -58,7 +58,7 @@
         -->
         <activity-alias
             android:name="SplashScreenActivity"
-            android:targetActivity=".MainActivity"
+            android:targetActivity="no.nordicsemi.android.swaromesh.MainActivity"
             android:icon="@drawable/networkmesh"
             android:label="@string/feature_name"
             android:launchMode="singleTop"
@@ -73,101 +73,101 @@
 
 
         <activity
-            android:name=".ble.ScannerActivity"
+            android:name="no.nordicsemi.android.swaromesh.ble.ScannerActivity"
             android:launchMode="singleTop" />
         <activity
-            android:name=".ble.ReconnectActivity"
+            android:name="no.nordicsemi.android.swaromesh.ble.ReconnectActivity"
             android:launchMode="singleTop" />
         <activity
-            android:name=".GroupControlsActivity"
+            android:name="no.nordicsemi.android.swaromesh.GroupControlsActivity"
             android:configChanges="orientation|screenSize"
             android:launchMode="singleTop" />
         <activity
-            android:name=".provisioners.ProvisionersActivity"
+            android:name="no.nordicsemi.android.swaromesh.provisioners.ProvisionersActivity"
             android:launchMode="singleTop" />
         <activity
-            android:name=".provisioners.AddProvisionerActivity"
+            android:name="no.nordicsemi.android.swaromesh.provisioners.AddProvisionerActivity"
             android:launchMode="singleTop" />
         <activity
-            android:name=".provisioners.EditProvisionerActivity"
+            android:name="no.nordicsemi.android.swaromesh.provisioners.EditProvisionerActivity"
             android:launchMode="singleTop" />
         <activity
-            android:name=".provisioners.RangesActivity"
+            android:name="no.nordicsemi.android.swaromesh.provisioners.RangesActivity"
             android:launchMode="singleTop" />
         <activity
-            android:name=".keys.NetKeysActivity"
+            android:name="no.nordicsemi.android.swaromesh.keys.NetKeysActivity"
             android:launchMode="singleTop" />
         <activity
-            android:name=".keys.EditNetKeyActivity"
+            android:name="no.nordicsemi.android.swaromesh.keys.EditNetKeyActivity"
             android:launchMode="singleTop" />
         <activity
-            android:name=".keys.AddNetKeyActivity"
+            android:name="no.nordicsemi.android.swaromesh.keys.AddNetKeyActivity"
             android:launchMode="singleTop" />
         <activity
-            android:name=".keys.AppKeysActivity"
+            android:name="no.nordicsemi.android.swaromesh.keys.AppKeysActivity"
             android:launchMode="singleTop" />
         <activity
-            android:name=".keys.AddAppKeyActivity"
+            android:name="no.nordicsemi.android.swaromesh.keys.AddAppKeyActivity"
             android:launchMode="singleTop" />
         <activity
-            android:name=".keys.EditAppKeyActivity"
+            android:name="no.nordicsemi.android.swaromesh.keys.EditAppKeyActivity"
             android:launchMode="singleTop" />
         <activity
-            android:name=".ProvisioningActivity"
+            android:name="no.nordicsemi.android.swaromesh.ProvisioningActivity"
             android:launchMode="singleTop" />
         <activity
-            android:name=".node.NodeConfigurationActivity"
+            android:name="no.nordicsemi.android.swaromesh.node.NodeConfigurationActivity"
             android:launchMode="singleTop" />
         <activity
-            android:name=".keys.AddNetKeysActivity"
+            android:name="no.nordicsemi.android.swaromesh.keys.AddNetKeysActivity"
             android:launchMode="singleTop" />
         <activity
-            android:name=".keys.AddAppKeysActivity"
+            android:name="no.nordicsemi.android.swaromesh.keys.AddAppKeysActivity"
             android:launchMode="singleTop" />
         <activity
-            android:name=".scenes.ScenesActivity"
+            android:name="no.nordicsemi.android.swaromesh.scenes.ScenesActivity"
             android:launchMode="singleTop" />
         <activity
-            android:name=".node.PublicationSettingsActivity"
+            android:name="no.nordicsemi.android.swaromesh.node.PublicationSettingsActivity"
             android:launchMode="singleTop" />
         <activity
-            android:name=".node.NodeDetailsActivity"
+            android:name="no.nordicsemi.android.swaromesh.node.NodeDetailsActivity"
             android:launchMode="singleTop" />
         <activity
-            android:name=".node.GenericLevelServerActivity"
+            android:name="no.nordicsemi.android.swaromesh.node.GenericLevelServerActivity"
             android:launchMode="singleTop" />
         <activity
-            android:name=".node.GenericOnOffServerActivity"
+            android:name="no.nordicsemi.android.swaromesh.node.GenericOnOffServerActivity"
             android:launchMode="singleTop" />
         <activity
-            android:name=".node.SceneServerModelActivity"
+            android:name="no.nordicsemi.android.swaromesh.node.SceneServerModelActivity"
             android:launchMode="singleTop" />
         <activity
-            android:name=".node.SceneSetupServerModelActivity"
+            android:name="no.nordicsemi.android.swaromesh.node.SceneSetupServerModelActivity"
             android:launchMode="singleTop" />
         <activity
-            android:name=".node.SensorServerActivity"
+            android:name="no.nordicsemi.android.swaromesh.node.SensorServerActivity"
             android:launchMode="singleTop" />
         <activity
-            android:name=".node.VendorModelActivity"
+            android:name="no.nordicsemi.android.swaromesh.node.VendorModelActivity"
             android:launchMode="singleTop" />
         <activity
-            android:name=".node.ConfigurationServerActivity"
+            android:name="no.nordicsemi.android.swaromesh.node.ConfigurationServerActivity"
             android:launchMode="singleTop" />
         <activity
-            android:name=".node.HeartbeatPublicationActivity"
+            android:name="no.nordicsemi.android.swaromesh.node.HeartbeatPublicationActivity"
             android:launchMode="singleTop" />
         <activity
-            android:name=".node.HeartbeatSubscriptionActivity"
+            android:name="no.nordicsemi.android.swaromesh.node.HeartbeatSubscriptionActivity"
             android:launchMode="singleTop" />
         <activity
-            android:name=".node.ConfigurationClientActivity"
+            android:name="no.nordicsemi.android.swaromesh.node.ConfigurationClientActivity"
             android:launchMode="singleTop" />
         <activity
-            android:name=".node.GenericModelConfigurationActivity"
+            android:name="no.nordicsemi.android.swaromesh.node.GenericModelConfigurationActivity"
             android:launchMode="singleTop" />
         <activity
-            android:name=".export.ExportNetworkActivity"
+            android:name="no.nordicsemi.android.swaromesh.export.ExportNetworkActivity"
             android:launchMode="singleTop" />
     </application>
 </manifest>

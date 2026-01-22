@@ -28,7 +28,7 @@
     android:id="@+id/container"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".node.NodeDetailsActivity"
+    tools:context="no.nordicsemi.android.swaromesh.node.NodeDetailsActivity"
     tools:ignore="ContentDescription">
 
     <androidx.constraintlayout.widget.ConstraintLayout
