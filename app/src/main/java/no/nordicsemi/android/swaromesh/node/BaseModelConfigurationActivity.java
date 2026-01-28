@@ -20,6 +20,7 @@ import android.widget.TextView;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.coordinatorlayout.widget.CoordinatorLayout;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.ItemTouchHelper;
@@ -160,10 +161,13 @@ public abstract class BaseModelConfigurationActivity extends BaseActivity implem
             });
 
     @Override
-    protected void onCreate(final Bundle savedInstanceState) {
+    protected void onCreate(@Nullable final Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
         binding = ActivityModelConfigurationBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
+
+        // Base UI references
         mContainer = binding.container;
         mContainerAppKeyBinding = binding.appKeyCard;
         mActionBindAppKey = binding.actionBindAppKey;
@@ -180,6 +184,9 @@ public abstract class BaseModelConfigurationActivity extends BaseActivity implem
         mProgressbar = binding.configurationProgressBar;
         mSwipe = binding.swipeRefresh;
 
+        // Swipe refresh listener
+        mSwipe.setOnRefreshListener(this);
+
         // Node controls references
         mCommandEditText = binding.etCommand;
         mStateEditText = binding.etState;
@@ -192,81 +199,157 @@ public abstract class BaseModelConfigurationActivity extends BaseActivity implem
         mLongAddressEditText = binding.etLongCommand;
         mLengthEditText.setText(String.valueOf(MAX_LENGTH)); // default = 8
 
-
         // Initialize long data fields with brightness values
         initializeLongDataFields();
 
+        // ViewModel
         mViewModel = new ViewModelProvider(this).get(ModelConfigurationViewModel.class);
         initialize();
+
+        // Toolbar setup
         final MeshModel meshModel = mViewModel.getSelectedModel().getValue();
         if (meshModel != null) {
             setSupportActionBar(binding.toolbar);
+
             if (getSupportActionBar() != null) {
                 getSupportActionBar().setDisplayHomeAsUpEnabled(true);
                 getSupportActionBar().setTitle(meshModel.getModelName());
+
+                final int modelId = meshModel.getModelId();
+                getSupportActionBar().setSubtitle(
+                        getString(R.string.model_id,
+                                CompositionDataParser.formatModelIdentifier(modelId, true))
+                );
             }
-
-            final int modelId = meshModel.getModelId();
-            getSupportActionBar().setSubtitle(getString(R.string.model_id, CompositionDataParser.formatModelIdentifier(modelId, true)));
-
-            recyclerViewSubscriptions = findViewById(R.id.recycler_view_subscriptions);
-            recyclerViewSubscriptions.setLayoutManager(new LinearLayoutManager(this));
-            final ItemTouchHelper.Callback itemTouchHelperCallback = new RemovableItemTouchHelperCallback(this);
-            final ItemTouchHelper itemTouchHelper = new ItemTouchHelper(itemTouchHelperCallback);
-            itemTouchHelper.attachToRecyclerView(recyclerViewSubscriptions);
-            mSubscriptionAdapter = new GroupAddressAdapter(this, mViewModel.getNetworkLiveData().getMeshNetwork(), mViewModel.getSelectedModel());
-            recyclerViewSubscriptions.setAdapter(mSubscriptionAdapter);
-
-            recyclerViewBoundKeys = findViewById(R.id.recycler_view_bound_keys);
-            recyclerViewBoundKeys.setLayoutManager(new LinearLayoutManager(this));
-            recyclerViewBoundKeys.setItemAnimator(null);
-            final ItemTouchHelper.Callback itemTouchHelperCallbackKeys = new RemovableItemTouchHelperCallback(this);
-            final ItemTouchHelper itemTouchHelperKeys = new ItemTouchHelper(itemTouchHelperCallbackKeys);
-            itemTouchHelperKeys.attachToRecyclerView(recyclerViewBoundKeys);
-            mBoundAppKeyAdapter = new BoundAppKeysAdapter(this, mViewModel.getNetworkLiveData().getAppKeys(), mViewModel.getSelectedModel());
-            recyclerViewBoundKeys.setAdapter(mBoundAppKeyAdapter);
-
-            mActionBindAppKey.setOnClickListener(v -> {
-                final ProvisionedMeshNode node = mViewModel.getSelectedMeshNode().getValue();
-                if (node != null && !node.isExist(SigModelParser.CONFIGURATION_SERVER)) {
-                    return;
-                }
-                if (!checkConnectivity(mContainer)) return;
-                final Intent bindAppKeysIntent = new Intent(BaseModelConfigurationActivity.this, AppKeysActivity.class);
-                bindAppKeysIntent.putExtra(EXTRA_DATA, BIND_APP_KEY);
-                appKeySelector.launch(bindAppKeysIntent);
-            });
-            mSendButton.setOnClickListener(v -> { sendGenericOnOffCommand(); });
-
-            // Setup long command button click listeners
-            mLongSendButton.setOnClickListener(v -> { sendLongBrightnessCommand(); });
-            mLongReadButton.setOnClickListener(v -> { readLongCommand(); });
-
-            // Setup length text watcher to show validation only
-            setupLengthTextWatcher();
-
-            mPublishAddressView.setText(R.string.none);
-            mActionSetPublication.setOnClickListener(v -> navigateToPublication());
-
-            mActionClearPublication.setOnClickListener(v -> clearPublication());
-
-            mActionSubscribe.setOnClickListener(v -> {
-                if (!checkConnectivity(mContainer)) return;
-                final ArrayList<Group> groups = new ArrayList<>(mViewModel.getNetworkLiveData().getMeshNetwork().getGroups());
-                final DialogFragmentGroupSubscription fragmentSubscriptionAddress = DialogFragmentGroupSubscription.newInstance(groups);
-                fragmentSubscriptionAddress.show(getSupportFragmentManager(), null);
-            });
-
-            mViewModel.getTransactionStatus().observe(this, transactionStatus -> {
-                if (transactionStatus != null) {
-                    hideProgressBar();
-                    final String message = getString(R.string.operation_timed_out);
-                    DialogFragmentTransactionStatus fragmentMessage = DialogFragmentTransactionStatus.newInstance("Transaction Failed", message);
-                    fragmentMessage.show(getSupportFragmentManager(), null);
-                }
-            });
         }
+
+        // RecyclerView: Subscriptions
+        recyclerViewSubscriptions = findViewById(R.id.recycler_view_subscriptions);
+        recyclerViewSubscriptions.setLayoutManager(new LinearLayoutManager(this));
+        final ItemTouchHelper.Callback itemTouchHelperCallback = new RemovableItemTouchHelperCallback(this);
+        final ItemTouchHelper itemTouchHelper = new ItemTouchHelper(itemTouchHelperCallback);
+        itemTouchHelper.attachToRecyclerView(recyclerViewSubscriptions);
+
+        mSubscriptionAdapter = new GroupAddressAdapter(
+                this,
+                mViewModel.getNetworkLiveData().getMeshNetwork(),
+                mViewModel.getSelectedModel()
+        );
+        recyclerViewSubscriptions.setAdapter(mSubscriptionAdapter);
+
+        // RecyclerView: Bound Keys
+        recyclerViewBoundKeys = findViewById(R.id.recycler_view_bound_keys);
+        recyclerViewBoundKeys.setLayoutManager(new LinearLayoutManager(this));
+        recyclerViewBoundKeys.setItemAnimator(null);
+
+        final ItemTouchHelper.Callback itemTouchHelperCallbackKeys = new RemovableItemTouchHelperCallback(this);
+        final ItemTouchHelper itemTouchHelperKeys = new ItemTouchHelper(itemTouchHelperCallbackKeys);
+        itemTouchHelperKeys.attachToRecyclerView(recyclerViewBoundKeys);
+
+        mBoundAppKeyAdapter = new BoundAppKeysAdapter(
+                this,
+                mViewModel.getNetworkLiveData().getAppKeys(),
+                mViewModel.getSelectedModel()
+        );
+        recyclerViewBoundKeys.setAdapter(mBoundAppKeyAdapter);
+
+        // Manual Bind Button (optional)
+        mActionBindAppKey.setOnClickListener(v -> {
+            final ProvisionedMeshNode node = mViewModel.getSelectedMeshNode().getValue();
+            if (node != null && !node.isExist(SigModelParser.CONFIGURATION_SERVER)) {
+                return;
+            }
+            if (!checkConnectivity(mContainer)) return;
+
+            final Intent bindAppKeysIntent = new Intent(BaseModelConfigurationActivity.this, AppKeysActivity.class);
+            bindAppKeysIntent.putExtra(EXTRA_DATA, BIND_APP_KEY);
+            appKeySelector.launch(bindAppKeysIntent);
+        });
+
+        // Send button
+        mSendButton.setOnClickListener(v -> sendGenericOnOffCommand());
+
+        // Long command buttons
+        mLongSendButton.setOnClickListener(v -> sendLongBrightnessCommand());
+        mLongReadButton.setOnClickListener(v -> readLongCommand());
+
+        // Length watcher
+        setupLengthTextWatcher();
+
+        // Publication buttons
+        mPublishAddressView.setText(R.string.none);
+        mActionSetPublication.setOnClickListener(v -> navigateToPublication());
+        mActionClearPublication.setOnClickListener(v -> clearPublication());
+
+        // Subscription button
+        mActionSubscribe.setOnClickListener(v -> {
+            if (!checkConnectivity(mContainer)) return;
+            final ArrayList<Group> groups = new ArrayList<>(
+                    mViewModel.getNetworkLiveData().getMeshNetwork().getGroups()
+            );
+            final DialogFragmentGroupSubscription fragmentSubscriptionAddress =
+                    DialogFragmentGroupSubscription.newInstance(groups);
+            fragmentSubscriptionAddress.show(getSupportFragmentManager(), null);
+        });
+
+        // Transaction timeout observer
+        mViewModel.getTransactionStatus().observe(this, transactionStatus -> {
+            if (transactionStatus != null) {
+                hideProgressBar();
+                final String message = getString(R.string.operation_timed_out);
+                DialogFragmentTransactionStatus fragmentMessage =
+                        DialogFragmentTransactionStatus.newInstance("", message);
+                fragmentMessage.show(getSupportFragmentManager(), null);
+            }
+        });
+
+        // ✅ AUTO BIND TRIGGER USING OBSERVERS (IMPORTANT)
+        mViewModel.getSelectedMeshNode().observe(this, node -> tryAutoBind());
+        mViewModel.getSelectedElement().observe(this, element -> tryAutoBind());
+        mViewModel.getSelectedModel().observe(this, model -> tryAutoBind());
     }
+
+    private boolean isAutoBindTriggered = false;
+
+    private void tryAutoBind() {
+
+        if (isAutoBindTriggered) return;
+
+        final ProvisionedMeshNode node = mViewModel.getSelectedMeshNode().getValue();
+        final Element element = mViewModel.getSelectedElement().getValue();
+        final MeshModel model = mViewModel.getSelectedModel().getValue();
+
+        if (node == null || element == null || model == null) return;
+
+        // Config server required
+        if (!node.isExist(SigModelParser.CONFIGURATION_SERVER)) return;
+
+        // Connectivity required
+        if (!checkConnectivity(mContainer)) return;
+
+        // Already bound -> skip
+        if (model.getBoundAppKeyIndexes() != null && !model.getBoundAppKeyIndexes().isEmpty()) {
+            return;
+        }
+
+        // Default AppKey index (first one)
+        final List<ApplicationKey> appKeys = mViewModel.getNetworkLiveData().getAppKeys();
+        if (appKeys == null || appKeys.isEmpty()) return;
+
+        final int defaultAppKeyIndex = appKeys.get(0).getKeyIndex();
+
+        isAutoBindTriggered = true;
+
+        final ConfigModelAppBind bindMessage = new ConfigModelAppBind(
+                element.getElementAddress(),
+                model.getModelId(),
+                defaultAppKeyIndex
+        );
+
+        sendAcknowledgedMessage(node.getUnicastAddress(), bindMessage);
+    }
+
+
 
     private void initializeLongDataFields() {
         mLongDataFields.add(binding.layoutLongData1);

@@ -6,7 +6,6 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.view.View;
-
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.lifecycle.ViewModelProvider;
@@ -60,7 +59,7 @@ public abstract class AddKeysActivity extends BaseActivity implements SwipeRefre
                 new DividerItemDecoration(binding.recyclerViewKeys.getContext(), DividerItemDecoration.VERTICAL);
         binding.recyclerViewKeys.addItemDecoration(dividerItemDecoration);
         binding.recyclerViewKeys.setItemAnimator(new DefaultItemAnimator());
-//        binding.fabAdd.hide();
+      //  binding.fabAdd.hide();
 
     }
 

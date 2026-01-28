@@ -1,12 +1,10 @@
 
-
 package no.nordicsemi.android.swaromesh;
 
 import android.content.Context;
 import android.net.Uri;
 import android.os.Handler;
 import android.os.Looper;
-
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.security.Security;

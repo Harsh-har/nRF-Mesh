@@ -115,13 +115,13 @@
                                     android:clipToPadding="false"
                                     android:overScrollMode="never"
                                     android:scrollbars="none"
-                                    android:visibility="gone"
+                                    android:visibility="visible"
                                     app:layout_constraintBottom_toBottomOf="parent"
                                     app:layout_constraintEnd_toEndOf="parent"
                                     app:layout_constraintHorizontal_bias="0.0"
                                     app:layout_constraintStart_toStartOf="parent"
                                     app:layout_constraintTop_toTopOf="parent"
-                                    app:layout_constraintVertical_bias="1.0"
+                                    app:layout_constraintVertical_bias="0.0"
                                     tools:listitem="@layout/removable_row_item"
                                     tools:visibility="visible" />
 
@@ -376,6 +376,11 @@
 
                         </androidx.constraintlayout.widget.ConstraintLayout>
                     </com.google.android.material.card.MaterialCardView>
+
+
+
+
+
 
                     <com.google.android.material.card.MaterialCardView
                         android:id="@+id/node_controls_card"

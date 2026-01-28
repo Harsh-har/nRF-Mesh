@@ -1,25 +1,3 @@
-/*
- * Copyright (c) 2018, Nordic Semiconductor
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
- *
- * 1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
- *
- * 2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the
- * documentation and/or other materials provided with the distribution.
- *
- * 3. Neither the name of the copyright holder nor the names of its contributors may be used to endorse or promote products derived from this
- * software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE
- * USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
-
 package no.nordicsemi.android.swaromesh.viewmodels;
 
 import android.bluetooth.BluetoothAdapter;
@@ -42,8 +20,8 @@ import javax.inject.Inject;
 import dagger.hilt.android.qualifiers.ApplicationContext;
 import no.nordicsemi.android.swaromesh.MeshManagerApi;
 import no.nordicsemi.android.swaromesh.MeshNetwork;
-import no.nordicsemi.android.swaromesh.transport.ProvisionedMeshNode;
 import no.nordicsemi.android.swaromesh.ble.BleMeshManager;
+import no.nordicsemi.android.swaromesh.transport.ProvisionedMeshNode;
 import no.nordicsemi.android.swaromesh.utils.Utils;
 import no.nordicsemi.android.support.v18.scanner.BluetoothLeScannerCompat;
 import no.nordicsemi.android.support.v18.scanner.ScanCallback;
@@ -53,56 +31,78 @@ import no.nordicsemi.android.support.v18.scanner.ScanResult;
 import no.nordicsemi.android.support.v18.scanner.ScanSettings;
 
 /**
- * Repository for scanning for bluetooth mesh devices
+ * Repository for scanning Bluetooth Mesh devices
  */
 public class ScannerRepository {
 
     private static final String TAG = ScannerRepository.class.getSimpleName();
+
     private final Context mContext;
     private final MeshManagerApi mMeshManagerApi;
 
-    /**
-     * MutableLiveData containing the scanner state to notify MainActivity.
-     */
     private final ScannerLiveData mScannerLiveData;
     private final ScannerStateLiveData mScannerStateLiveData;
 
     private UUID mFilterUuid;
 
-    private final ScanCallback mScanCallbacks = new ScanCallback() {
+    // 🔥 NEW: Proxy scan callback
+    private ProxyScanCallback mProxyScanCallback;
 
+    // ------------------------------------------------------------------------
+    // Scan Callback
+    // ------------------------------------------------------------------------
+    private final ScanCallback mScanCallbacks = new ScanCallback() {
 
         @Override
         public void onScanResult(final int callbackType, @NonNull final ScanResult result) {
             try {
+                if (mFilterUuid == null) return;
+
+                // ---------------- PROVISIONING SCAN ----------------
                 if (mFilterUuid.equals(BleMeshManager.MESH_PROVISIONING_UUID)) {
-                    // If the packet has been obtained while Location was disabled, mark Location as not required
-                    if (Utils.isLocationRequired(mContext) && !Utils.isLocationEnabled(mContext))
+
+                    if (Utils.isLocationRequired(mContext)
+                            && !Utils.isLocationEnabled(mContext)) {
                         Utils.markLocationNotRequired(mContext);
+                    }
 
                     updateScannerLiveData(result);
-                } else if (mFilterUuid.equals(BleMeshManager.MESH_PROXY_UUID)) {
-                    final byte[] serviceData = Utils.getServiceData(result, BleMeshManager.MESH_PROXY_UUID);
-                    if (mMeshManagerApi != null) {
-                        if (mMeshManagerApi.isAdvertisingWithNetworkIdentity(serviceData)) {
-                            if (mMeshManagerApi.networkIdMatches(serviceData)) {
-                                updateScannerLiveData(result);
-                            }
-                        } else if (mMeshManagerApi.isAdvertisedWithNodeIdentity(serviceData)) {
-                            if (checkIfNodeIdentityMatches(serviceData)) {
-                                updateScannerLiveData(result);
-                            }
+                }
+
+                // ---------------- PROXY SCAN ----------------
+                else if (mFilterUuid.equals(BleMeshManager.MESH_PROXY_UUID)) {
+
+                    final byte[] serviceData =
+                            Utils.getServiceData(result, BleMeshManager.MESH_PROXY_UUID);
+
+                    if (serviceData == null || mMeshManagerApi == null) return;
+
+                    boolean matched = false;
+
+                    if (mMeshManagerApi.isAdvertisingWithNetworkIdentity(serviceData)) {
+                        matched = mMeshManagerApi.networkIdMatches(serviceData);
+                    } else if (mMeshManagerApi.isAdvertisedWithNodeIdentity(serviceData)) {
+                        matched = checkIfNodeIdentityMatches(serviceData);
+                    }
+
+                    if (matched) {
+                        updateScannerLiveData(result);
+
+                        // 🔥 AUTO PROXY CALLBACK
+                        if (mProxyScanCallback != null) {
+                            mProxyScanCallback.onProxyFound(result);
                         }
                     }
                 }
+
             } catch (Exception ex) {
-                Log.e(TAG, "Error: " + ex.getMessage());
+                Log.e(TAG, "Scan error", ex);
             }
         }
 
         @Override
         public void onBatchScanResults(@NonNull final List<ScanResult> results) {
-            // Batch scan is disabled (report delay = 0)
+            // Not used
         }
 
         @Override
@@ -111,48 +111,69 @@ public class ScannerRepository {
         }
     };
 
-    /**
-     * Broadcast receiver to monitor the changes in the location provider
-     */
-    private final BroadcastReceiver mLocationProviderChangedReceiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(final Context context, final Intent intent) {
-            final boolean enabled = Utils.isLocationEnabled(context);
-            mScannerStateLiveData.setLocationEnabled(enabled);
-        }
-    };
-    /**
-     * Broadcast receiver to monitor the changes in the bluetooth adapter
-     */
-    private final BroadcastReceiver mBluetoothStateBroadcastReceiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(final Context context, final Intent intent) {
-            final int state = intent.getIntExtra(BluetoothAdapter.EXTRA_STATE, BluetoothAdapter.STATE_OFF);
-            final int previousState = intent.getIntExtra(BluetoothAdapter.EXTRA_PREVIOUS_STATE, BluetoothAdapter.STATE_OFF);
+    // ------------------------------------------------------------------------
+    // Broadcast Receivers
+    // ------------------------------------------------------------------------
+    private final BroadcastReceiver mLocationProviderChangedReceiver =
+            new BroadcastReceiver() {
+                @Override
+                public void onReceive(final Context context, final Intent intent) {
+                    final boolean enabled = Utils.isLocationEnabled(context);
+                    mScannerStateLiveData.setLocationEnabled(enabled);
+                }
+            };
 
-            switch (state) {
-                case BluetoothAdapter.STATE_ON:
-                    mScannerStateLiveData.bluetoothEnabled();
-                    break;
-                case BluetoothAdapter.STATE_TURNING_OFF:
-                case BluetoothAdapter.STATE_OFF:
-                    if (previousState != BluetoothAdapter.STATE_TURNING_OFF && previousState != BluetoothAdapter.STATE_OFF) {
-                        stopScan();
-                        mScannerStateLiveData.bluetoothDisabled();
+    private final BroadcastReceiver mBluetoothStateBroadcastReceiver =
+            new BroadcastReceiver() {
+                @Override
+                public void onReceive(final Context context, final Intent intent) {
+
+                    final int state =
+                            intent.getIntExtra(BluetoothAdapter.EXTRA_STATE,
+                                    BluetoothAdapter.STATE_OFF);
+
+                    final int previousState =
+                            intent.getIntExtra(BluetoothAdapter.EXTRA_PREVIOUS_STATE,
+                                    BluetoothAdapter.STATE_OFF);
+
+                    switch (state) {
+                        case BluetoothAdapter.STATE_ON:
+                            mScannerStateLiveData.bluetoothEnabled();
+                            break;
+
+                        case BluetoothAdapter.STATE_TURNING_OFF:
+                        case BluetoothAdapter.STATE_OFF:
+                            if (previousState != BluetoothAdapter.STATE_TURNING_OFF
+                                    && previousState != BluetoothAdapter.STATE_OFF) {
+                                stopScan();
+                                mScannerStateLiveData.bluetoothDisabled();
+                            }
+                            break;
                     }
-                    break;
-            }
-        }
-    };
+                }
+            };
 
+    // ------------------------------------------------------------------------
+    // Constructor
+    // ------------------------------------------------------------------------
     @Inject
-    public ScannerRepository(@NonNull @ApplicationContext final Context context, @NonNull final MeshManagerApi meshManagerApi) {
+    public ScannerRepository(
+            @NonNull @ApplicationContext final Context context,
+            @NonNull final MeshManagerApi meshManagerApi) {
+
         this.mContext = context;
         this.mMeshManagerApi = meshManagerApi;
-        mScannerStateLiveData = new ScannerStateLiveData(Utils.isBleEnabled(), Utils.isLocationEnabled(context));
+
+        mScannerStateLiveData =
+                new ScannerStateLiveData(Utils.isBleEnabled(),
+                        Utils.isLocationEnabled(context));
+
         mScannerLiveData = new ScannerLiveData();
     }
 
+    // ------------------------------------------------------------------------
+    // Public getters
+    // ------------------------------------------------------------------------
     public ScannerStateLiveData getScannerState() {
         return mScannerStateLiveData;
     }
@@ -161,89 +182,67 @@ public class ScannerRepository {
         return mScannerLiveData;
     }
 
-    private void updateScannerLiveData(final ScanResult result) {
-        final ScanRecord scanRecord = result.getScanRecord();
-        if (scanRecord != null) {
-            if (scanRecord.getBytes() != null) {
-                final byte[] beaconData = mMeshManagerApi.getMeshBeaconData(scanRecord.getBytes());
-                if (beaconData != null) {
-                    mScannerLiveData.deviceDiscovered(result, mMeshManagerApi.getMeshBeacon(beaconData));
-                } else {
-                    mScannerLiveData.deviceDiscovered(result);
-                }
-                mScannerStateLiveData.deviceFound();
-            }
-        }
-    }
+    // ------------------------------------------------------------------------
+    // Scan control
+    // ------------------------------------------------------------------------
+    public void startScan(@NonNull final UUID filterUuid) {
 
-    /**
-     * Register for required broadcast receivers.
-     */
-    void registerBroadcastReceivers() {
-        mContext.registerReceiver(mBluetoothStateBroadcastReceiver, new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED));
-        if (Utils.isWithinMarshmallowAndR()) {
-            mContext.registerReceiver(mLocationProviderChangedReceiver, new IntentFilter(LocationManager.MODE_CHANGED_ACTION));
-        }
-    }
-
-    /**
-     * Unregister for required broadcast receivers.
-     */
-    void unregisterBroadcastReceivers() {
-        mContext.unregisterReceiver(mBluetoothStateBroadcastReceiver);
-        if (Utils.isWithinMarshmallowAndR()) {
-            mContext.unregisterReceiver(mLocationProviderChangedReceiver);
-        }
-    }
-
-    /**
-     * Start scanning for Bluetooth devices.
-     *
-     * @param filterUuid UUID to filter scan results with
-     */
-    public void startScan(final UUID filterUuid) {
         mFilterUuid = filterUuid;
 
-        if (mScannerStateLiveData.isScanning()) {
-            return;
-        }
+        if (mScannerStateLiveData.isScanning()) return;
 
         mScannerStateLiveData.scanningStarted();
-        //Scanning settings
+
         final ScanSettings settings = new ScanSettings.Builder()
                 .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
-                // Refresh the devices list every second
                 .setReportDelay(0)
-                // Hardware filtering has some issues on selected devices
                 .setUseHardwareFilteringIfSupported(false)
-                // Samsung S6 and S6 Edge report equal value of RSSI for all devices. In this app we ignore the RSSI.
-                /*.setUseHardwareBatchingIfSupported(false)*/
                 .build();
 
-        //Let's use the filter to scan only for unprovisioned mesh nodes.
         final List<ScanFilter> filters = new ArrayList<>();
-        filters.add(new ScanFilter.Builder().setServiceUuid(new ParcelUuid((filterUuid))).build());
+        filters.add(new ScanFilter.Builder()
+                .setServiceUuid(new ParcelUuid(filterUuid))
+                .build());
 
-        final BluetoothLeScannerCompat scanner = BluetoothLeScannerCompat.getScanner();
-        scanner.startScan(filters, settings, mScanCallbacks);
+        BluetoothLeScannerCompat.getScanner()
+                .startScan(filters, settings, mScanCallbacks);
     }
 
-    /**
-     * stop scanning for bluetooth devices.
-     */
+    // 🔥 NEW: Proxy scan entry point
+    public void startProxyScan(@NonNull final ProxyScanCallback callback) {
+        mProxyScanCallback = callback;
+        startScan(BleMeshManager.MESH_PROXY_UUID);
+    }
+
     public void stopScan() {
-        final BluetoothLeScannerCompat scanner = BluetoothLeScannerCompat.getScanner();
-        scanner.stopScan(mScanCallbacks);
+        BluetoothLeScannerCompat.getScanner().stopScan(mScanCallbacks);
         mScannerStateLiveData.scanningStopped();
         mScannerLiveData.clear();
+        mProxyScanCallback = null;
     }
 
-    /**
-     * Check if node identity matches
-     *
-     * @param serviceData service data received from the advertising data
-     * @return true if the node identity matches or false otherwise
-     */
+    // ------------------------------------------------------------------------
+    // Helpers
+    // ------------------------------------------------------------------------
+    private void updateScannerLiveData(final ScanResult result) {
+        final ScanRecord scanRecord = result.getScanRecord();
+        if (scanRecord != null && scanRecord.getBytes() != null) {
+
+            final byte[] beaconData =
+                    mMeshManagerApi.getMeshBeaconData(scanRecord.getBytes());
+
+            if (beaconData != null) {
+                mScannerLiveData.deviceDiscovered(
+                        result,
+                        mMeshManagerApi.getMeshBeacon(beaconData));
+            } else {
+                mScannerLiveData.deviceDiscovered(result);
+            }
+
+            mScannerStateLiveData.deviceFound();
+        }
+    }
+
     private boolean checkIfNodeIdentityMatches(final byte[] serviceData) {
         final MeshNetwork network = mMeshManagerApi.getMeshNetwork();
         if (network != null) {
@@ -254,5 +253,34 @@ public class ScannerRepository {
             }
         }
         return false;
+    }
+
+    // ------------------------------------------------------------------------
+    // Broadcast receiver control
+    // ------------------------------------------------------------------------
+    void registerBroadcastReceivers() {
+        mContext.registerReceiver(
+                mBluetoothStateBroadcastReceiver,
+                new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED));
+
+        if (Utils.isWithinMarshmallowAndR()) {
+            mContext.registerReceiver(
+                    mLocationProviderChangedReceiver,
+                    new IntentFilter(LocationManager.MODE_CHANGED_ACTION));
+        }
+    }
+
+    void unregisterBroadcastReceivers() {
+        mContext.unregisterReceiver(mBluetoothStateBroadcastReceiver);
+        if (Utils.isWithinMarshmallowAndR()) {
+            mContext.unregisterReceiver(mLocationProviderChangedReceiver);
+        }
+    }
+
+    // ------------------------------------------------------------------------
+    // 🔥 Callback interface
+    // ------------------------------------------------------------------------
+    public interface ProxyScanCallback {
+        void onProxyFound(@NonNull ScanResult result);
     }
 }

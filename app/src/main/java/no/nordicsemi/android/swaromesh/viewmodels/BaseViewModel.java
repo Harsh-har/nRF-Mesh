@@ -189,6 +189,9 @@ public abstract class BaseViewModel extends ViewModel {
         return mNrfMeshRepository.isConnectedToProxy();
     }
 
+
+
+
     /**
      * Returns the mesh manager api
      */
