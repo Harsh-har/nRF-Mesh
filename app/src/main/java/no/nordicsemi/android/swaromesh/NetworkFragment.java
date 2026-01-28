@@ -6,8 +6,10 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.SearchView;
+
 import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton;
 import com.google.android.material.snackbar.Snackbar;
+
 import androidx.activity.result.ActivityResult;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
@@ -19,14 +21,15 @@ import androidx.recyclerview.widget.DividerItemDecoration;
 import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+
 import dagger.hilt.android.AndroidEntryPoint;
-import no.nordicsemi.android.swaromesh.transport.ProvisionedMeshNode;
 import no.nordicsemi.android.swaromesh.ble.ScannerActivity;
 import no.nordicsemi.android.swaromesh.databinding.FragmentNetworkBinding;
 import no.nordicsemi.android.swaromesh.dialog.DialogFragmentDeleteNode;
 import no.nordicsemi.android.swaromesh.dialog.DialogFragmentError;
 import no.nordicsemi.android.swaromesh.node.NodeConfigurationActivity;
 import no.nordicsemi.android.swaromesh.node.adapter.NodeAdapter;
+import no.nordicsemi.android.swaromesh.transport.ProvisionedMeshNode;
 import no.nordicsemi.android.swaromesh.utils.Utils;
 import no.nordicsemi.android.swaromesh.viewmodels.SharedViewModel;
 import no.nordicsemi.android.swaromesh.widgets.ItemTouchHelperAdapter;
@@ -45,12 +48,20 @@ public class NetworkFragment extends Fragment implements
     private SharedViewModel mViewModel;
     private NodeAdapter mNodeAdapter;
 
+    // Provisioning launcher (FAB -> Add New Node)
     private final ActivityResultLauncher<Intent> provisioner =
-            registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), this::handleActivityResult);
+            registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), this::handleProvisioningResult);
+
+    // Proxy connect launcher (Click existing provisioned node -> connect proxy -> open config)
+    private final ActivityResultLauncher<Intent> proxyConnector =
+            registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), this::handleProxyConnectResult);
 
     @Nullable
     @Override
-    public View onCreateView(@NonNull final LayoutInflater inflater, @Nullable final ViewGroup viewGroup, @Nullable final Bundle savedInstanceState) {
+    public View onCreateView(@NonNull final LayoutInflater inflater,
+                             @Nullable final ViewGroup viewGroup,
+                             @Nullable final Bundle savedInstanceState) {
+
         binding = FragmentNetworkBinding.inflate(getLayoutInflater());
         mViewModel = new ViewModelProvider(requireActivity()).get(SharedViewModel.class);
 
@@ -63,9 +74,12 @@ public class NetworkFragment extends Fragment implements
         mNodeAdapter.setOnItemClickListener(this);
 
         mRecyclerViewNodes.setLayoutManager(new LinearLayoutManager(getContext()));
-        mRecyclerViewNodes.addItemDecoration(new DividerItemDecoration(requireContext(), DividerItemDecoration.VERTICAL));
+        mRecyclerViewNodes.addItemDecoration(
+                new DividerItemDecoration(requireContext(), DividerItemDecoration.VERTICAL)
+        );
 
-        final ItemTouchHelper.Callback itemTouchHelperCallback = new RemovableItemTouchHelperCallback(this);
+        final ItemTouchHelper.Callback itemTouchHelperCallback =
+                new RemovableItemTouchHelperCallback(this);
         final ItemTouchHelper itemTouchHelper = new ItemTouchHelper(itemTouchHelperCallback);
         itemTouchHelper.attachToRecyclerView(mRecyclerViewNodes);
 
@@ -103,9 +117,10 @@ public class NetworkFragment extends Fragment implements
             }
         });
 
+        // ------------------- FAB Click -> Provision New Node -------------------
         fab.setOnClickListener(v -> {
             final Intent intent = new Intent(requireContext(), ScannerActivity.class);
-            intent.putExtra(Utils.EXTRA_DATA_PROVISIONING_SERVICE, true);
+            intent.putExtra(Utils.EXTRA_DATA_PROVISIONING_SERVICE, true); // ✅ Provisioning mode
             provisioner.launch(intent);
         });
 
@@ -143,9 +158,23 @@ public class NetworkFragment extends Fragment implements
     // ------------------- NodeAdapter Listener -------------------
     @Override
     public void onConfigureClicked(final ProvisionedMeshNode node) {
+
+        // 1) Select node
         mViewModel.setSelectedMeshNode(node);
-        final Intent meshConfigurationIntent = new Intent(requireActivity(), NodeConfigurationActivity.class);
-        requireActivity().startActivity(meshConfigurationIntent);
+
+        // 2) If already connected to Proxy -> directly open NodeConfigurationActivity
+        final Boolean isConnected = mViewModel.isConnectedToProxy().getValue();
+        if (isConnected != null && isConnected) {
+            final Intent meshConfigurationIntent =
+                    new Intent(requireActivity(), NodeConfigurationActivity.class);
+            requireActivity().startActivity(meshConfigurationIntent);
+            return;
+        }
+
+        // 3) Not connected -> Scan + connect to Proxy first
+        final Intent intent = new Intent(requireContext(), ScannerActivity.class);
+        intent.putExtra(Utils.EXTRA_DATA_PROVISIONING_SERVICE, false); // ✅ Proxy mode
+        proxyConnector.launch(intent);
     }
 
     // ------------------- Swipe to delete -------------------
@@ -153,21 +182,25 @@ public class NetworkFragment extends Fragment implements
     public void onItemDismiss(final RemovableViewHolder viewHolder) {
         final int position = viewHolder.getAdapterPosition();
         if (!mNodeAdapter.isEmpty()) {
-            final DialogFragmentDeleteNode fragmentDeleteNode = DialogFragmentDeleteNode.newInstance(position);
+            final DialogFragmentDeleteNode fragmentDeleteNode =
+                    DialogFragmentDeleteNode.newInstance(position);
             fragmentDeleteNode.show(getChildFragmentManager(), null);
         }
     }
 
     @Override
     public void onItemDismissFailed(final RemovableViewHolder viewHolder) {
-        //Do nothing
+        // Do nothing
     }
 
     @Override
     public void onNodeDeleteConfirmed(final int position) {
         final ProvisionedMeshNode node = mNodeAdapter.getItem(position);
         if (mViewModel.getNetworkLiveData().getMeshNetwork().deleteNode(node)) {
-            mViewModel.displaySnackBar(requireActivity(), binding.container, getString(R.string.node_deleted), Snackbar.LENGTH_LONG);
+            mViewModel.displaySnackBar(requireActivity(),
+                    binding.container,
+                    getString(R.string.node_deleted),
+                    Snackbar.LENGTH_LONG);
         }
     }
 
@@ -176,25 +209,31 @@ public class NetworkFragment extends Fragment implements
         mNodeAdapter.notifyItemChanged(position);
     }
 
-    // ------------------- Activity Result Handler -------------------
-    private void handleActivityResult(final ActivityResult result) {
+    // ------------------- Provisioning Result Handler -------------------
+    private void handleProvisioningResult(final ActivityResult result) {
         final Intent data = result.getData();
         if (result.getResultCode() == RESULT_OK && data != null) {
-            final boolean provisioningSuccess = data.getBooleanExtra(Utils.PROVISIONING_COMPLETED, false);
-            final DialogFragmentError fragmentConfigError;
+
+            final boolean provisioningSuccess =
+                    data.getBooleanExtra(Utils.PROVISIONING_COMPLETED, false);
+
             if (provisioningSuccess) {
-                final boolean provisionerUnassigned = data.getBooleanExtra(Utils.PROVISIONER_UNASSIGNED, false);
+                final boolean provisionerUnassigned =
+                        data.getBooleanExtra(Utils.PROVISIONER_UNASSIGNED, false);
+
                 if (provisionerUnassigned) {
-                    fragmentConfigError =
-                            DialogFragmentError.newInstance(getString(R.string.title_init_config_error)
-                                    , getString(R.string.provisioner_unassigned_msg));
-                    fragmentConfigError.show(getChildFragmentManager(), null);
+                    showErrorDialog(getString(R.string.title_init_config_error),
+                            getString(R.string.provisioner_unassigned_msg));
                 } else {
-                    final boolean compositionDataReceived = data.getBooleanExtra(Utils.COMPOSITION_DATA_COMPLETED, false);
-                    final boolean defaultTtlGetCompleted = data.getBooleanExtra(Utils.DEFAULT_GET_COMPLETED, false);
-                    final boolean appKeyAddCompleted = data.getBooleanExtra(Utils.APP_KEY_ADD_COMPLETED, false);
+                    final boolean compositionDataReceived =
+                            data.getBooleanExtra(Utils.COMPOSITION_DATA_COMPLETED, false);
+                    final boolean defaultTtlGetCompleted =
+                            data.getBooleanExtra(Utils.DEFAULT_GET_COMPLETED, false);
+                    final boolean appKeyAddCompleted =
+                            data.getBooleanExtra(Utils.APP_KEY_ADD_COMPLETED, false);
+
                     final String title = getString(R.string.title_init_config_error);
-                    final String message;
+
                     if (compositionDataReceived) {
                         if (defaultTtlGetCompleted) {
                             if (!appKeyAddCompleted) {
@@ -206,7 +245,18 @@ public class NetworkFragment extends Fragment implements
                     }
                 }
             }
+
             requireActivity().invalidateOptionsMenu();
+        }
+    }
+
+    // ------------------- Proxy Connect Result Handler -------------------
+    private void handleProxyConnectResult(final ActivityResult result) {
+        // If proxy connected successfully, open NodeConfigurationActivity
+        if (result.getResultCode() == RESULT_OK) {
+            final Intent meshConfigurationIntent =
+                    new Intent(requireActivity(), NodeConfigurationActivity.class);
+            requireActivity().startActivity(meshConfigurationIntent);
         }
     }
 

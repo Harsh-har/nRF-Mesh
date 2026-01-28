@@ -9,6 +9,8 @@ import static no.nordicsemi.android.swaromesh.utils.Utils.MESSAGE_TIME_OUT;
 import static no.nordicsemi.android.swaromesh.utils.Utils.RESULT_KEY;
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
@@ -307,6 +309,9 @@ public abstract class BaseModelConfigurationActivity extends BaseActivity implem
         mViewModel.getSelectedMeshNode().observe(this, node -> tryAutoBind());
         mViewModel.getSelectedElement().observe(this, element -> tryAutoBind());
         mViewModel.getSelectedModel().observe(this, model -> tryAutoBind());
+        tryAutoBind();
+
+
     }
 
     private boolean isAutoBindTriggered = false;
