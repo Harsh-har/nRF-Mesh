@@ -48,11 +48,9 @@ public class NetworkFragment extends Fragment implements
     private SharedViewModel mViewModel;
     private NodeAdapter mNodeAdapter;
 
-    // Provisioning launcher (FAB -> Add New Node)
     private final ActivityResultLauncher<Intent> provisioner =
             registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), this::handleProvisioningResult);
 
-    // Proxy connect launcher (Click existing provisioned node -> connect proxy -> open config)
     private final ActivityResultLauncher<Intent> proxyConnector =
             registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), this::handleProxyConnectResult);
 
@@ -69,7 +67,6 @@ public class NetworkFragment extends Fragment implements
         final RecyclerView mRecyclerViewNodes = binding.recyclerViewProvisionedNodes;
         final View noNetworksConfiguredView = binding.noNetworksConfigured.getRoot();
 
-        // ------------------- RecyclerView Setup -------------------
         mNodeAdapter = new NodeAdapter(this, mViewModel.getNodes());
         mNodeAdapter.setOnItemClickListener(this);
 
@@ -78,190 +75,113 @@ public class NetworkFragment extends Fragment implements
                 new DividerItemDecoration(requireContext(), DividerItemDecoration.VERTICAL)
         );
 
-        final ItemTouchHelper.Callback itemTouchHelperCallback =
-                new RemovableItemTouchHelperCallback(this);
+        final ItemTouchHelper.Callback itemTouchHelperCallback = new RemovableItemTouchHelperCallback(this);
         final ItemTouchHelper itemTouchHelper = new ItemTouchHelper(itemTouchHelperCallback);
         itemTouchHelper.attachToRecyclerView(mRecyclerViewNodes);
-
         mRecyclerViewNodes.setAdapter(mNodeAdapter);
 
-        // ------------------- Observe Nodes -------------------
         mViewModel.getNodes().observe(getViewLifecycleOwner(), nodes -> {
-            if (nodes != null && !nodes.isEmpty()) {
-                noNetworksConfiguredView.setVisibility(View.GONE);
-            } else {
-                noNetworksConfiguredView.setVisibility(View.VISIBLE);
-            }
+            noNetworksConfiguredView.setVisibility(nodes != null && !nodes.isEmpty() ? View.GONE : View.VISIBLE);
             requireActivity().invalidateOptionsMenu();
         });
 
-        mViewModel.isConnectedToProxy().observe(getViewLifecycleOwner(), isConnected -> {
-            if (isConnected != null) {
-                requireActivity().invalidateOptionsMenu();
-            }
-        });
+        mViewModel.isConnectedToProxy().observe(getViewLifecycleOwner(), isConnected -> requireActivity().invalidateOptionsMenu());
 
-        // ------------------- FAB Scroll Logic -------------------
         mRecyclerViewNodes.addOnScrollListener(new RecyclerView.OnScrollListener() {
             @Override
             public void onScrolled(@NonNull final RecyclerView recyclerView, final int dx, final int dy) {
                 super.onScrolled(recyclerView, dx, dy);
                 final LinearLayoutManager m = (LinearLayoutManager) recyclerView.getLayoutManager();
-                if (m != null) {
-                    if (m.findFirstCompletelyVisibleItemPosition() == 0) {
-                        fab.extend();
-                    } else {
-                        fab.shrink();
-                    }
-                }
+                if (m != null) fab.setExtended(m.findFirstCompletelyVisibleItemPosition() == 0);
             }
         });
 
-        // ------------------- FAB Click -> Provision New Node -------------------
         fab.setOnClickListener(v -> {
             final Intent intent = new Intent(requireContext(), ScannerActivity.class);
-            intent.putExtra(Utils.EXTRA_DATA_PROVISIONING_SERVICE, true); // ✅ Provisioning mode
+            intent.putExtra(Utils.EXTRA_DATA_PROVISIONING_SERVICE, true);
             provisioner.launch(intent);
         });
 
-        // ------------------- SearchView Setup -------------------
         binding.searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
-            @Override
-            public boolean onQueryTextSubmit(String query) {
-                mNodeAdapter.filter(query);
-                return true;
-            }
-
-            @Override
-            public boolean onQueryTextChange(String newText) {
-                mNodeAdapter.filter(newText);
-                return true;
-            }
+            @Override public boolean onQueryTextSubmit(String query) { mNodeAdapter.filter(query); return true; }
+            @Override public boolean onQueryTextChange(String newText) { mNodeAdapter.filter(newText); return true; }
         });
 
-        // ------------------- Show empty view on search results -------------------
         mNodeAdapter.registerAdapterDataObserver(new RecyclerView.AdapterDataObserver() {
-            @Override
-            public void onChanged() {
-                super.onChanged();
-                if (mNodeAdapter.getItemCount() == 0) {
-                    noNetworksConfiguredView.setVisibility(View.VISIBLE);
-                } else {
-                    noNetworksConfiguredView.setVisibility(View.GONE);
-                }
+            @Override public void onChanged() {
+                noNetworksConfiguredView.setVisibility(mNodeAdapter.getItemCount() == 0 ? View.VISIBLE : View.GONE);
             }
         });
 
         return binding.getRoot();
     }
 
-    // ------------------- NodeAdapter Listener -------------------
     @Override
     public void onConfigureClicked(final ProvisionedMeshNode node) {
-
-        // 1) Select node
         mViewModel.setSelectedMeshNode(node);
-
-        // 2) If already connected to Proxy -> directly open NodeConfigurationActivity
         final Boolean isConnected = mViewModel.isConnectedToProxy().getValue();
-        if (isConnected != null && isConnected) {
-            final Intent meshConfigurationIntent =
-                    new Intent(requireActivity(), NodeConfigurationActivity.class);
-            requireActivity().startActivity(meshConfigurationIntent);
-            return;
-        }
 
-        // 3) Not connected -> Scan + connect to Proxy first
-        final Intent intent = new Intent(requireContext(), ScannerActivity.class);
-        intent.putExtra(Utils.EXTRA_DATA_PROVISIONING_SERVICE, false); // ✅ Proxy mode
-        proxyConnector.launch(intent);
+        if (isConnected != null && isConnected) {
+            startActivity(new Intent(requireActivity(), NodeConfigurationActivity.class));
+        } else {
+            final Intent intent = new Intent(requireContext(), ScannerActivity.class);
+            intent.putExtra(Utils.EXTRA_DATA_PROVISIONING_SERVICE, false); // Proxy mode
+            proxyConnector.launch(intent);
+        }
     }
 
-    // ------------------- Swipe to delete -------------------
     @Override
     public void onItemDismiss(final RemovableViewHolder viewHolder) {
         final int position = viewHolder.getAdapterPosition();
         if (!mNodeAdapter.isEmpty()) {
-            final DialogFragmentDeleteNode fragmentDeleteNode =
-                    DialogFragmentDeleteNode.newInstance(position);
-            fragmentDeleteNode.show(getChildFragmentManager(), null);
+            DialogFragmentDeleteNode.newInstance(position).show(getChildFragmentManager(), null);
         }
     }
 
     @Override
-    public void onItemDismissFailed(final RemovableViewHolder viewHolder) {
-        // Do nothing
-    }
+    public void onItemDismissFailed(final RemovableViewHolder viewHolder) {}
 
     @Override
     public void onNodeDeleteConfirmed(final int position) {
         final ProvisionedMeshNode node = mNodeAdapter.getItem(position);
         if (mViewModel.getNetworkLiveData().getMeshNetwork().deleteNode(node)) {
-            mViewModel.displaySnackBar(requireActivity(),
-                    binding.container,
-                    getString(R.string.node_deleted),
-                    Snackbar.LENGTH_LONG);
+            mViewModel.displaySnackBar(requireActivity(), binding.container, getString(R.string.node_deleted), Snackbar.LENGTH_LONG);
         }
     }
 
     @Override
-    public void onNodeDeleteCancelled(final int position) {
-        mNodeAdapter.notifyItemChanged(position);
-    }
+    public void onNodeDeleteCancelled(final int position) { mNodeAdapter.notifyItemChanged(position); }
 
-    // ------------------- Provisioning Result Handler -------------------
     private void handleProvisioningResult(final ActivityResult result) {
         final Intent data = result.getData();
         if (result.getResultCode() == RESULT_OK && data != null) {
-
-            final boolean provisioningSuccess =
-                    data.getBooleanExtra(Utils.PROVISIONING_COMPLETED, false);
-
+            final boolean provisioningSuccess = data.getBooleanExtra(Utils.PROVISIONING_COMPLETED, false);
             if (provisioningSuccess) {
-                final boolean provisionerUnassigned =
-                        data.getBooleanExtra(Utils.PROVISIONER_UNASSIGNED, false);
-
-                if (provisionerUnassigned) {
-                    showErrorDialog(getString(R.string.title_init_config_error),
-                            getString(R.string.provisioner_unassigned_msg));
-                } else {
-                    final boolean compositionDataReceived =
-                            data.getBooleanExtra(Utils.COMPOSITION_DATA_COMPLETED, false);
-                    final boolean defaultTtlGetCompleted =
-                            data.getBooleanExtra(Utils.DEFAULT_GET_COMPLETED, false);
-                    final boolean appKeyAddCompleted =
-                            data.getBooleanExtra(Utils.APP_KEY_ADD_COMPLETED, false);
-
-                    final String title = getString(R.string.title_init_config_error);
-
-                    if (compositionDataReceived) {
-                        if (defaultTtlGetCompleted) {
-                            if (!appKeyAddCompleted) {
-                                showErrorDialog(title, getString(R.string.init_config_error_app_key_msg));
-                            }
-                        } else {
-                            showErrorDialog(title, getString(R.string.init_config_error_default_ttl_get_msg));
-                        }
-                    }
-                }
+                // Auto-connect to proxy after provisioning
+                final Intent intent = new Intent(requireContext(), ScannerActivity.class);
+                intent.putExtra(Utils.EXTRA_DATA_PROVISIONING_SERVICE, false); // Proxy mode
+                intent.putExtra(Utils.EXTRA_NEWLY_PROVISIONED_NODE, true);
+                proxyConnector.launch(intent);
             }
-
             requireActivity().invalidateOptionsMenu();
         }
     }
 
-    // ------------------- Proxy Connect Result Handler -------------------
     private void handleProxyConnectResult(final ActivityResult result) {
-        // If proxy connected successfully, open NodeConfigurationActivity
         if (result.getResultCode() == RESULT_OK) {
-            final Intent meshConfigurationIntent =
-                    new Intent(requireActivity(), NodeConfigurationActivity.class);
-            requireActivity().startActivity(meshConfigurationIntent);
+            final Intent data = result.getData();
+            final boolean isNewNode = data != null && data.getBooleanExtra(Utils.EXTRA_NEWLY_PROVISIONED_NODE, false);
+            mNodeAdapter.notifyDataSetChanged();
+
+            if (isNewNode && mNodeAdapter.getItemCount() > 0) {
+                binding.recyclerViewProvisionedNodes.scrollToPosition(mNodeAdapter.getItemCount() - 1);
+            }
+
+            startActivity(new Intent(requireActivity(), NodeConfigurationActivity.class));
         }
     }
 
     private void showErrorDialog(@NonNull final String title, @NonNull final String message) {
-        final DialogFragmentError dialogFragmentError = DialogFragmentError.newInstance(title, message);
-        dialogFragmentError.show(getChildFragmentManager(), null);
+        DialogFragmentError.newInstance(title, message).show(getChildFragmentManager(), null);
     }
 }

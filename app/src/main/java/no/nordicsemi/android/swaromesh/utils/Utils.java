@@ -60,6 +60,8 @@ public class Utils {
     public static final String EXTRA_DEVICE = "EXTRA_DEVICE";
     public static final String PROVISIONING_COMPLETED = "PROVISIONING_COMPLETED";
     public static final String PROVISIONER_UNASSIGNED = "PROVISIONER_UNASSIGNED";
+    // ✅ NEW FLAG: Indicates the node was just provisioned
+    public static final String EXTRA_NEWLY_PROVISIONED_NODE = "no.nordicsemi.android.swaromesh.EXTRA_NEWLY_PROVISIONED_NODE";
     public static final String COMPOSITION_DATA_COMPLETED = "COMPOSITION_DATA_COMPLETED";
     public static final String DEFAULT_GET_COMPLETED = "DEFAULT_GET_COMPLETED";
     public static final String APP_KEY_ADD_COMPLETED = "APP_KEY_ADD_COMPLETED";
