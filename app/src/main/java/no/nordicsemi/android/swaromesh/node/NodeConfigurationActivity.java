@@ -187,7 +187,39 @@ public class NodeConfigurationActivity extends BaseActivity implements
         });
 
         updateProxySettingsCardUi();
+        autoFetchCompositionData();
+
     }
+
+    private boolean mCompositionRequested = false;
+
+    private void autoFetchCompositionData() {
+        // Already requested once? avoid duplicate calls
+        if (mCompositionRequested) return;
+
+        final ProvisionedMeshNode node = mViewModel.getSelectedMeshNode().getValue();
+        if (node == null) return;
+
+        // If already have models, no need to request again
+        boolean hasModels = false;
+        for (Element e : node.getElements().values()) {
+            if (e != null && e.getMeshModels() != null && !e.getMeshModels().isEmpty()) {
+                hasModels = true;
+                break;
+            }
+        }
+
+        if (hasModels) return;
+
+        // Must be connected to proxy
+        if (!checkConnectivity(binding.container)) return;
+
+        mCompositionRequested = true;
+
+        final ConfigCompositionDataGet configCompositionDataGet = new ConfigCompositionDataGet();
+        sendMessage(configCompositionDataGet);
+    }
+
 
     @Override
     protected void onStart() {
