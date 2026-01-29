@@ -16,11 +16,9 @@ import androidx.recyclerview.widget.DefaultItemAnimator;
 import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
-
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.switchmaterial.SwitchMaterial;
 import com.google.android.material.textview.MaterialTextView;
-
 import dagger.hilt.android.AndroidEntryPoint;
 import no.nordicsemi.android.swaromesh.adapter.FilterAddressAdapter;
 import no.nordicsemi.android.swaromesh.databinding.FragmentProxyFilterBinding;
@@ -77,7 +75,7 @@ public class ProxyFilterFragment extends Fragment implements
             clearAddressPressed = savedInstanceState.getBoolean(CLEAR_ADDRESS_PRESSED, false);
             isFilterEnabled = savedInstanceState.getBoolean(FILTER_ENABLED, true);
         } else {
-            // ⭐ sync from ViewModel
+            //  sync from ViewModel
             isFilterEnabled = mViewModel.isProxyEnabled();
         }
 
@@ -100,7 +98,7 @@ public class ProxyFilterFragment extends Fragment implements
         switchEnableFilter.setOnCheckedChangeListener((buttonView, isChecked) -> {
             isFilterEnabled = isChecked;
 
-            // ⭐ IMPORTANT: this will control your auto-proxy-connect logic in NetworkFragment
+            //  this will control your auto-proxy-connect logic in NetworkFragment
             mViewModel.setProxyEnabled(isChecked);
 
             if (!isChecked) {

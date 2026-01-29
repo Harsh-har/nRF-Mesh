@@ -2,6 +2,7 @@
 
 package no.nordicsemi.android.swaromesh;
 import android.os.Bundle;
+import android.view.Menu;
 import android.view.MenuItem;
 import androidx.activity.EdgeToEdge;
 import androidx.annotation.NonNull;
@@ -68,30 +69,30 @@ public class MainActivity extends AppCompatActivity implements
                     savedInstanceState.getInt(CURRENT_FRAGMENT));
         }
     }
-//
-//    @Override
-//    public boolean onCreateOptionsMenu(Menu menu) {
-//        Boolean isConnected = mViewModel.isConnectedToProxy().getValue();
-//        getMenuInflater().inflate(
-//                isConnected != null && isConnected
-//                        ? R.menu.disconnect
-//                        : R.menu.connect,
-//                menu
-//        );
-//        return true;
-//    }
 
-//    @Override
-//    public boolean onOptionsItemSelected(MenuItem item) {
-//        if (item.getItemId() == R.id.action_connect) {
-//            mViewModel.navigateToScannerActivity(this, false);
-//            return true;
-//        } else if (item.getItemId() == R.id.action_disconnect) {
-//            mViewModel.disconnect();
-//            return true;
-//        }
-//        return super.onOptionsItemSelected(item);
-//    }
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        Boolean isConnected = mViewModel.isConnectedToProxy().getValue();
+        getMenuInflater().inflate(
+                isConnected != null && isConnected
+                        ? R.menu.disconnect
+                        : R.menu.connect,
+                menu
+        );
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        if (item.getItemId() == R.id.action_connect) {
+            mViewModel.navigateToScannerActivity(this, false);
+            return true;
+        } else if (item.getItemId() == R.id.action_disconnect) {
+            mViewModel.disconnect();
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
+    }
 
     @Override
     public boolean onNavigationItemSelected(@NonNull MenuItem item) {

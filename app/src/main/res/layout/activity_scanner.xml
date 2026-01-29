@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
+
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
@@ -7,7 +8,6 @@
     tools:context="no.nordicsemi.android.swaromesh.ble.ScannerActivity"
     tools:ignore="ContentDescription">
 
-    <!-- Toolbar / AppBar -->
     <com.google.android.material.appbar.AppBarLayout
         android:id="@+id/appbar_layout"
         android:layout_width="0dp"
@@ -23,9 +23,24 @@
             android:layout_width="match_parent"
             android:layout_height="?actionBarSize"
             app:popupTheme="@style/AppTheme.PopupOverlay" />
+
+        <ProgressBar
+            android:id="@+id/state_scanning"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="-8dp"
+            android:layout_marginBottom="-7dp"
+            android:indeterminate="true"
+            android:indeterminateTint="@color/indeterminateColor"
+            android:visibility="invisible"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="@+id/recycler_view_ble_devices"
+            tools:targetApi="lollipop" />
+
     </com.google.android.material.appbar.AppBarLayout>
 
-    <!-- RecyclerView for scanned devices -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recycler_view_ble_devices"
         android:layout_width="0dp"
@@ -36,11 +51,12 @@
         android:scrollbars="none"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/appbar_layout"
+        app:layout_constraintVertical_bias="0.0"
         tools:listitem="@layout/device_item" />
 
-    <!-- No Devices View -->
     <include
         android:id="@+id/no_devices"
         layout="@layout/info_no_devices"
@@ -52,7 +68,6 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/appbar_layout" />
 
-    <!-- Bluetooth Off View -->
     <include
         android:id="@+id/bluetooth_off"
         layout="@layout/info_no_bluetooth"
@@ -64,7 +79,6 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/appbar_layout" />
 
-    <!-- Location Permission -->
     <include
         android:id="@+id/no_location_permission"
         layout="@layout/info_no_location_permission"
@@ -76,7 +90,6 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/appbar_layout" />
 
-    <!-- Bluetooth Permissions -->
     <include
         android:id="@+id/no_bluetooth_permissions"
         layout="@layout/info_no_bluetooth_permissions"
@@ -88,37 +101,32 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/appbar_layout" />
 
-    <!-- Silent Connect Overlay / Progress -->
     <LinearLayout
         android:id="@+id/connectivity_progress_container"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:gravity="center"
+        android:layout_height="wrap_content"
+        android:gravity="center_horizontal"
         android:orientation="vertical"
-        android:background="#80D90B0B"
+        android:padding="@dimen/activity_horizontal_margin"
         android:visibility="gone"
-        android:clickable="true"
-        android:focusable="true"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent">
+        app:layout_constraintTop_toBottomOf="@id/appbar_layout">
 
         <com.google.android.material.textview.MaterialTextView
             android:id="@+id/connection_state"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="@string/state_connecting"
-            android:textColor="@android:color/white"
+            android:gravity="center_horizontal"
             android:textSize="16sp"
-            android:layout_marginBottom="16dp"
-            android:gravity="center" />
+            tools:text="@string/state_connecting" />
 
         <ProgressBar
             android:id="@+id/progress_bar"
-            style="?android:attr/progressBarStyleLarge"
-            android:layout_width="60dp"
-            android:layout_height="60dp"
+            style="@style/Widget.AppCompat.ProgressBar.Horizontal"
+            android:layout_width="250dp"
+            android:layout_height="wrap_content"
             android:indeterminate="true" />
     </LinearLayout>
 

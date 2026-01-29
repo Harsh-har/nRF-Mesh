@@ -6,17 +6,10 @@ import android.content.SharedPreferences;
 import androidx.annotation.NonNull;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
-
 import java.io.OutputStream;
-
 import javax.inject.Inject;
-
 import dagger.hilt.android.lifecycle.HiltViewModel;
 import dagger.hilt.android.qualifiers.ApplicationContext;
-import no.nordicsemi.android.swaromesh.GroupsFragment;
-import no.nordicsemi.android.swaromesh.NetworkFragment;
-import no.nordicsemi.android.swaromesh.ProxyFilterFragment;
-import no.nordicsemi.android.swaromesh.SettingsFragment;
 import no.nordicsemi.android.swaromesh.utils.NetworkExportUtils;
 
 @HiltViewModel

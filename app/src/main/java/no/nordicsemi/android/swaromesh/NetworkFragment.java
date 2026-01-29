@@ -128,13 +128,13 @@ public class NetworkFragment extends Fragment implements
     public void onConfigureClicked(final ProvisionedMeshNode node) {
         mViewModel.setSelectedMeshNode(node);
 
-        // ⭐ PROXY BUTTON OFF → OLD FLOW
+        //  PROXY BUTTON OFF → OLD FLOW
         if (!mViewModel.isProxyEnabled()) {
             startActivity(new Intent(requireActivity(), NodeConfigurationActivity.class));
             return;
         }
 
-        // ⭐ PROXY BUTTON ON → NEW FLOW
+        //  PROXY BUTTON ON → NEW FLOW
         final Boolean isConnected = mViewModel.isConnectedToProxy().getValue();
 
         if (Boolean.TRUE.equals(isConnected)) {
