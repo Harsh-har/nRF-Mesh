@@ -292,4 +292,21 @@ public class Utils {
         }
         return null;
     }
+                                    // AUTO PROXY
+    private static final String PREFS_AUTO = "mesh_auto_prefs";
+    private static final String KEY_APPKEY_DONE_PREFIX = "auto_appkey_done_";
+
+    public static boolean isAutoAppKeyDone(@NonNull final Context context, final int unicastAddress) {
+        final SharedPreferences sp = context.getSharedPreferences(PREFS_AUTO, Context.MODE_PRIVATE);
+        return sp.getBoolean(KEY_APPKEY_DONE_PREFIX + unicastAddress, false);
+    }
+
+    public static void setAutoAppKeyDone(@NonNull final Context context,
+                                         final int unicastAddress,
+                                         final boolean done) {
+        final SharedPreferences sp = context.getSharedPreferences(PREFS_AUTO, Context.MODE_PRIVATE);
+        sp.edit().putBoolean(KEY_APPKEY_DONE_PREFIX + unicastAddress, done).apply();
+    }
+
+
 }

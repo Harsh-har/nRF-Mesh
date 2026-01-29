@@ -5,13 +5,28 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
+
 import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
+
 import dagger.hilt.android.AndroidEntryPoint;
 import no.nordicsemi.android.swaromesh.MeshNetwork;
+import no.nordicsemi.android.swaromesh.R;
+import no.nordicsemi.android.swaromesh.databinding.ActivityNodeConfigurationBinding;
+import no.nordicsemi.android.swaromesh.databinding.LayoutContainerBinding;
+import no.nordicsemi.android.swaromesh.dialog.DialogFragmentConfigurationComplete;
+import no.nordicsemi.android.swaromesh.dialog.DialogFragmentError;
+import no.nordicsemi.android.swaromesh.dialog.DialogFragmentProxySet;
+import no.nordicsemi.android.swaromesh.keys.AddAppKeysActivity;
+import no.nordicsemi.android.swaromesh.keys.AddNetKeysActivity;
 import no.nordicsemi.android.swaromesh.models.SigModelParser;
+import no.nordicsemi.android.swaromesh.node.adapter.ElementAdapter;
+import no.nordicsemi.android.swaromesh.node.dialog.DialogFragmentElementName;
+import no.nordicsemi.android.swaromesh.node.dialog.DialogFragmentNodeName;
+import no.nordicsemi.android.swaromesh.node.dialog.DialogFragmentResetNode;
+import no.nordicsemi.android.swaromesh.provisioners.dialogs.DialogFragmentTtl;
 import no.nordicsemi.android.swaromesh.transport.ConfigCompositionDataGet;
 import no.nordicsemi.android.swaromesh.transport.ConfigCompositionDataStatus;
 import no.nordicsemi.android.swaromesh.transport.ConfigDefaultTtlGet;
@@ -26,19 +41,6 @@ import no.nordicsemi.android.swaromesh.transport.MeshMessage;
 import no.nordicsemi.android.swaromesh.transport.MeshModel;
 import no.nordicsemi.android.swaromesh.transport.ProvisionedMeshNode;
 import no.nordicsemi.android.swaromesh.transport.ProxyConfigFilterStatus;
-import no.nordicsemi.android.swaromesh.R;
-import no.nordicsemi.android.swaromesh.databinding.ActivityNodeConfigurationBinding;
-import no.nordicsemi.android.swaromesh.databinding.LayoutContainerBinding;
-import no.nordicsemi.android.swaromesh.dialog.DialogFragmentConfigurationComplete;
-import no.nordicsemi.android.swaromesh.dialog.DialogFragmentError;
-import no.nordicsemi.android.swaromesh.dialog.DialogFragmentProxySet;
-import no.nordicsemi.android.swaromesh.keys.AddAppKeysActivity;
-import no.nordicsemi.android.swaromesh.keys.AddNetKeysActivity;
-import no.nordicsemi.android.swaromesh.node.adapter.ElementAdapter;
-import no.nordicsemi.android.swaromesh.node.dialog.DialogFragmentElementName;
-import no.nordicsemi.android.swaromesh.node.dialog.DialogFragmentNodeName;
-import no.nordicsemi.android.swaromesh.node.dialog.DialogFragmentResetNode;
-import no.nordicsemi.android.swaromesh.provisioners.dialogs.DialogFragmentTtl;
 import no.nordicsemi.android.swaromesh.utils.Utils;
 import no.nordicsemi.android.swaromesh.viewmodels.BaseActivity;
 import no.nordicsemi.android.swaromesh.viewmodels.NodeConfigurationViewModel;
@@ -60,11 +62,19 @@ public class NodeConfigurationActivity extends BaseActivity implements
     private ActivityNodeConfigurationBinding binding;
     private boolean mRequestedState = true;
 
+    // ✅ Auto open AppKeys only once per node
+    private boolean appKeyScreenOpenedThisSession = false;
+    private static final long AUTO_OPEN_APPKEY_DELAY_MS = 150;
+
+    private boolean mCompositionRequested = false;
+
     @Override
     protected void onCreate(final Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
         binding = ActivityNodeConfigurationBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
+
         mViewModel = new ViewModelProvider(this).get(NodeConfigurationViewModel.class);
         initialize();
 
@@ -81,59 +91,81 @@ public class NodeConfigurationActivity extends BaseActivity implements
 
         if (mViewModel.getSelectedMeshNode().getValue() == null) {
             finish();
+            return;
         }
-        // Set up views
+
+        // Toolbar setup
         setSupportActionBar(binding.toolbar);
         if (getSupportActionBar() != null) {
             getSupportActionBar().setDisplayHomeAsUpEnabled(true);
             getSupportActionBar().setTitle(R.string.title_node_configuration);
         }
 
+        // ---------------- Node Name Card ----------------
         final LayoutContainerBinding containerNodeName = binding.containerNodeName;
-        containerNodeName.image
-                .setBackground(ContextCompat.getDrawable(this, R.drawable.ic_label));
+        containerNodeName.image.setBackground(ContextCompat.getDrawable(this, R.drawable.ic_label));
         containerNodeName.title.setText(R.string.title_node_name);
+
         final TextView nodeNameView = containerNodeName.text;
         nodeNameView.setVisibility(View.VISIBLE);
+
         containerNodeName.getRoot().setOnClickListener(v -> {
-            final DialogFragmentNodeName fragment = DialogFragmentNodeName.
-                    newInstance(nodeNameView.getText().toString());
+            final DialogFragmentNodeName fragment =
+                    DialogFragmentNodeName.newInstance(nodeNameView.getText().toString());
             fragment.show(getSupportFragmentManager(), null);
         });
-        final Button actionDetails = findViewById(R.id.action_show_details);
-        actionDetails.setOnClickListener(v -> startActivity(new Intent(NodeConfigurationActivity.this, NodeDetailsActivity.class)));
 
+        final Button actionDetails = findViewById(R.id.action_show_details);
+        actionDetails.setOnClickListener(v ->
+                startActivity(new Intent(NodeConfigurationActivity.this, NodeDetailsActivity.class)));
+
+        // ---------------- Elements Recycler ----------------
         binding.recyclerViewElements.setLayoutManager(new LinearLayoutManager(this));
         final ElementAdapter adapter = new ElementAdapter();
-        //adapter.setHasStableIds(true);
         adapter.setOnItemClickListener(this);
         binding.recyclerViewElements.setAdapter(adapter);
 
-        binding.containerNetKeys.image
-                .setBackground(ContextCompat.getDrawable(this, R.drawable.ic_vpn_key_24dp));
+        // ---------------- NetKeys Card ----------------
+        binding.containerNetKeys.image.setBackground(ContextCompat.getDrawable(this, R.drawable.ic_vpn_key_24dp));
         binding.containerNetKeys.title.setText(R.string.title_net_keys);
+
         final TextView netKeySummary = binding.containerNetKeys.text;
         netKeySummary.setVisibility(View.VISIBLE);
-        binding.containerNetKeys.getRoot().setOnClickListener(v -> startActivity(new Intent(this, AddNetKeysActivity.class)));
 
+        binding.containerNetKeys.getRoot().setOnClickListener(v ->
+                startActivity(new Intent(this, AddNetKeysActivity.class)));
+
+        // ---------------- AppKeys Card ----------------
         binding.containerAppKeys.image.setBackground(ContextCompat.getDrawable(this, R.drawable.ic_vpn_key_24dp));
         binding.containerAppKeys.title.setText(R.string.title_app_keys);
+
         final TextView appKeySummary = binding.containerAppKeys.text;
         appKeySummary.setVisibility(View.VISIBLE);
-        binding.containerAppKeys.getRoot().setOnClickListener(v -> startActivity(new Intent(this, AddAppKeysActivity.class)));
 
+        // manual click optional
+        binding.containerAppKeys.getRoot().setOnClickListener(v ->
+                startActivity(new Intent(this, AddAppKeysActivity.class)));
+
+        // ---------------- TTL Card ----------------
         binding.containerTtl.image.setBackground(ContextCompat.getDrawable(this, R.drawable.ic_numeric));
         binding.containerTtl.title.setText(R.string.title_ttl);
+
         final TextView defaultTtlSummary = binding.containerTtl.text;
         defaultTtlSummary.setVisibility(View.VISIBLE);
 
+        // ---------------- Observe Node ----------------
         mViewModel.getSelectedMeshNode().observe(this, meshNode -> {
             if (meshNode == null) {
                 finish();
                 return;
             }
+
             adapter.update(meshNode);
-            getSupportActionBar().setSubtitle(meshNode.getNodeName());
+
+            if (getSupportActionBar() != null) {
+                getSupportActionBar().setSubtitle(meshNode.getNodeName());
+            }
+
             nodeNameView.setText(meshNode.getNodeName());
 
             updateClickableViews();
@@ -158,49 +190,73 @@ public class NodeConfigurationActivity extends BaseActivity implements
             }
         });
 
+        // ---------------- Actions ----------------
         binding.actionGetCompositionData.setOnClickListener(v -> {
             if (!checkConnectivity(binding.container)) return;
-            final ConfigCompositionDataGet configCompositionDataGet = new ConfigCompositionDataGet();
-            sendMessage(configCompositionDataGet);
+            sendMessage(new ConfigCompositionDataGet());
         });
 
         binding.actionGetDefaultTtl.setOnClickListener(v -> {
             if (!checkConnectivity(binding.container)) return;
-            final ConfigDefaultTtlGet defaultTtlGet = new ConfigDefaultTtlGet();
-            sendMessage(defaultTtlGet);
+            sendMessage(new ConfigDefaultTtlGet());
         });
 
         binding.actionSetDefaultTtl.setOnClickListener(v -> {
             final ProvisionedMeshNode node = mViewModel.getSelectedMeshNode().getValue();
             if (node != null) {
-                DialogFragmentTtl fragmentTtl = DialogFragmentTtl.newInstance(node.getTtl() == null ? -1 : node.getTtl());
+                DialogFragmentTtl fragmentTtl =
+                        DialogFragmentTtl.newInstance(node.getTtl() == null ? -1 : node.getTtl());
                 fragmentTtl.show(getSupportFragmentManager(), null);
             }
         });
 
-
         binding.actionResetNode.setOnClickListener(v -> {
             if (!checkConnectivity(binding.container)) return;
-            final DialogFragmentResetNode resetNodeFragment = DialogFragmentResetNode.
-                    newInstance(getString(R.string.title_reset_node), getString(R.string.reset_node_rationale_summary));
+            final DialogFragmentResetNode resetNodeFragment =
+                    DialogFragmentResetNode.newInstance(
+                            getString(R.string.title_reset_node),
+                            getString(R.string.reset_node_rationale_summary)
+                    );
             resetNodeFragment.show(getSupportFragmentManager(), null);
         });
 
         updateProxySettingsCardUi();
         autoFetchCompositionData();
-
     }
 
-    private boolean mCompositionRequested = false;
+    /**
+     * ✅ Auto open AddAppKeysActivity ONLY ONCE per node (unicast)
+     */
+    @Override
+    protected void onResume() {
+        super.onResume();
+
+        if (appKeyScreenOpenedThisSession) return;
+
+        final ProvisionedMeshNode node = mViewModel.getSelectedMeshNode().getValue();
+        if (node == null) return;
+
+        final int unicast = node.getUnicastAddress();
+
+        // already done for this device? don't auto-open
+//        if (Utils.isAutoAppKeyDone(this, unicast)) return;
+
+        // must be connected to proxy
+        if (!checkConnectivity(binding.container)) return;
+
+        appKeyScreenOpenedThisSession = true;
+
+        binding.getRoot().postDelayed(() -> {
+            startActivity(new Intent(NodeConfigurationActivity.this, AddAppKeysActivity.class));
+        }, AUTO_OPEN_APPKEY_DELAY_MS);
+    }
 
     private void autoFetchCompositionData() {
-        // Already requested once? avoid duplicate calls
         if (mCompositionRequested) return;
 
         final ProvisionedMeshNode node = mViewModel.getSelectedMeshNode().getValue();
         if (node == null) return;
 
-        // If already have models, no need to request again
         boolean hasModels = false;
         for (Element e : node.getElements().values()) {
             if (e != null && e.getMeshModels() != null && !e.getMeshModels().isEmpty()) {
@@ -210,16 +266,11 @@ public class NodeConfigurationActivity extends BaseActivity implements
         }
 
         if (hasModels) return;
-
-        // Must be connected to proxy
         if (!checkConnectivity(binding.container)) return;
 
         mCompositionRequested = true;
-
-        final ConfigCompositionDataGet configCompositionDataGet = new ConfigCompositionDataGet();
-        sendMessage(configCompositionDataGet);
+        sendMessage(new ConfigCompositionDataGet());
     }
-
 
     @Override
     protected void onStart() {
@@ -249,7 +300,9 @@ public class NodeConfigurationActivity extends BaseActivity implements
     }
 
     @Override
-    public void onModelClicked(@NonNull final ProvisionedMeshNode meshNode, @NonNull final Element element, @NonNull final MeshModel model) {
+    public void onModelClicked(@NonNull final ProvisionedMeshNode meshNode,
+                               @NonNull final Element element,
+                               @NonNull final MeshModel model) {
         mViewModel.setSelectedElement(element);
         mViewModel.setSelectedModel(model);
         mViewModel.navigateToModelActivity(this, model);
@@ -257,13 +310,12 @@ public class NodeConfigurationActivity extends BaseActivity implements
 
     @Override
     public void onNodeReset() {
-        final ConfigNodeReset configNodeReset = new ConfigNodeReset();
-        sendMessage(configNodeReset);
+        sendMessage(new ConfigNodeReset());
     }
 
     @Override
     public void onConfigurationCompleted() {
-        //Do nothing
+        // do nothing
     }
 
     @Override
@@ -285,11 +337,11 @@ public class NodeConfigurationActivity extends BaseActivity implements
 
     private void updateProxySettingsCardUi() {
         final ProvisionedMeshNode meshNode = mViewModel.getSelectedMeshNode().getValue();
-        if (meshNode != null && meshNode.getNodeFeatures() != null && meshNode.getNodeFeatures().isProxyFeatureSupported()) {
-
+        if (meshNode != null && meshNode.getNodeFeatures() != null
+                && meshNode.getNodeFeatures().isProxyFeatureSupported()) {
+            // optional UI update
         }
     }
-
 
     protected void showProgressBar() {
         mHandler.postDelayed(mRunnableOperationTimeout, Utils.MESSAGE_TIME_OUT);
@@ -310,14 +362,12 @@ public class NodeConfigurationActivity extends BaseActivity implements
         binding.actionResetNode.setEnabled(true);
     }
 
-
     protected void disableClickableViews() {
         binding.actionGetCompositionData.setEnabled(false);
         binding.actionGetDefaultTtl.setEnabled(false);
         binding.actionSetDefaultTtl.setEnabled(false);
         binding.actionResetNode.setEnabled(false);
     }
-
 
     protected void updateMeshMessage(final MeshMessage meshMessage) {
         if (meshMessage instanceof ProxyConfigFilterStatus) {
@@ -339,8 +389,9 @@ public class NodeConfigurationActivity extends BaseActivity implements
     protected void updateClickableViews() {
         final ProvisionedMeshNode meshNode = mViewModel.getSelectedMeshNode().getValue();
         if (meshNode != null && meshNode.isConfigured() &&
-                !mViewModel.isModelExists(SigModelParser.CONFIGURATION_SERVER))
+                !mViewModel.isModelExists(SigModelParser.CONFIGURATION_SERVER)) {
             disableClickableViews();
+        }
     }
 
     private void updateCompositionDataUi(final ProvisionedMeshNode meshNode) {
@@ -362,6 +413,7 @@ public class NodeConfigurationActivity extends BaseActivity implements
         try {
             if (!checkConnectivity(binding.container))
                 return;
+
             final ProvisionedMeshNode node = mViewModel.getSelectedMeshNode().getValue();
             if (node != null) {
                 mViewModel.getMeshManagerApi().createMeshPdu(node.getUnicastAddress(), meshMessage);
@@ -369,23 +421,22 @@ public class NodeConfigurationActivity extends BaseActivity implements
             }
         } catch (IllegalArgumentException ex) {
             hideProgressBar();
-            final DialogFragmentError message = DialogFragmentError.
-                    newInstance(getString(R.string.title_error),
-                            ex.getMessage() == null ? getString(R.string.unknwon_error) : ex.getMessage());
+            final DialogFragmentError message = DialogFragmentError.newInstance(
+                    getString(R.string.title_error),
+                    ex.getMessage() == null ? getString(R.string.unknwon_error) : ex.getMessage()
+            );
             message.show(getSupportFragmentManager(), null);
         }
     }
 
     @Override
     public boolean setDefaultTtl(final int ttl) {
-        final ConfigDefaultTtlSet ttlSet = new ConfigDefaultTtlSet(ttl);
-        sendMessage(ttlSet);
+        sendMessage(new ConfigDefaultTtlSet(ttl));
         return true;
     }
 
     @Override
     public void onProxySet(final int state) {
-        final ConfigGattProxySet configGattProxySet = new ConfigGattProxySet(state);
-        sendMessage(configGattProxySet);
+        sendMessage(new ConfigGattProxySet(state));
     }
 }
