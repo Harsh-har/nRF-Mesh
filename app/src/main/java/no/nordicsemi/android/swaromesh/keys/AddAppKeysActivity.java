@@ -4,14 +4,10 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.view.View;
-
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-
 import com.google.android.material.snackbar.Snackbar;
-
 import java.util.List;
-
 import dagger.hilt.android.AndroidEntryPoint;
 import no.nordicsemi.android.swaromesh.ApplicationKey;
 import no.nordicsemi.android.swaromesh.NetworkKey;

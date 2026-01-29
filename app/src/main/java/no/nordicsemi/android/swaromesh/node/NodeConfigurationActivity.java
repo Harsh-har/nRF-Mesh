@@ -239,7 +239,7 @@ public class NodeConfigurationActivity extends BaseActivity implements
         final int unicast = node.getUnicastAddress();
 
         // already done for this device? don't auto-open
-//        if (Utils.isAutoAppKeyDone(this, unicast)) return;
+        if (Utils.isAutoAppKeyDone(this, unicast)) return;
 
         // must be connected to proxy
         if (!checkConnectivity(binding.container)) return;

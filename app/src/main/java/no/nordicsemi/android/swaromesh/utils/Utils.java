@@ -56,10 +56,13 @@ public class Utils {
 
     public static final String RESULT_KEY_INDEX = "RESULT_KEY_INDEX";
     public static final String EDIT_KEY = "EDIT_KEY";
+    // Utils.java (existing constants ke sath add karo)
+    public static final String EXTRA_SILENT_CONNECT = "no.nordicsemi.android.swaromesh.EXTRA_SILENT_CONNECT";
 
     public static final String EXTRA_DEVICE = "EXTRA_DEVICE";
     public static final String PROVISIONING_COMPLETED = "PROVISIONING_COMPLETED";
     public static final String PROVISIONER_UNASSIGNED = "PROVISIONER_UNASSIGNED";
+
     // ✅ NEW FLAG: Indicates the node was just provisioned
     public static final String EXTRA_NEWLY_PROVISIONED_NODE = "no.nordicsemi.android.swaromesh.EXTRA_NEWLY_PROVISIONED_NODE";
     public static final String COMPOSITION_DATA_COMPLETED = "COMPOSITION_DATA_COMPLETED";

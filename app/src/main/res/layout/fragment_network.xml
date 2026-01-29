@@ -33,7 +33,7 @@
         <!-- SEARCHVIEW -->
         <SearchView
             android:id="@+id/searchView"
-            android:layout_width="0dp"
+            android:layout_width="380dp"
             android:layout_height="48dp"
             android:queryHint="Search devices..."
             android:background="@drawable/searchview_bg"
