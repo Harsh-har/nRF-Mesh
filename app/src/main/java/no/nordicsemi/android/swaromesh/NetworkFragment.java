@@ -49,10 +49,12 @@ public class NetworkFragment extends Fragment implements
     private NodeAdapter mNodeAdapter;
 
     private final ActivityResultLauncher<Intent> provisioner =
-            registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), this::handleProvisioningResult);
+            registerForActivityResult(new ActivityResultContracts.StartActivityForResult(),
+                    this::handleProvisioningResult);
 
     private final ActivityResultLauncher<Intent> proxyConnector =
-            registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), this::handleProxyConnectResult);
+            registerForActivityResult(new ActivityResultContracts.StartActivityForResult(),
+                    this::handleProxyConnectResult);
 
     @Nullable
     @Override
@@ -75,23 +77,27 @@ public class NetworkFragment extends Fragment implements
                 new DividerItemDecoration(requireContext(), DividerItemDecoration.VERTICAL)
         );
 
-        final ItemTouchHelper.Callback itemTouchHelperCallback = new RemovableItemTouchHelperCallback(this);
+        final ItemTouchHelper.Callback itemTouchHelperCallback =
+                new RemovableItemTouchHelperCallback(this);
         final ItemTouchHelper itemTouchHelper = new ItemTouchHelper(itemTouchHelperCallback);
         itemTouchHelper.attachToRecyclerView(mRecyclerViewNodes);
         mRecyclerViewNodes.setAdapter(mNodeAdapter);
 
         mViewModel.getNodes().observe(getViewLifecycleOwner(), nodes -> {
-            noNetworksConfiguredView.setVisibility(nodes != null && !nodes.isEmpty() ? View.GONE : View.VISIBLE);
+            noNetworksConfiguredView.setVisibility(nodes != null && !nodes.isEmpty()
+                    ? View.GONE : View.VISIBLE);
             requireActivity().invalidateOptionsMenu();
         });
 
-        mViewModel.isConnectedToProxy().observe(getViewLifecycleOwner(), isConnected -> requireActivity().invalidateOptionsMenu());
+        mViewModel.isConnectedToProxy().observe(getViewLifecycleOwner(),
+                isConnected -> requireActivity().invalidateOptionsMenu());
 
         mRecyclerViewNodes.addOnScrollListener(new RecyclerView.OnScrollListener() {
             @Override
             public void onScrolled(@NonNull final RecyclerView recyclerView, final int dx, final int dy) {
                 super.onScrolled(recyclerView, dx, dy);
-                final LinearLayoutManager m = (LinearLayoutManager) recyclerView.getLayoutManager();
+                final LinearLayoutManager m =
+                        (LinearLayoutManager) recyclerView.getLayoutManager();
                 if (m != null) fab.setExtended(m.findFirstCompletelyVisibleItemPosition() == 0);
             }
         });
@@ -109,7 +115,8 @@ public class NetworkFragment extends Fragment implements
 
         mNodeAdapter.registerAdapterDataObserver(new RecyclerView.AdapterDataObserver() {
             @Override public void onChanged() {
-                noNetworksConfiguredView.setVisibility(mNodeAdapter.getItemCount() == 0 ? View.VISIBLE : View.GONE);
+                noNetworksConfiguredView.setVisibility(mNodeAdapter.getItemCount() == 0
+                        ? View.VISIBLE : View.GONE);
             }
         });
 
@@ -121,22 +128,26 @@ public class NetworkFragment extends Fragment implements
     public void onConfigureClicked(final ProvisionedMeshNode node) {
         mViewModel.setSelectedMeshNode(node);
 
+        // ⭐ PROXY BUTTON OFF → OLD FLOW
+        if (!mViewModel.isProxyEnabled()) {
+            startActivity(new Intent(requireActivity(), NodeConfigurationActivity.class));
+            return;
+        }
+
+        // ⭐ PROXY BUTTON ON → NEW FLOW
         final Boolean isConnected = mViewModel.isConnectedToProxy().getValue();
 
-        if (isConnected != null && isConnected) {
-            // Already connected → direct NodeConfiguration
+        if (Boolean.TRUE.equals(isConnected)) {
             startActivity(new Intent(requireActivity(), NodeConfigurationActivity.class));
         } else {
-            // Silent background proxy connect
             startProxyConnectInBackground();
         }
     }
 
     private void startProxyConnectInBackground() {
         final Intent intent = new Intent(requireContext(), ScannerActivity.class);
-
         intent.putExtra(Utils.EXTRA_DATA_PROVISIONING_SERVICE, false); // proxy mode
-        intent.putExtra(Utils.EXTRA_SILENT_CONNECT, true); // new flag for silent mode
+        intent.putExtra(Utils.EXTRA_SILENT_CONNECT, true); // silent mode
         proxyConnector.launch(intent);
     }
 
@@ -144,7 +155,8 @@ public class NetworkFragment extends Fragment implements
     public void onItemDismiss(final RemovableViewHolder viewHolder) {
         final int position = viewHolder.getAdapterPosition();
         if (!mNodeAdapter.isEmpty()) {
-            DialogFragmentDeleteNode.newInstance(position).show(getChildFragmentManager(), null);
+            DialogFragmentDeleteNode.newInstance(position)
+                    .show(getChildFragmentManager(), null);
         }
     }
 
@@ -155,17 +167,24 @@ public class NetworkFragment extends Fragment implements
     public void onNodeDeleteConfirmed(final int position) {
         final ProvisionedMeshNode node = mNodeAdapter.getItem(position);
         if (mViewModel.getNetworkLiveData().getMeshNetwork().deleteNode(node)) {
-            mViewModel.displaySnackBar(requireActivity(), binding.container, getString(R.string.node_deleted), Snackbar.LENGTH_LONG);
+            mViewModel.displaySnackBar(requireActivity(),
+                    binding.container,
+                    getString(R.string.node_deleted),
+                    Snackbar.LENGTH_LONG);
         }
     }
 
     @Override
-    public void onNodeDeleteCancelled(final int position) { mNodeAdapter.notifyItemChanged(position); }
+    public void onNodeDeleteCancelled(final int position) {
+        mNodeAdapter.notifyItemChanged(position);
+    }
 
     private void handleProvisioningResult(final ActivityResult result) {
         final Intent data = result.getData();
         if (result.getResultCode() == RESULT_OK && data != null) {
-            final boolean provisioningSuccess = data.getBooleanExtra(Utils.PROVISIONING_COMPLETED, false);
+            final boolean provisioningSuccess =
+                    data.getBooleanExtra(Utils.PROVISIONING_COMPLETED, false);
+
             if (provisioningSuccess) {
                 // Auto-connect to proxy after provisioning silently
                 final Intent intent = new Intent(requireContext(), ScannerActivity.class);
@@ -185,6 +204,7 @@ public class NetworkFragment extends Fragment implements
     }
 
     private void showErrorDialog(@NonNull final String title, @NonNull final String message) {
-        DialogFragmentError.newInstance(title, message).show(getChildFragmentManager(), null);
+        DialogFragmentError.newInstance(title, message)
+                .show(getChildFragmentManager(), null);
     }
 }

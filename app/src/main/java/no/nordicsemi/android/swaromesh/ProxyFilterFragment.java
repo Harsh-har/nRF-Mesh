@@ -1,12 +1,9 @@
-
 package no.nordicsemi.android.swaromesh;
 
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Button;
-import android.widget.TextView;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -19,7 +16,16 @@ import androidx.recyclerview.widget.DefaultItemAnimator;
 import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+
+import com.google.android.material.button.MaterialButton;
+import com.google.android.material.switchmaterial.SwitchMaterial;
+import com.google.android.material.textview.MaterialTextView;
+
 import dagger.hilt.android.AndroidEntryPoint;
+import no.nordicsemi.android.swaromesh.adapter.FilterAddressAdapter;
+import no.nordicsemi.android.swaromesh.databinding.FragmentProxyFilterBinding;
+import no.nordicsemi.android.swaromesh.dialog.DialogFragmentError;
+import no.nordicsemi.android.swaromesh.dialog.DialogFragmentFilterAddAddress;
 import no.nordicsemi.android.swaromesh.transport.MeshMessage;
 import no.nordicsemi.android.swaromesh.transport.ProxyConfigAddAddressToFilter;
 import no.nordicsemi.android.swaromesh.transport.ProxyConfigRemoveAddressFromFilter;
@@ -28,16 +34,10 @@ import no.nordicsemi.android.swaromesh.utils.AddressArray;
 import no.nordicsemi.android.swaromesh.utils.MeshAddress;
 import no.nordicsemi.android.swaromesh.utils.ProxyFilter;
 import no.nordicsemi.android.swaromesh.utils.ProxyFilterType;
-import no.nordicsemi.android.swaromesh.adapter.FilterAddressAdapter;
-import no.nordicsemi.android.swaromesh.databinding.FragmentProxyFilterBinding;
-import no.nordicsemi.android.swaromesh.dialog.DialogFragmentError;
-import no.nordicsemi.android.swaromesh.dialog.DialogFragmentFilterAddAddress;
 import no.nordicsemi.android.swaromesh.viewmodels.SharedViewModel;
 import no.nordicsemi.android.swaromesh.widgets.ItemTouchHelperAdapter;
 import no.nordicsemi.android.swaromesh.widgets.RemovableItemTouchHelperCallback;
 import no.nordicsemi.android.swaromesh.widgets.RemovableViewHolder;
-
-import static android.view.View.VISIBLE;
 
 @AndroidEntryPoint
 public class ProxyFilterFragment extends Fragment implements
@@ -45,48 +45,84 @@ public class ProxyFilterFragment extends Fragment implements
         ItemTouchHelperAdapter {
 
     private static final String CLEAR_ADDRESS_PRESSED = "CLEAR_ADDRESS_PRESSED";
-    private static final String PROXY_FILTER_DISABLED = "PROXY_FILTER_DISABLED";
+    private static final String FILTER_ENABLED = "FILTER_ENABLED";
 
     private SharedViewModel mViewModel;
 
     private ProxyFilter mFilter;
     private boolean clearAddressPressed;
-    private boolean isProxyFilterDisabled;
+    private boolean isFilterEnabled = true;
+
     private FilterAddressAdapter addressAdapter;
 
     @Nullable
     @Override
-    public View onCreateView(@NonNull final LayoutInflater inflater, @Nullable final ViewGroup viewGroup, @Nullable final Bundle savedInstanceState) {
+    public View onCreateView(@NonNull final LayoutInflater inflater,
+                             @Nullable final ViewGroup container,
+                             @Nullable final Bundle savedInstanceState) {
+
         mViewModel = new ViewModelProvider(requireActivity()).get(SharedViewModel.class);
-        final FragmentProxyFilterBinding binding = FragmentProxyFilterBinding.inflate(getLayoutInflater());
-        final Button actionEnableWhiteList = binding.actionWhiteList;
-        final Button actionEnableBlackList = binding.actionBlackList;
-        final Button actionDisable = binding.actionDisable;
-        final Button actionAddFilterAddress = binding.actionAddAddress;
-        final Button actionClearFilterAddress = binding.actionClearAddresses;
+        final FragmentProxyFilterBinding binding =
+                FragmentProxyFilterBinding.inflate(getLayoutInflater());
+
+        // UI
+        final SwitchMaterial switchEnableFilter = binding.switchEnableFilter;
+        final MaterialButton actionAddFilterAddress = binding.actionAddAddress;
+        final MaterialButton actionClearFilterAddress = binding.actionClearAddresses;
+
+        final MaterialTextView noAddressesAdded = binding.noAddresses;
+        final RecyclerView recyclerViewAddresses = binding.recyclerViewFilterAddresses;
 
         if (savedInstanceState != null) {
-            clearAddressPressed = savedInstanceState.getBoolean(CLEAR_ADDRESS_PRESSED);
-            isProxyFilterDisabled = savedInstanceState.getBoolean(PROXY_FILTER_DISABLED);
+            clearAddressPressed = savedInstanceState.getBoolean(CLEAR_ADDRESS_PRESSED, false);
+            isFilterEnabled = savedInstanceState.getBoolean(FILTER_ENABLED, true);
+        } else {
+            // ⭐ sync from ViewModel
+            isFilterEnabled = mViewModel.isProxyEnabled();
         }
 
-        final TextView noAddressesAdded = binding.noAddresses;
-        final RecyclerView recyclerViewAddresses = binding.recyclerViewFilterAddresses;
-        actionEnableWhiteList.setEnabled(false);
-        actionEnableBlackList.setEnabled(false);
-        actionDisable.setEnabled(false);
-
+        // Recycler
         recyclerViewAddresses.setLayoutManager(new LinearLayoutManager(requireContext()));
         recyclerViewAddresses.setItemAnimator(new DefaultItemAnimator());
-        final ItemTouchHelper.Callback itemTouchHelperCallback = new RemovableItemTouchHelperCallback(this);
+
+        final ItemTouchHelper.Callback itemTouchHelperCallback =
+                new RemovableItemTouchHelperCallback(this);
         final ItemTouchHelper itemTouchHelper = new ItemTouchHelper(itemTouchHelperCallback);
         itemTouchHelper.attachToRecyclerView(recyclerViewAddresses);
+
         addressAdapter = new FilterAddressAdapter();
         recyclerViewAddresses.setAdapter(addressAdapter);
 
+        // Set initial switch state
+        switchEnableFilter.setChecked(isFilterEnabled);
+
+        // Switch Toggle
+        switchEnableFilter.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            isFilterEnabled = isChecked;
+
+            // ⭐ IMPORTANT: this will control your auto-proxy-connect logic in NetworkFragment
+            mViewModel.setProxyEnabled(isChecked);
+
+            if (!isChecked) {
+                // Disable UI
+                actionAddFilterAddress.setEnabled(false);
+                actionClearFilterAddress.setVisibility(View.GONE);
+                recyclerViewAddresses.setVisibility(View.GONE);
+                noAddressesAdded.setVisibility(View.VISIBLE);
+            } else {
+                // Enable filter again
+                actionAddFilterAddress.setEnabled(true);
+
+                // Set filter type again (default inclusion)
+                setFilter(new ProxyFilterType(ProxyFilterType.INCLUSION_LIST_FILTER));
+            }
+        });
+
+        // Observe Proxy Connection
         mViewModel.isConnectedToProxy().observe(getViewLifecycleOwner(), isConnected -> {
             if (!isConnected) {
                 clearAddressPressed = false;
+
                 final MeshNetwork network = mViewModel.getNetworkLiveData().getMeshNetwork();
                 if (network != null) {
                     mFilter = network.getProxyFilter();
@@ -97,78 +133,54 @@ public class ProxyFilterFragment extends Fragment implements
                     }
                 }
 
-                actionEnableWhiteList.setSelected(isConnected);
-                actionEnableBlackList.setSelected(isConnected);
-                actionDisable.setSelected(isConnected);
-                actionAddFilterAddress.setEnabled(isConnected);
+                actionAddFilterAddress.setEnabled(false);
                 actionClearFilterAddress.setVisibility(View.GONE);
-            }
-            actionDisable.setEnabled(false);
-            actionEnableWhiteList.setEnabled(isConnected);
-            actionEnableBlackList.setEnabled(isConnected);
-        });
-
-        mViewModel.getNetworkLiveData().observe(getViewLifecycleOwner(), meshNetworkLiveData -> {
-            final MeshNetwork network = meshNetworkLiveData.getMeshNetwork();
-            if (network == null) {
                 return;
             }
+
+            // connected
+            actionAddFilterAddress.setEnabled(isFilterEnabled);
+        });
+
+        // Observe Network Data
+        mViewModel.getNetworkLiveData().observe(getViewLifecycleOwner(), meshNetworkLiveData -> {
+            final MeshNetwork network = meshNetworkLiveData.getMeshNetwork();
+            if (network == null) return;
 
             final ProxyFilter filter = mFilter = network.getProxyFilter();
             if (filter == null) {
                 addressAdapter.clearData();
                 return;
-            } else if (clearAddressPressed) {
-                clearAddressPressed = false;
-                return;
-            } else if (isProxyFilterDisabled) {
-                actionDisable.setSelected(true);
             }
 
-            actionEnableWhiteList.setSelected(mFilter.getFilterType().getType() == ProxyFilterType.INCLUSION_LIST_FILTER && !actionDisable.isSelected());
-            actionEnableBlackList.setSelected(mFilter.getFilterType().getType() == ProxyFilterType.EXCLUSION_LIST_FILTER);
+            if (clearAddressPressed) {
+                clearAddressPressed = false;
+                return;
+            }
 
-            if (!mFilter.getAddresses().isEmpty()) {
+            if (!isFilterEnabled) {
+                recyclerViewAddresses.setVisibility(View.GONE);
+                noAddressesAdded.setVisibility(View.VISIBLE);
+                actionClearFilterAddress.setVisibility(View.GONE);
+                return;
+            }
+
+            // Show addresses
+            if (!filter.getAddresses().isEmpty()) {
                 noAddressesAdded.setVisibility(View.GONE);
+                recyclerViewAddresses.setVisibility(View.VISIBLE);
                 actionClearFilterAddress.setVisibility(View.VISIBLE);
-                recyclerViewAddresses.setVisibility(VISIBLE);
             } else {
                 recyclerViewAddresses.setVisibility(View.GONE);
                 noAddressesAdded.setVisibility(View.VISIBLE);
                 actionClearFilterAddress.setVisibility(View.GONE);
             }
-            actionAddFilterAddress.setEnabled(!actionDisable.isSelected());
+
+            actionAddFilterAddress.setEnabled(true);
             addressAdapter.updateData(filter);
         });
 
-        actionEnableWhiteList.setOnClickListener(v -> {
-            isProxyFilterDisabled = false;
-            v.setSelected(true);
-            actionEnableBlackList.setSelected(false);
-            actionDisable.setSelected(false);
-            actionDisable.setEnabled(true);
-            setFilter(new ProxyFilterType(ProxyFilterType.INCLUSION_LIST_FILTER));
-        });
-
-        actionEnableBlackList.setOnClickListener(v -> {
-            isProxyFilterDisabled = false;
-            v.setSelected(true);
-            actionEnableWhiteList.setSelected(false);
-            actionDisable.setSelected(false);
-            actionDisable.setEnabled(true);
-            setFilter(new ProxyFilterType(ProxyFilterType.EXCLUSION_LIST_FILTER));
-        });
-
-        actionDisable.setOnClickListener(v -> {
-            v.setSelected(true);
-            isProxyFilterDisabled = true;
-            actionEnableWhiteList.setSelected(false);
-            actionEnableBlackList.setSelected(false);
-            addressAdapter.clearData();
-            actionDisable.setEnabled(false);
-            setFilter(new ProxyFilterType(ProxyFilterType.INCLUSION_LIST_FILTER));
-        });
-
+        // Add Address
         actionAddFilterAddress.setOnClickListener(v -> {
             final ProxyFilterType filterType;
             if (mFilter == null) {
@@ -176,10 +188,14 @@ public class ProxyFilterFragment extends Fragment implements
             } else {
                 filterType = mFilter.getFilterType();
             }
-            final DialogFragmentFilterAddAddress filterAddAddress = DialogFragmentFilterAddAddress.newInstance(filterType);
+
+            final DialogFragmentFilterAddAddress filterAddAddress =
+                    DialogFragmentFilterAddAddress.newInstance(filterType);
+
             filterAddAddress.show(getChildFragmentManager(), null);
         });
 
+        // Clear Addresses
         actionClearFilterAddress.setOnClickListener(v -> removeAddresses());
 
         return binding.getRoot();
@@ -189,12 +205,13 @@ public class ProxyFilterFragment extends Fragment implements
     public void onSaveInstanceState(@NonNull final Bundle outState) {
         super.onSaveInstanceState(outState);
         outState.putBoolean(CLEAR_ADDRESS_PRESSED, clearAddressPressed);
-        outState.putBoolean(PROXY_FILTER_DISABLED, isProxyFilterDisabled);
+        outState.putBoolean(FILTER_ENABLED, isFilterEnabled);
     }
 
     @Override
     public void addAddresses(final List<AddressArray> addresses) {
-        final ProxyConfigAddAddressToFilter addAddressToFilter = new ProxyConfigAddAddressToFilter(addresses);
+        final ProxyConfigAddAddressToFilter addAddressToFilter =
+                new ProxyConfigAddAddressToFilter(addresses);
         sendMessage(addAddressToFilter);
     }
 
@@ -208,7 +225,7 @@ public class ProxyFilterFragment extends Fragment implements
 
     @Override
     public void onItemDismissFailed(final RemovableViewHolder viewHolder) {
-
+        // ignore
     }
 
     private void removeAddress(final int position) {
@@ -217,11 +234,16 @@ public class ProxyFilterFragment extends Fragment implements
             final ProxyFilter proxyFilter = meshNetwork.getProxyFilter();
             if (proxyFilter != null) {
                 clearAddressPressed = true;
+
                 final AddressArray addressArr = proxyFilter.getAddresses().get(position);
                 final List<AddressArray> addresses = new ArrayList<>();
                 addresses.add(addressArr);
+
                 addressAdapter.clearRow(proxyFilter, position);
-                final ProxyConfigRemoveAddressFromFilter removeAddressFromFilter = new ProxyConfigRemoveAddressFromFilter(addresses);
+
+                final ProxyConfigRemoveAddressFromFilter removeAddressFromFilter =
+                        new ProxyConfigRemoveAddressFromFilter(addresses);
+
                 sendMessage(removeAddressFromFilter);
             }
         }
@@ -231,11 +253,11 @@ public class ProxyFilterFragment extends Fragment implements
         final MeshNetwork meshNetwork = mViewModel.getNetworkLiveData().getMeshNetwork();
         if (meshNetwork != null) {
             final ProxyFilter proxyFilter = meshNetwork.getProxyFilter();
-            if (proxyFilter != null) {
-                if (!proxyFilter.getAddresses().isEmpty()) {
-                    final ProxyConfigRemoveAddressFromFilter removeAddressFromFilter = new ProxyConfigRemoveAddressFromFilter(proxyFilter.getAddresses());
-                    sendMessage(removeAddressFromFilter);
-                }
+            if (proxyFilter != null && !proxyFilter.getAddresses().isEmpty()) {
+                final ProxyConfigRemoveAddressFromFilter removeAddressFromFilter =
+                        new ProxyConfigRemoveAddressFromFilter(proxyFilter.getAddresses());
+
+                sendMessage(removeAddressFromFilter);
             }
         }
     }
@@ -249,8 +271,10 @@ public class ProxyFilterFragment extends Fragment implements
         try {
             mViewModel.getMeshManagerApi().createMeshPdu(MeshAddress.UNASSIGNED_ADDRESS, meshMessage);
         } catch (IllegalArgumentException ex) {
-            final DialogFragmentError message = DialogFragmentError.
-                    newInstance(getString(R.string.title_error), ex.getMessage() == null ? getString(R.string.unknwon_error) : ex.getMessage());
+            final DialogFragmentError message = DialogFragmentError.newInstance(
+                    getString(R.string.title_error),
+                    ex.getMessage() == null ? getString(R.string.unknwon_error) : ex.getMessage()
+            );
             message.show(getChildFragmentManager(), null);
         }
     }

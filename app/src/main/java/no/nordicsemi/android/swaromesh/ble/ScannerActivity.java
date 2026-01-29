@@ -156,6 +156,7 @@ public class ScannerActivity extends AppCompatActivity implements DevicesAdapter
                     final ExtendedBluetoothDevice device = resultsLiveData.getDevices().get(0);
                     stopScan();
                     final Intent intent = new Intent(this, ReconnectActivity.class);
+
                     intent.putExtra(Utils.EXTRA_DEVICE, device);
                     reconnect.launch(intent);
                 } else {
@@ -212,3 +213,5 @@ public class ScannerActivity extends AppCompatActivity implements DevicesAdapter
     private void onGrantBluetoothPermissionClicked() { if (Utils.isSorAbove()) ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.BLUETOOTH_SCAN, Manifest.permission.BLUETOOTH_CONNECT}, REQUEST_ACCESS_BLUETOOTH_PERMISSION); }
     private void onPermissionSettingsClicked() { startActivity(new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.fromParts("package", getPackageName(), null))); }
 }
+
+
