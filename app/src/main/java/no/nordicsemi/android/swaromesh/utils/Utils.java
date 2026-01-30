@@ -34,7 +34,7 @@ public class Utils {
 
     public static final String RESULT_KEY_INDEX = "RESULT_KEY_INDEX";
     public static final String EDIT_KEY = "EDIT_KEY";
-    // Utils.java (existing constants ke sath add karo)
+    // Utils.java (existing constants )
     public static final String EXTRA_SILENT_CONNECT = "no.nordicsemi.android.swaromesh.EXTRA_SILENT_CONNECT";
 
     public static final String EXTRA_DEVICE = "EXTRA_DEVICE";
@@ -43,7 +43,6 @@ public class Utils {
 
     // ✅ NEW FLAG: Indicates the node was just provisioned
 
-    public static final String EXTRA_PROXY_AUTO_CONNECT = "no.nordicsemi.android.swaromesh.EXTRA_PROXY_AUTO_CONNECT";
 
     public static final String EXTRA_NEWLY_PROVISIONED_NODE = "no.nordicsemi.android.swaromesh.EXTRA_NEWLY_PROVISIONED_NODE";
     public static final String COMPOSITION_DATA_COMPLETED = "COMPOSITION_DATA_COMPLETED";
@@ -53,7 +52,6 @@ public class Utils {
     // public static final String NETWORK_TRANSMIT_SET_COMPLETED = "NETWORK_TRANSMIT_SET_COMPLETED";
     public static final String EXTRA_DATA = "EXTRA_DATA";
 
-    public static final String EXTRA_AUTO_CONNECT_ENABLED = "no.nordicsemi.android.swaromesh.EXTRA_AUTO_CONNECT_ENABLED";
     private static final String PREFS_LOCATION_NOT_REQUIRED = "location_not_required";
     private static final String PREFS_PERMISSION_REQUESTED = "permission_requested";
     private static final String PREFS_BLUETOOTH_PERMISSION_REQUESTED = "PREFS_BLUETOOTH_PERMISSION_REQUESTED";

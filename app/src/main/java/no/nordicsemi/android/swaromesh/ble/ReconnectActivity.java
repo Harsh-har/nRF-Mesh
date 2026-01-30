@@ -1,31 +1,13 @@
-/*
- * Copyright (c) 2018, Nordic Semiconductor
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
- *
- * 1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
- *
- * 2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the
- * documentation and/or other materials provided with the distribution.
- *
- * 3. Neither the name of the copyright holder nor the names of its contributors may be used to endorse or promote products derived from this
- * software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE
- * USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
-
 package no.nordicsemi.android.swaromesh.ble;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
 import android.view.MenuItem;
+import android.view.View;
+import android.view.WindowManager;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -47,45 +29,93 @@ public class ReconnectActivity extends AppCompatActivity {
     public static final int REQUEST_DEVICE_READY = 1122; //Random number
     private ReconnectViewModel mReconnectViewModel;
 
+    private ActivityReconnectBinding binding;
+    private boolean mSilentConnect = false;
 
     @Override
     protected void onCreate(@Nullable final Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        final ActivityReconnectBinding binding = ActivityReconnectBinding.inflate(getLayoutInflater());
+
+        binding = ActivityReconnectBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
-        // Create view model containing utility methods for scanning
+
+        // ViewModel
         mReconnectViewModel = new ViewModelProvider(this).get(ReconnectViewModel.class);
 
         final Intent intent = getIntent();
+        if (intent == null) {
+            finish();
+            return;
+        }
+
+        // Silent connect flag (AUTO PROXY CONNECT)
+        mSilentConnect = intent.getBooleanExtra(Utils.EXTRA_SILENT_CONNECT, false);
+
         final ExtendedBluetoothDevice device = intent.getParcelableExtra(Utils.EXTRA_DEVICE);
+        if (device == null) {
+            finish();
+            return;
+        }
+
         final String deviceName = device.getName();
         final String deviceAddress = device.getAddress();
 
-        final Toolbar toolbar = binding.toolbar;
-        setSupportActionBar(toolbar);
-        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-        getSupportActionBar().setTitle(deviceName);
-        getSupportActionBar().setSubtitle(deviceAddress);
-        final TextView connectionState = findViewById(R.id.connection_state);
+        // ------------------ SILENT MODE (BACKGROUND) ------------------
+        if (mSilentConnect) {
+            // Hide complete UI
+            binding.toolbar.setVisibility(View.GONE);
 
+            // Hide any other views if exist in layout
+            final View connectionStateView = findViewById(R.id.connection_state);
+            if (connectionStateView != null) connectionStateView.setVisibility(View.GONE);
+
+            // Make activity transparent + no touch (looks like nothing opened)
+            getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+            getWindow().clearFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND);
+            getWindow().setDimAmount(0f);
+            getWindow().addFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
+
+            // No animation (prevents screen blink)
+            overridePendingTransition(0, 0);
+
+        } else {
+            // ------------------ NORMAL MODE (MANUAL) ------------------
+            final Toolbar toolbar = binding.toolbar;
+            setSupportActionBar(toolbar);
+
+            if (getSupportActionBar() != null) {
+                getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+                getSupportActionBar().setTitle(deviceName);
+                getSupportActionBar().setSubtitle(deviceAddress);
+            }
+
+            final TextView connectionState = findViewById(R.id.connection_state);
+            if (connectionState != null) {
+                mReconnectViewModel.getConnectionState().observe(this, connectionState::setText);
+            }
+        }
+
+        // Connect (works for both silent/manual)
         mReconnectViewModel.connect(this, device, true);
+
+        // If disconnected -> close
         mReconnectViewModel.isConnected().observe(this, isConnected -> {
             if (!isConnected) {
                 finish();
+                if (mSilentConnect) overridePendingTransition(0, 0);
             }
         });
 
-        mReconnectViewModel.getConnectionState().observe(this, connectionState::setText);
-
+        // When device ready -> return OK
         mReconnectViewModel.isDeviceReady().observe(this, deviceReady -> {
             if (mReconnectViewModel.getBleMeshManager().isDeviceReady()) {
-                Intent returnIntent = new Intent();
+                final Intent returnIntent = new Intent();
                 returnIntent.putExtra(Utils.EXTRA_DATA, true);
                 setResult(Activity.RESULT_OK, returnIntent);
                 finish();
+                if (mSilentConnect) overridePendingTransition(0, 0);
             }
         });
-
     }
 
     @Override
