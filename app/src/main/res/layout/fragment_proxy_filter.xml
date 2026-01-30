@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/material_grey_100"
+    android:background="@color/background"
     tools:context="no.nordicsemi.android.swaromesh.ProxyFilterFragment">
 
     <LinearLayout
@@ -23,7 +23,7 @@
             android:layout_marginBottom="8dp"
             app:cardCornerRadius="16dp"
             app:cardElevation="4dp"
-            app:cardBackgroundColor="@android:color/white">
+            android:background="?attr/colorSurface">
 
             <androidx.constraintlayout.widget.ConstraintLayout
                 android:layout_width="match_parent"
@@ -66,18 +66,18 @@
                     app:layout_constraintTop_toTopOf="parent" />
 
                 <!-- STATUS INDICATOR -->
-                <com.google.android.material.textview.MaterialTextView
-                    android:id="@+id/filter_status"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:text="@string/filter_enabled"
-                    android:textSize="12sp"
-                    android:textColor="@color/green_500"
-                    android:visibility="visible"
-                    app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toBottomOf="@id/switch_enable_filter" />
+<!--                <com.google.android.material.textview.MaterialTextView-->
+<!--                    android:id="@+id/filter_status"-->
+<!--                    android:layout_width="wrap_content"-->
+<!--                    android:layout_height="wrap_content"-->
+<!--                    android:layout_marginTop="8dp"-->
+<!--                    android:text="@string/filter_enabled"-->
+<!--                    android:textSize="12sp"-->
+<!--                    android:textColor="@color/green_500"-->
+<!--                    android:visibility="visible"-->
+<!--                    app:layout_constraintEnd_toEndOf="parent"-->
+<!--                    app:layout_constraintStart_toStartOf="parent"-->
+<!--                    app:layout_constraintTop_toBottomOf="@id/switch_enable_filter" />-->
 
             </androidx.constraintlayout.widget.ConstraintLayout>
         </com.google.android.material.card.MaterialCardView>
@@ -92,7 +92,7 @@
             android:layout_marginBottom="16dp"
             app:cardCornerRadius="12dp"
             app:cardElevation="2dp"
-            app:cardBackgroundColor="@android:color/white">
+            android:background="?attr/colorSurface">
 
             <androidx.constraintlayout.widget.ConstraintLayout
                 android:layout_width="match_parent"
