@@ -660,4 +660,13 @@
     <string name="message_public_key">Enter the 128-character hexadecimal Public Key of the device.</string>
     <string name="skip">skip</string>
     <string name="skip_oob_public_key_summary">Skipping this process will mark the provisioned node and any Network Key associated with this node as insecure.</string>
+
+    <!-- Filter Control Strings -->
+    <string name="title_filter_control">Proxy Filter Control</string>
+    <string name="subtitle_filter_control">Enable or disable address filtering</string>
+    <string name="filter_enabled">● Active</string>
+    <string name="filter_disabled">● Inactive</string>
+    <string name="filter_enabled_message">Address filter is now active</string>
+    <string name="filter_disabled_message">Address filter is now inactive</string>
+    <string name="proxy_disconnected">● Disconnected</string>
 </resources>
