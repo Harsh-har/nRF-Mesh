@@ -23,6 +23,7 @@
 package no.nordicsemi.android.swaromesh.provisionerstates;
 
 import android.os.Parcel;
+import android.os.Parcelable;
 
 import java.util.UUID;
 
@@ -30,13 +31,15 @@ import no.nordicsemi.android.swaromesh.utils.AuthenticationOOBMethods;
 import no.nordicsemi.android.swaromesh.utils.SecureUtils;
 
 @SuppressWarnings("WeakerAccess")
-public final class UnprovisionedMeshNode extends UnprovisionedBaseMeshNode {
+public final class UnprovisionedMeshNode extends UnprovisionedBaseMeshNode implements Parcelable {
+
+    private String macAddress; // ✅ MAC address
 
     public UnprovisionedMeshNode(final UUID uuid) {
         super(uuid);
     }
 
-    UnprovisionedMeshNode(Parcel in) {
+    protected UnprovisionedMeshNode(Parcel in) {
         super((UUID) in.readSerializable());
         isProvisioned = in.readByte() != 0;
         isConfigured = in.readByte() != 0;
@@ -66,7 +69,23 @@ public final class UnprovisionedMeshNode extends UnprovisionedBaseMeshNode {
         authMethodUsed = AuthenticationOOBMethods.fromValue(in.readInt());
         authActionUsed = (short) in.readInt();
         authenticationValue = in.createByteArray();
+        inputAuthentication = in.createByteArray();
+
+        // ✅ Read MAC address from Parcel
+        macAddress = in.readString();
     }
+
+    public static final Creator<UnprovisionedMeshNode> CREATOR = new Creator<UnprovisionedMeshNode>() {
+        @Override
+        public UnprovisionedMeshNode createFromParcel(Parcel in) {
+            return new UnprovisionedMeshNode(in);
+        }
+
+        @Override
+        public UnprovisionedMeshNode[] newArray(int size) {
+            return new UnprovisionedMeshNode[size];
+        }
+    };
 
     @Override
     public void writeToParcel(Parcel dest, int flags) {
@@ -97,26 +116,30 @@ public final class UnprovisionedMeshNode extends UnprovisionedBaseMeshNode {
         dest.writeInt(authActionUsed);
         dest.writeByteArray(authenticationValue);
         dest.writeByteArray(inputAuthentication);
+
+        // ✅ Write MAC address to Parcel
+        dest.writeString(macAddress);
     }
-
-
-    public static final Creator<UnprovisionedMeshNode> CREATOR = new Creator<UnprovisionedMeshNode>() {
-        @Override
-        public UnprovisionedMeshNode createFromParcel(Parcel in) {
-            return new UnprovisionedMeshNode(in);
-        }
-
-        @Override
-        public UnprovisionedMeshNode[] newArray(int size) {
-            return new UnprovisionedMeshNode[size];
-        }
-    };
 
     @Override
     public int describeContents() {
         return 0;
     }
 
+    // ======================================================
+    // ✅ MAC Getter/Setter
+    // ======================================================
+    public String getMacAddress() {
+        return macAddress;
+    }
+
+    public void setMacAddress(final String macAddress) {
+        this.macAddress = macAddress;
+    }
+
+    // ======================================================
+    // Existing getters/setters
+    // ======================================================
     public byte[] getSharedECDHSecret() {
         return sharedECDHSecret;
     }
@@ -137,12 +160,6 @@ public final class UnprovisionedMeshNode extends UnprovisionedBaseMeshNode {
         return provisioneePublicKeyXY;
     }
 
-    /**
-     * Sets the provisionee public key. Use this when provisioning using a Public Key obtained via
-     * out of band methods.
-     *
-     * @param provisioneePublicKeyXY 128-bit public key obtained OOB.
-     */
     public void setProvisioneePublicKeyXY(final byte[] provisioneePublicKeyXY) {
         this.provisioneePublicKeyXY = provisioneePublicKeyXY;
     }
@@ -163,17 +180,10 @@ public final class UnprovisionedMeshNode extends UnprovisionedBaseMeshNode {
         this.provisioneeConfirmation = provisioneeConfirmation;
     }
 
-    /**
-     * Returns the 128-bit authentication value generated based on the user selected OOB type
-     */
     public byte[] getAuthenticationValue() {
         return authenticationValue;
     }
 
-    /**
-     * Sets the 128-bit authentication value generated based on the user input if the user input was selected
-     * @param authenticationValue 128-bit auth value
-     */
     void setAuthenticationValue(final byte[] authenticationValue) {
         this.authenticationValue = authenticationValue;
     }

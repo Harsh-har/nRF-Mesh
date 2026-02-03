@@ -1,6 +1,7 @@
 package no.nordicsemi.android.swaromesh.node.adapter;
 
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -19,16 +20,18 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import no.nordicsemi.android.swaromesh.R;
+import no.nordicsemi.android.swaromesh.databinding.NetworkItemBinding;
 import no.nordicsemi.android.swaromesh.transport.Element;
 import no.nordicsemi.android.swaromesh.transport.ProvisionedMeshNode;
 import no.nordicsemi.android.swaromesh.utils.CompanyIdentifiers;
 import no.nordicsemi.android.swaromesh.utils.MeshAddress;
 import no.nordicsemi.android.swaromesh.utils.MeshParserUtils;
-import no.nordicsemi.android.swaromesh.R;
-import no.nordicsemi.android.swaromesh.databinding.NetworkItemBinding;
 import no.nordicsemi.android.swaromesh.widgets.RemovableViewHolder;
 
 public class NodeAdapter extends RecyclerView.Adapter<NodeAdapter.ViewHolder> {
+
+    private static final String TAG = "NodeAdapter";
 
     private final AsyncListDiffer<ProvisionedMeshNode> differ =
             new AsyncListDiffer<>(this, new NodeDiffCallback());
@@ -36,16 +39,22 @@ public class NodeAdapter extends RecyclerView.Adapter<NodeAdapter.ViewHolder> {
     private final Set<Integer> expandedPositions = new HashSet<>();
     private OnItemClickListener mOnItemClickListener;
 
-    // ---------- ADD: backup list for filtering ----------
+    // backup list for filtering
     private List<ProvisionedMeshNode> allNodes = new ArrayList<>();
 
     public NodeAdapter(@NonNull final LifecycleOwner owner,
                        @NonNull final LiveData<List<ProvisionedMeshNode>> provisionedNodesLiveData) {
+
         provisionedNodesLiveData.observe(owner, nodes -> {
             if (nodes != null) {
-                expandedPositions.clear(); // reset expansion on data update
-                allNodes = new ArrayList<>(nodes); // ADD: keep full list
+                expandedPositions.clear();
+                allNodes = new ArrayList<>(nodes);
                 differ.submitList(new ArrayList<>(nodes));
+
+                // Debug: Log all MAC addresses
+                for (ProvisionedMeshNode node : nodes) {
+                    Log.d(TAG, "Node: " + node.getNodeName() + ", MAC: " + node.getMacAddress());
+                }
             }
         });
     }
@@ -67,19 +76,28 @@ public class NodeAdapter extends RecyclerView.Adapter<NodeAdapter.ViewHolder> {
         final ProvisionedMeshNode node = differ.getCurrentList().get(position);
         if (node == null) return;
 
-        // ---------- NODE NAME (EXPAND / COLLAPSE) ----------
+        // NODE NAME
         holder.name.setText(node.getNodeName());
 
         final boolean expanded = expandedPositions.contains(position);
         holder.name.setMaxLines(expanded ? Integer.MAX_VALUE : 2);
         holder.name.setEllipsize(expanded ? null : TextUtils.TruncateAt.END);
 
-        // ---------- NODE INFO ----------
+        // UNICAST ADDRESS
         holder.unicastAddress.setText(
                 MeshParserUtils.bytesToHex(
                         MeshAddress.addressIntToBytes(node.getUnicastAddress()), false)
         );
 
+        // MAC ADDRESS ⭐⭐ - DEBUG LOGGING
+        final String mac = node.getMacAddress();
+        Log.d(TAG, "Binding node: " + node.getNodeName() +
+                ", MAC from DB: " + mac +
+                ", Position: " + position);
+
+        holder.macAddress.setText(!TextUtils.isEmpty(mac) ? mac : "--");
+
+        // NODE INFO
         final Map<Integer, Element> elements = node.getElements();
         if (!elements.isEmpty()) {
             holder.nodeInfoContainer.setVisibility(View.VISIBLE);
@@ -98,9 +116,9 @@ public class NodeAdapter extends RecyclerView.Adapter<NodeAdapter.ViewHolder> {
             holder.models.setText(R.string.unknown);
         }
 
-        // ---------- CLICK HANDLING (EXPAND + CONFIGURE) ----------
+        // CLICK
         holder.container.setOnClickListener(v -> {
-            // toggle expand
+            // expand/collapse
             if (expanded) {
                 expandedPositions.remove(position);
             } else {
@@ -108,7 +126,6 @@ public class NodeAdapter extends RecyclerView.Adapter<NodeAdapter.ViewHolder> {
             }
             notifyItemChanged(position);
 
-            // existing behavior preserved
             if (mOnItemClickListener != null) {
                 mOnItemClickListener.onConfigureClicked(node);
             }
@@ -139,7 +156,6 @@ public class NodeAdapter extends RecyclerView.Adapter<NodeAdapter.ViewHolder> {
         return models;
     }
 
-    // ---------- ADD: filter method ----------
     public void filter(String query) {
         final List<ProvisionedMeshNode> filteredList = new ArrayList<>();
         if (query == null || query.trim().isEmpty()) {
@@ -147,12 +163,13 @@ public class NodeAdapter extends RecyclerView.Adapter<NodeAdapter.ViewHolder> {
         } else {
             String lowerCaseQuery = query.toLowerCase();
             for (ProvisionedMeshNode node : allNodes) {
-                if (node.getNodeName() != null && node.getNodeName().toLowerCase().contains(lowerCaseQuery)) {
+                if (node.getNodeName() != null &&
+                        node.getNodeName().toLowerCase().contains(lowerCaseQuery)) {
                     filteredList.add(node);
                 }
             }
         }
-        expandedPositions.clear(); // reset expansions when filtering
+        expandedPositions.clear();
         differ.submitList(filteredList);
     }
 
@@ -162,10 +179,12 @@ public class NodeAdapter extends RecyclerView.Adapter<NodeAdapter.ViewHolder> {
     }
 
     final class ViewHolder extends RemovableViewHolder {
+
         FrameLayout container;
         TextView name;
         View nodeInfoContainer;
         TextView unicastAddress;
+        TextView macAddress;
         TextView companyIdentifier;
         TextView elements;
         TextView models;
@@ -176,6 +195,7 @@ public class NodeAdapter extends RecyclerView.Adapter<NodeAdapter.ViewHolder> {
             name = binding.nodeName;
             nodeInfoContainer = binding.configuredNodeInfoContainer;
             unicastAddress = binding.unicast;
+            macAddress = binding.macAddress;
             companyIdentifier = binding.companyIdentifier;
             elements = binding.elements;
             models = binding.models;

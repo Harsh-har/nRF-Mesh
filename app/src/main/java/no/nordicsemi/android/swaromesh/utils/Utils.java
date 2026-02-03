@@ -277,7 +277,7 @@ public class Utils {
         }
         return null;
     }
-                                    // AUTO PROXY
+    // AUTO PROXY
     private static final String PREFS_AUTO = "mesh_auto_prefs";
     private static final String KEY_APPKEY_DONE_PREFIX = "auto_appkey_done_";
 

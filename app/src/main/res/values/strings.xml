@@ -1,4 +1,12 @@
 <resources>
+    <!-- Mac Address -->
+    <string name="unknown_error">Unknown error</string>
+    <string name="title_configuration_complete">Configuration Complete</string>
+
+
+
+
+
     <string name="app_name">Swaro Mesh</string>
     <string name="feature_name">Mesh</string>
     <string name="title_scanner">Scanner</string>
@@ -258,6 +266,8 @@
         You may do this by going back to the main screen and connecting to the node.</string>
     <string name="no_elements_guide_composition_data">No elements were found! \nGet composition data to see what elements are on this node.</string>
     <string name="action_connect">Connect</string>
+    <string name="action_mac_connect">Same Connect</string>
+
     <string name="action_disconnect">Disconnect</string>
 
     <string name="hint_publish_address">Publish Address</string>

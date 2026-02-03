@@ -1,37 +1,11 @@
-/*
- * Copyright (c) 2018, Nordic Semiconductor
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
- *
- * 1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
- *
- * 2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the
- * documentation and/or other materials provided with the distribution.
- *
- * 3. Neither the name of the copyright holder nor the names of its contributors may be used to endorse or promote products derived from this
- * software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE
- * USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
-
 package no.nordicsemi.android.swaromesh.viewmodels;
 
 import android.content.Context;
-
 import androidx.annotation.NonNull;
 import androidx.lifecycle.LiveData;
-
-
-
 import javax.inject.Inject;
-
 import dagger.hilt.android.lifecycle.HiltViewModel;
+import no.nordicsemi.android.swaromesh.adapter.ExtendedBluetoothDevice;
 import no.nordicsemi.android.swaromesh.provisionerstates.ProvisioningCapabilities;
 import no.nordicsemi.android.swaromesh.provisionerstates.UnprovisionedMeshNode;
 import no.nordicsemi.android.swaromesh.utils.AlgorithmType;
@@ -40,12 +14,12 @@ import no.nordicsemi.android.swaromesh.utils.OutputOOBAction;
 import no.nordicsemi.android.swaromesh.ProvisioningActivity;
 import no.nordicsemi.android.swaromesh.R;
 
-
 /**
  * ViewModel for {@link ProvisioningActivity}
  */
 @HiltViewModel
 public class ProvisioningViewModel extends BaseViewModel {
+    private String mDeviceMacAddress;
 
     @Inject
     ProvisioningViewModel(@NonNull final NrfMeshRepository nrfMeshRepository) {
@@ -59,7 +33,7 @@ public class ProvisioningViewModel extends BaseViewModel {
     }
 
     /**
-     * Returns the LifeData {@link UnprovisionedMeshNode}
+     * Returns the LiveData {@link UnprovisionedMeshNode}
      */
     public LiveData<UnprovisionedMeshNode> getUnprovisionedMeshNode() {
         return mNrfMeshRepository.getUnprovisionedMeshNode();
@@ -114,6 +88,64 @@ public class ProvisioningViewModel extends BaseViewModel {
         return mNrfMeshRepository.isNetworkRetransmitSetCompleted();
     }
 
+    /**
+     * Set device MAC address
+     */
+    public void setDeviceMacAddress(String macAddress) {
+        this.mDeviceMacAddress = macAddress;
+
+        // Also set MAC address in UnprovisionedMeshNode if it exists
+        UnprovisionedMeshNode node = getUnprovisionedMeshNode().getValue();
+        if (node != null && macAddress != null) {
+            node.setMacAddress(macAddress);
+        }
+    }
+
+    /**
+     * Get device MAC address
+     */
+    public String getDeviceMacAddress() {
+        return mDeviceMacAddress;
+    }
+
+    /**
+     * Connect to device and ensure MAC address is set
+     */
+    @Override
+    public void connect(@NonNull final Context context,
+                        @NonNull final ExtendedBluetoothDevice device,
+                        final boolean connectToNetwork) {
+        // Store MAC address
+        setDeviceMacAddress(device.getAddress());
+
+        // Call parent connect method
+        super.connect(context, device, connectToNetwork);
+    }
+
+    /**
+     * Get UnprovisionedMeshNode value directly (not LiveData)
+     */
+    public UnprovisionedMeshNode getUnprovisionedMeshNodeValue() {
+        return getUnprovisionedMeshNode().getValue();
+    }
+
+    /**
+     * Check if UnprovisionedMeshNode has MAC address
+     */
+    public boolean hasMacAddressInNode() {
+        UnprovisionedMeshNode node = getUnprovisionedMeshNodeValue();
+        return node != null && node.getMacAddress() != null && !node.getMacAddress().isEmpty();
+    }
+
+    /**
+     * Set MAC address in UnprovisionedMeshNode if not set
+     */
+    public void ensureMacAddressInNode(String macAddress) {
+        UnprovisionedMeshNode node = getUnprovisionedMeshNodeValue();
+        if (node != null && (node.getMacAddress() == null || node.getMacAddress().isEmpty())) {
+            node.setMacAddress(macAddress);
+        }
+    }
 
     public String parseAlgorithms(final ProvisioningCapabilities capabilities) {
         final StringBuilder algorithmTypes = new StringBuilder();
@@ -162,5 +194,4 @@ public class ProvisioningViewModel extends BaseViewModel {
         }
         return inputOOBActions.toString();
     }
-
 }

@@ -123,18 +123,15 @@ public class NetworkFragment extends Fragment implements
         return binding.getRoot();
     }
 
-    // ------------------ CONFIGURE NODE ------------------
     @Override
     public void onConfigureClicked(final ProvisionedMeshNode node) {
         mViewModel.setSelectedMeshNode(node);
 
-        //  PROXY BUTTON OFF → OLD FLOW
         if (!mViewModel.isProxyEnabled()) {
             startActivity(new Intent(requireActivity(), NodeConfigurationActivity.class));
             return;
         }
 
-        //  PROXY BUTTON ON → NEW FLOW
         final Boolean isConnected = mViewModel.isConnectedToProxy().getValue();
 
         if (Boolean.TRUE.equals(isConnected)) {
@@ -146,8 +143,8 @@ public class NetworkFragment extends Fragment implements
 
     private void startProxyConnectInBackground() {
         final Intent intent = new Intent(requireContext(), ScannerActivity.class);
-        intent.putExtra(Utils.EXTRA_DATA_PROVISIONING_SERVICE, false); // proxy mode
-        intent.putExtra(Utils.EXTRA_SILENT_CONNECT, true); // silent mode
+        intent.putExtra(Utils.EXTRA_DATA_PROVISIONING_SERVICE, false);
+        intent.putExtra(Utils.EXTRA_SILENT_CONNECT, true);
         proxyConnector.launch(intent);
     }
 
@@ -186,9 +183,8 @@ public class NetworkFragment extends Fragment implements
                     data.getBooleanExtra(Utils.PROVISIONING_COMPLETED, false);
 
             if (provisioningSuccess) {
-                // Auto-connect to proxy after provisioning silently
                 final Intent intent = new Intent(requireContext(), ScannerActivity.class);
-                intent.putExtra(Utils.EXTRA_DATA_PROVISIONING_SERVICE, false); // Proxy mode
+                intent.putExtra(Utils.EXTRA_DATA_PROVISIONING_SERVICE, false);
                 intent.putExtra(Utils.EXTRA_NEWLY_PROVISIONED_NODE, true);
                 intent.putExtra(Utils.EXTRA_SILENT_CONNECT, true);
                 proxyConnector.launch(intent);

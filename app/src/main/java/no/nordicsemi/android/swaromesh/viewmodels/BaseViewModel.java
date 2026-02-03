@@ -33,9 +33,7 @@ import no.nordicsemi.android.swaromesh.ble.BleMeshManager;
 import no.nordicsemi.android.swaromesh.ble.ScannerActivity;
 import no.nordicsemi.android.swaromesh.node.ConfigurationClientActivity;
 import no.nordicsemi.android.swaromesh.node.ConfigurationServerActivity;
-//import no.nordicsemi.android.node.swaromesh.GenericLevelServerActivity;
 import no.nordicsemi.android.swaromesh.node.GenericModelConfigurationActivity;
-//import no.nordicsemi.android.node.swaromesh.GenericOnOffServerActivity;
 import no.nordicsemi.android.swaromesh.node.SceneServerModelActivity;
 import no.nordicsemi.android.swaromesh.node.SceneSetupServerModelActivity;
 import no.nordicsemi.android.swaromesh.node.SensorServerActivity;
@@ -50,7 +48,6 @@ public abstract class BaseViewModel extends ViewModel {
     protected Queue<MeshMessage> messageQueue = new LinkedList<>();
     final NrfMeshRepository mNrfMeshRepository;
     boolean isActivityVisible = false;
-
 
     /**
      * Constructs {@link BaseViewModel}
@@ -115,14 +112,7 @@ public abstract class BaseViewModel extends ViewModel {
             intent = new Intent(context, ConfigurationServerActivity.class);
         } else if (model.getModelId() == CONFIGURATION_CLIENT) {
             intent = new Intent(context, ConfigurationClientActivity.class);
-        }
-//        else if (model.getModelId() == GENERIC_ON_OFF_SERVER) {
-//            intent = new Intent(context, GenericOnOffServerActivity.class);
-//        }
-//        else if (model.getModelId() == GENERIC_LEVEL_SERVER) {
-//            intent = new Intent(context, GenericLevelServerActivity.class);
-//        }
-        else if (model.getModelId() == SCENE_SERVER) {
+        } else if (model.getModelId() == SCENE_SERVER) {
             intent = new Intent(context, SceneServerModelActivity.class);
         } else if (model.getModelId() == SCENE_SETUP_SERVER) {
             intent = new Intent(context, SceneSetupServerModelActivity.class);
@@ -143,8 +133,32 @@ public abstract class BaseViewModel extends ViewModel {
      * @param device           {@link ExtendedBluetoothDevice} device
      * @param connectToNetwork True if connecting to an unprovisioned node or proxy node
      */
-    public final void connect(@NonNull final Context context, @NonNull final ExtendedBluetoothDevice device, final boolean connectToNetwork) {
+    public void connect(@NonNull final Context context, @NonNull final ExtendedBluetoothDevice device, final boolean connectToNetwork) {
         mNrfMeshRepository.connect(context, device, connectToNetwork);
+    }
+
+    /**
+     * Connect to peripheral with MAC address handling
+     *
+     * @param context          Context
+     * @param device           {@link ExtendedBluetoothDevice} device
+     * @param connectToNetwork True if connecting to an unprovisioned node or proxy node
+     * @param macAddress       MAC address of the device
+     */
+    public void connectWithMacAddress(@NonNull final Context context,
+                                      @NonNull final ExtendedBluetoothDevice device,
+                                      final boolean connectToNetwork,
+                                      @NonNull final String macAddress) {
+        // Store MAC address in device if needed
+        if (device.getAddress() == null || device.getAddress().isEmpty()) {
+            // If device doesn't have address, we can store it
+            // This depends on your ExtendedBluetoothDevice implementation
+        }
+
+        // Call the regular connect method
+        mNrfMeshRepository.connect(context, device, connectToNetwork);
+
+        // If this is a subclass that needs MAC address, it should override this method
     }
 
     /**
@@ -189,8 +203,9 @@ public abstract class BaseViewModel extends ViewModel {
         return mNrfMeshRepository.isConnectedToProxy();
     }
 
-
-
+    /**
+     * Returns true if proxy feature is enabled
+     */
 
     /**
      * Returns the mesh manager api

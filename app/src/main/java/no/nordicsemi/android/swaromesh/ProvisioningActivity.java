@@ -1,15 +1,11 @@
-
 package no.nordicsemi.android.swaromesh;
 
 import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
-
-import com.google.android.material.snackbar.Snackbar;
-
-import java.util.Locale;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
@@ -20,7 +16,13 @@ import androidx.core.content.ContextCompat;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+
+import com.google.android.material.snackbar.Snackbar;
+
+import java.util.Locale;
+
 import dagger.hilt.android.AndroidEntryPoint;
+
 import no.nordicsemi.android.swaromesh.provisionerstates.ProvisioningCapabilities;
 import no.nordicsemi.android.swaromesh.provisionerstates.ProvisioningFailedState;
 import no.nordicsemi.android.swaromesh.provisionerstates.UnprovisionedMeshNode;
@@ -59,9 +61,11 @@ public class ProvisioningActivity extends AppCompatActivity implements
     private static final String DIALOG_FRAGMENT_PROVISIONING_FAILED = "DIALOG_FRAGMENT_PROVISIONING_FAILED";
     private static final String DIALOG_FRAGMENT_AUTH_INPUT_TAG = "DIALOG_FRAGMENT_AUTH_INPUT_TAG";
     private static final String DIALOG_FRAGMENT_CONFIGURATION_STATUS = "DIALOG_FRAGMENT_CONFIGURATION_STATUS";
+    private static final String TAG = "ProvisioningActivity";
 
     private ActivityMeshProvisionerBinding binding;
     private ProvisioningViewModel mViewModel;
+    private ExtendedBluetoothDevice mDevice;
 
     private final ActivityResultLauncher<Intent> appKeySelector = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
         if (result.getResultCode() == RESULT_OK && result.getData() != null) {
@@ -80,11 +84,14 @@ public class ProvisioningActivity extends AppCompatActivity implements
         mViewModel = new ViewModelProvider(this).get(ProvisioningViewModel.class);
 
         final Intent intent = getIntent();
-        final ExtendedBluetoothDevice device = intent.getParcelableExtra(Utils.EXTRA_DEVICE);
-        if (device == null)
+        mDevice = intent.getParcelableExtra(Utils.EXTRA_DEVICE);
+        if (mDevice == null) {
             finish();
-        final String deviceName = device != null ? device.getName() : getString(R.string.unknown_device);
-        final String deviceAddress = device != null ? device.getName() : getString(R.string.unicast_address);
+            return;
+        }
+
+        final String deviceName = mDevice.getName() != null ? mDevice.getName() : getString(R.string.unknown_device);
+        final String deviceAddress = mDevice.getAddress() != null ? mDevice.getAddress() : getString(R.string.unknown_address);
 
         setSupportActionBar(binding.toolbar);
         if (getSupportActionBar() != null) {
@@ -93,8 +100,11 @@ public class ProvisioningActivity extends AppCompatActivity implements
             getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         }
 
-        if (savedInstanceState == null && device != null)
-            mViewModel.connect(this, device, false);
+        if (savedInstanceState == null) {
+            mViewModel.connect(this, mDevice, false);
+            mViewModel.setDeviceMacAddress(mDevice.getAddress());
+            Log.d(TAG, "MAC Address stored: " + mDevice.getAddress());
+        }
 
         binding.containerName.image
                 .setBackground(ContextCompat.getDrawable(this, R.drawable.ic_label_outline));
@@ -195,8 +205,15 @@ public class ProvisioningActivity extends AppCompatActivity implements
                             network.assignUnicastAddress(unicast);
                         } catch (IllegalArgumentException ex) {
                             binding.actionProvisionDevice.setEnabled(false);
-                            mViewModel.displaySnackBar(this, binding.coordinator, ex.getMessage() == null ? getString(R.string.unknwon_error) : ex.getMessage(), Snackbar.LENGTH_LONG);
+                            mViewModel.displaySnackBar(this, binding.coordinator,
+                                    ex.getMessage() == null ? getString(R.string.unknown_error) : ex.getMessage(),
+                                    Snackbar.LENGTH_LONG);
                         }
+                    }
+
+                    if (meshNode.getMacAddress() == null || meshNode.getMacAddress().isEmpty()) {
+                        meshNode.setMacAddress(mDevice.getAddress());
+                        Log.d(TAG, "MAC address set in UnprovisionedMeshNode: " + mDevice.getAddress());
                     }
                 }
             }
@@ -205,15 +222,18 @@ public class ProvisioningActivity extends AppCompatActivity implements
         binding.actionProvisionDevice.setOnClickListener(v -> {
             final UnprovisionedMeshNode node = mViewModel.getUnprovisionedMeshNode().getValue();
 
-            // Identify mode (before capabilities)
             if (node == null) {
-                device.setName(mViewModel.getNetworkLiveData().getNodeName());
-                mViewModel.getNrfMeshRepository().identifyNode(device);
+                mDevice.setName(mViewModel.getNetworkLiveData().getNodeName());
+                mViewModel.getNrfMeshRepository().identifyNode(mDevice);
                 return;
             }
 
             try {
-                // Always force NO OOB
+                if (node.getMacAddress() == null || node.getMacAddress().isEmpty()) {
+                    node.setMacAddress(mDevice.getAddress());
+                    Log.d(TAG, "MAC address set before provisioning: " + mDevice.getAddress());
+                }
+
                 node.setNodeName(mViewModel.getNetworkLiveData().getNodeName());
                 setupProvisionerStateObservers();
                 binding.provisioningProgressBar.setVisibility(View.VISIBLE);
@@ -225,16 +245,16 @@ public class ProvisioningActivity extends AppCompatActivity implements
                         this,
                         binding.coordinator,
                         ex.getMessage() == null
-                                ? getString(R.string.unknwon_error)
+                                ? getString(R.string.unknown_error)
                                 : ex.getMessage(),
                         Snackbar.LENGTH_LONG
                 );
             }
         });
 
-
-        if (savedInstanceState == null)
+        if (savedInstanceState == null) {
             mViewModel.getNetworkLiveData().resetSelectedAppKey();
+        }
     }
 
     @Override
@@ -249,13 +269,13 @@ public class ProvisioningActivity extends AppCompatActivity implements
     @Override
     public void onBackPressed() {
         super.onBackPressed();
-        //We disconnect from the device if the user presses the back button
         disconnect();
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        disconnect();
     }
 
     @Override
@@ -294,9 +314,15 @@ public class ProvisioningActivity extends AppCompatActivity implements
 
     @Override
     public void onProvisioningFailed() {
-        //Provisioning failed so now we go back to the scanner page.
         disconnect();
-        setResultIntent();
+        setResult(Activity.RESULT_CANCELED);
+        finish();
+    }
+
+    @Override
+    public void onPublicKeyDialogCancelled() {
+        disconnect();
+        finish();
     }
 
     private void disconnect() {
@@ -346,7 +372,7 @@ public class ProvisioningActivity extends AppCompatActivity implements
                                 if(mViewModel.getNetworkLiveData().getAppKeys().isEmpty()){
                                     if (getSupportFragmentManager().findFragmentByTag(DIALOG_FRAGMENT_CONFIGURATION_STATUS) == null) {
                                         DialogFragmentConfigurationComplete fragmentConfigComplete = DialogFragmentConfigurationComplete.
-                                                newInstance(getString(R.string.title_configuration_compete), getString(R.string.configuration_complete_summary));
+                                                newInstance(getString(R.string.title_configuration_complete), getString(R.string.configuration_complete_summary));
                                         fragmentConfigComplete.show(getSupportFragmentManager(), DIALOG_FRAGMENT_CONFIGURATION_STATUS);
                                     }
                                 }
@@ -355,7 +381,7 @@ public class ProvisioningActivity extends AppCompatActivity implements
                         case APP_KEY_STATUS_RECEIVED:
                             if (getSupportFragmentManager().findFragmentByTag(DIALOG_FRAGMENT_CONFIGURATION_STATUS) == null) {
                                 DialogFragmentConfigurationComplete fragmentConfigComplete = DialogFragmentConfigurationComplete.
-                                        newInstance(getString(R.string.title_configuration_compete), getString(R.string.configuration_complete_summary));
+                                        newInstance(getString(R.string.title_configuration_complete), getString(R.string.configuration_complete_summary));
                                 fragmentConfigComplete.show(getSupportFragmentManager(), DIALOG_FRAGMENT_CONFIGURATION_STATUS);
                             }
                             break;
@@ -365,12 +391,10 @@ public class ProvisioningActivity extends AppCompatActivity implements
                         default:
                             break;
                     }
-
                 }
                 binding.dataContainer.setVisibility(View.GONE);
             }
         });
-
     }
 
     @Override
@@ -391,12 +415,6 @@ public class ProvisioningActivity extends AppCompatActivity implements
                     returnIntent.putExtra(Utils.COMPOSITION_DATA_COMPLETED, true);
                     if (mViewModel.isDefaultTtlReceived()) {
                         returnIntent.putExtra(Utils.DEFAULT_GET_COMPLETED, true);
-                        // if (mViewModel.isNetworkRetransmitSetCompleted()) {
-                        //     returnIntent.putExtra(Utils.NETWORK_TRANSMIT_SET_COMPLETED, true);
-                        //     if (mViewModel.getNetworkLiveData().getMeshNetwork().getAppKeys().isEmpty() || mViewModel.isAppKeyAddCompleted()) {
-                        //         returnIntent.putExtra(Utils.APP_KEY_ADD_COMPLETED, true);
-                        //     }
-                        // }
                         if (mViewModel.getNetworkLiveData().getMeshNetwork().getAppKeys().isEmpty() || mViewModel.isAppKeyAddCompleted()) {
                             returnIntent.putExtra(Utils.APP_KEY_ADD_COMPLETED, true);
                         }
@@ -407,13 +425,17 @@ public class ProvisioningActivity extends AppCompatActivity implements
         finish();
     }
 
-
-
     @Override
     public void onPublicKeyAdded(@Nullable final byte[] publicKey) {
         final UnprovisionedMeshNode node = mViewModel.getUnprovisionedMeshNode().getValue();
         if (node != null) {
             node.setProvisioneePublicKeyXY(publicKey);
+
+            if (node.getMacAddress() == null || node.getMacAddress().isEmpty()) {
+                node.setMacAddress(mDevice.getAddress());
+                Log.d(TAG, "MAC address set in onPublicKeyAdded: " + mDevice.getAddress());
+            }
+
             if (node.getProvisioningCapabilities().getAvailableOOBTypes().size() == 1 &&
                     node.getProvisioningCapabilities().getAvailableOOBTypes().get(0) == AuthenticationOOBMethods.NO_OOB_AUTHENTICATION) {
                 onNoOOBSelected();
@@ -429,12 +451,18 @@ public class ProvisioningActivity extends AppCompatActivity implements
         final UnprovisionedMeshNode node = mViewModel.getUnprovisionedMeshNode().getValue();
         if (node != null) {
             try {
+                if (node.getMacAddress() == null || node.getMacAddress().isEmpty()) {
+                    node.setMacAddress(mDevice.getAddress());
+                }
+
                 node.setNodeName(mViewModel.getNetworkLiveData().getNodeName());
                 setupProvisionerStateObservers();
                 binding.provisioningProgressBar.setVisibility(View.VISIBLE);
                 mViewModel.getMeshManagerApi().startProvisioning(node);
             } catch (IllegalArgumentException ex) {
-                mViewModel.displaySnackBar(this, binding.coordinator, ex.getMessage() == null ? getString(R.string.unknwon_error) : ex.getMessage(), Snackbar.LENGTH_LONG);
+                mViewModel.displaySnackBar(this, binding.coordinator,
+                        ex.getMessage() == null ? getString(R.string.unknown_error) : ex.getMessage(),
+                        Snackbar.LENGTH_LONG);
             }
         }
     }
@@ -444,12 +472,18 @@ public class ProvisioningActivity extends AppCompatActivity implements
         final UnprovisionedMeshNode node = mViewModel.getUnprovisionedMeshNode().getValue();
         if (node != null) {
             try {
+                if (node.getMacAddress() == null || node.getMacAddress().isEmpty()) {
+                    node.setMacAddress(mDevice.getAddress());
+                }
+
                 node.setNodeName(mViewModel.getNetworkLiveData().getNodeName());
                 setupProvisionerStateObservers();
                 binding.provisioningProgressBar.setVisibility(View.VISIBLE);
                 mViewModel.getMeshManagerApi().startProvisioningWithStaticOOB(node);
             } catch (IllegalArgumentException ex) {
-                mViewModel.displaySnackBar(this, binding.coordinator, ex.getMessage() == null ? getString(R.string.unknwon_error) : ex.getMessage(), Snackbar.LENGTH_LONG);
+                mViewModel.displaySnackBar(this, binding.coordinator,
+                        ex.getMessage() == null ? getString(R.string.unknown_error) : ex.getMessage(),
+                        Snackbar.LENGTH_LONG);
             }
         }
     }
@@ -459,12 +493,18 @@ public class ProvisioningActivity extends AppCompatActivity implements
         final UnprovisionedMeshNode node = mViewModel.getUnprovisionedMeshNode().getValue();
         if (node != null) {
             try {
+                if (node.getMacAddress() == null || node.getMacAddress().isEmpty()) {
+                    node.setMacAddress(mDevice.getAddress());
+                }
+
                 node.setNodeName(mViewModel.getNetworkLiveData().getNodeName());
                 setupProvisionerStateObservers();
                 binding.provisioningProgressBar.setVisibility(View.VISIBLE);
                 mViewModel.getMeshManagerApi().startProvisioningWithOutputOOB(node, action);
             } catch (IllegalArgumentException ex) {
-                mViewModel.displaySnackBar(this, binding.coordinator, ex.getMessage() == null ? getString(R.string.unknwon_error) : ex.getMessage(), Snackbar.LENGTH_LONG);
+                mViewModel.displaySnackBar(this, binding.coordinator,
+                        ex.getMessage() == null ? getString(R.string.unknown_error) : ex.getMessage(),
+                        Snackbar.LENGTH_LONG);
             }
         }
     }
@@ -474,12 +514,18 @@ public class ProvisioningActivity extends AppCompatActivity implements
         final UnprovisionedMeshNode node = mViewModel.getUnprovisionedMeshNode().getValue();
         if (node != null) {
             try {
+                if (node.getMacAddress() == null || node.getMacAddress().isEmpty()) {
+                    node.setMacAddress(mDevice.getAddress());
+                }
+
                 node.setNodeName(mViewModel.getNetworkLiveData().getNodeName());
                 setupProvisionerStateObservers();
                 binding.provisioningProgressBar.setVisibility(View.VISIBLE);
                 mViewModel.getMeshManagerApi().startProvisioningWithInputOOB(node, action);
             } catch (IllegalArgumentException ex) {
-                mViewModel.displaySnackBar(this, binding.coordinator, ex.getMessage() == null ? getString(R.string.unknwon_error) : ex.getMessage(), Snackbar.LENGTH_LONG);
+                mViewModel.displaySnackBar(this, binding.coordinator,
+                        ex.getMessage() == null ? getString(R.string.unknown_error) : ex.getMessage(),
+                        Snackbar.LENGTH_LONG);
             }
         }
     }

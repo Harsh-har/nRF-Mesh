@@ -42,6 +42,8 @@ public class DialogFragmentOobPublicKey extends DialogFragment {
     private DialogFragmentPublicKeyInputBinding binding;
 
     public interface DialogFragmentOobPublicKeysListener {
+        void onPublicKeyDialogCancelled();
+
         void onPublicKeyAdded(@Nullable final byte[] publicKey);
     }
 
