@@ -9,7 +9,6 @@ android {
 
     defaultConfig {
         minSdk 18
-        targetSdk 35
 
         javaCompileOptions {
             annotationProcessorOptions {
@@ -40,11 +39,15 @@ android {
         unitTests {
             returnDefaultValues = true
         }
+        targetSdk 35
     }
 
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_17
         targetCompatibility JavaVersion.VERSION_17
+    }
+    lint {
+        targetSdk 35
     }
 }
 

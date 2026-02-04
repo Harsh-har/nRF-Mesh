@@ -1,7 +1,10 @@
 package no.nordicsemi.android.swaromesh.transport;
 
+
 import android.annotation.SuppressLint;
 import android.os.Parcel;
+
+import com.google.gson.annotations.SerializedName;  // ✅ ADD THIS IMPORT
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -45,8 +48,9 @@ import static androidx.room.ForeignKey.CASCADE;
         indices = @Index("mesh_uuid"))
 public final class ProvisionedMeshNode extends ProvisionedBaseMeshNode {
 
-    // ✅ MAC address column
+    // ✅ MAC address column with SerializedName annotation
     @ColumnInfo(name = "mac_address")
+    @SerializedName("mac_address")  // ✅ ADD THIS ANNOTATION
     private String macAddress;
 
     public static final Creator<ProvisionedMeshNode> CREATOR = new Creator<ProvisionedMeshNode>() {
@@ -180,7 +184,7 @@ public final class ProvisionedMeshNode extends ProvisionedBaseMeshNode {
         dest.writeInt(unicastAddress);
         dest.writeByteArray(deviceKey);
         dest.writeValue(ttl);
-        dest.writeInt(sequenceNumber);
+        dest.writeValue(sequenceNumber);
         dest.writeValue(companyIdentifier);
         dest.writeValue(productIdentifier);
         dest.writeValue(versionIdentifier);
@@ -210,6 +214,7 @@ public final class ProvisionedMeshNode extends ProvisionedBaseMeshNode {
     public String getMacAddress() {
         return macAddress;
     }
+
 
     public void setMacAddress(final String macAddress) {
         this.macAddress = macAddress;

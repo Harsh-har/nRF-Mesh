@@ -52,6 +52,15 @@ public final class NodeDeserializer implements JsonSerializer<List<ProvisionedMe
                 throw new IllegalArgumentException("Invalid Mesh Provisioning/Configuration " +
                         "Database, invalid node UUID.");
             node.uuid = uuid;
+
+            // ✅ MAC ADDRESS READ KAREIN
+            if (jsonObject.has("mac_address") && !jsonObject.get("mac_address").isJsonNull()) {
+                String macAddress = jsonObject.get("mac_address").getAsString();
+                if (macAddress != null && !macAddress.isEmpty()) {
+                    node.setMacAddress(macAddress);
+                }
+            }
+
             if (jsonObject.has("deviceKey") && jsonObject.get("deviceKey") != null) {
                 node.deviceKey = MeshParserUtils.toByteArray(jsonObject.get("deviceKey").getAsString());
             }
@@ -179,8 +188,15 @@ public final class NodeDeserializer implements JsonSerializer<List<ProvisionedMe
         final JsonArray jsonArray = new JsonArray();
         for (ProvisionedMeshNode node : nodes) {
             final JsonObject nodeJson = new JsonObject();
-            nodeJson.addProperty("UUID", node.getUuid().toUpperCase(Locale.US)/*MeshParserUtils.uuidToHex(node.getUuid())*/);
+            nodeJson.addProperty("UUID", node.getUuid().toUpperCase(Locale.US));
             nodeJson.addProperty("name", node.getNodeName());
+
+            // ✅ MAC ADDRESS ADD KAREIN
+            String macAddress = node.getMacAddress();
+            if (macAddress != null && !macAddress.isEmpty()) {
+                nodeJson.addProperty("mac_address", macAddress);
+            }
+
             nodeJson.addProperty("deviceKey", MeshParserUtils.bytesToHex(node.getDeviceKey(), false));
             nodeJson.addProperty("unicastAddress", MeshParserUtils.bytesToHex(addressIntToBytes(node.getUnicastAddress()), false));
             nodeJson.addProperty("security", (node.getSecurity() == ProvisionedBaseMeshNode.HIGH) ? "secure" : "insecure");
