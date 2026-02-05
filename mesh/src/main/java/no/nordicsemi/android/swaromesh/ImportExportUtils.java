@@ -5,6 +5,10 @@ import android.net.Uri;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonSerializationContext;
+import com.google.gson.JsonSerializer;
 import com.google.gson.JsonSyntaxException;
 import com.google.gson.reflect.TypeToken;
 
@@ -16,6 +20,7 @@ import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.Locale;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -61,12 +66,60 @@ class ImportExportUtils {
         }.getType();
         Type elementList = new TypeToken<List<Element>>() {
         }.getType();
-        return new GsonBuilder().registerTypeAdapter(netKeyList, new NetKeyDeserializer())
+
+        return new GsonBuilder()
+                .registerTypeAdapter(netKeyList, new NetKeyDeserializer())
                 .registerTypeAdapter(appKeyList, new AppKeyDeserializer())
                 .registerTypeAdapter(allocatedUnicastRange, new AllocatedUnicastRangeDeserializer())
                 .registerTypeAdapter(allocatedGroupRange, new AllocatedGroupRangeDeserializer())
                 .registerTypeAdapter(allocatedSceneRange, new AllocatedSceneRangeDeserializer())
+
+                // NODE MAC ADDRESS
                 .registerTypeAdapter(nodeList, new NodeDeserializer())
+
+                //  for MAC address
+                .registerTypeAdapter(ProvisionedMeshNode.class, new JsonSerializer<ProvisionedMeshNode>() {
+                    @Override
+                    public JsonElement serialize(ProvisionedMeshNode src, Type typeOfSrc,
+                                                 JsonSerializationContext context) {
+                        JsonObject jsonObject = new JsonObject();
+
+                        // UUID
+                        jsonObject.addProperty("UUID", src.getUuid().toUpperCase(Locale.US));
+
+                        // ✅ MAC ADDRESS (IMPORTANT - MUST BE ADDED)
+                        String macAddress = src.getMacAddress();
+                        if (macAddress != null && !macAddress.isEmpty()) {
+                            jsonObject.addProperty("mac_address", macAddress);
+                        }
+
+                        // Name
+                        jsonObject.addProperty("name", src.getNodeName());
+
+                        // Device Key
+                        if (src.getDeviceKey() != null) {
+                            jsonObject.addProperty("deviceKey",
+                                    no.nordicsemi.android.swaromesh.utils.MeshParserUtils.bytesToHex(src.getDeviceKey(), false));
+                        }
+
+                        // Unicast Address
+                        jsonObject.addProperty("unicastAddress",
+                                no.nordicsemi.android.swaromesh.utils.MeshParserUtils.bytesToHex(
+                                        no.nordicsemi.android.swaromesh.utils.MeshAddress.addressIntToBytes(src.getUnicastAddress()), false));
+
+                        // Security
+
+                        // Config Complete
+                        jsonObject.addProperty("configComplete", src.isConfigured());
+
+                        // Log for debugging
+                        MeshLogger.debug(TAG, "Serializing node: " + src.getNodeName() +
+                                ", MAC: " + (macAddress != null ? macAddress : "null"));
+
+                        return jsonObject;
+                    }
+                })
+
                 .registerTypeAdapter(elementList, new InternalElementListDeserializer())
                 .registerTypeAdapter(meshModelList, new MeshModelListDeserializer())
                 .registerTypeAdapter(MeshNetwork.class, new MeshNetworkDeserializer())
@@ -79,6 +132,15 @@ class ImportExportUtils {
      * Imports the network from the Mesh Provisioning/Configuration Database json file
      */
     protected MeshNetwork importNetwork(@NonNull final String networkJson) throws JsonSyntaxException {
+        MeshLogger.debug(TAG, "Importing network JSON...");
+
+        // Debug: Check if MAC address exists in JSON
+        if (networkJson.contains("mac_address")) {
+            MeshLogger.debug(TAG, "JSON contains 'mac_address' field");
+        } else {
+            MeshLogger.debug(TAG, "JSON does NOT contain 'mac_address' field");
+        }
+
         return mGson.fromJson(networkJson, MeshNetwork.class);
     }
 
@@ -115,7 +177,33 @@ class ImportExportUtils {
     protected String export(@NonNull final MeshNetwork network, final boolean partial) {
         try {
             network.setPartial(partial);
-            return mGson.toJson(network);
+
+            // Debug: Check nodes for MAC addresses before export
+            for (ProvisionedMeshNode node : network.getNodes()) {
+                String macAddress = node.getMacAddress();
+                MeshLogger.debug(TAG, "Node: " + node.getNodeName() +
+                        ", MAC present: " + (macAddress != null && !macAddress.isEmpty()) +
+                        ", MAC: " + macAddress);
+            }
+
+            String exportedJson = mGson.toJson(network);
+
+            // Debug: Check if MAC address was included in export
+            if (exportedJson != null) {
+                boolean hasMacAddress = exportedJson.contains("mac_address");
+                MeshLogger.debug(TAG, "Export contains 'mac_address': " + hasMacAddress);
+
+                // Count occurrences
+                int count = 0;
+                int index = 0;
+                while ((index = exportedJson.indexOf("mac_address", index)) != -1) {
+                    count++;
+                    index += "mac_address".length();
+                }
+                MeshLogger.debug(TAG, "Found 'mac_address' " + count + " times in export");
+            }
+
+            return exportedJson;
         } catch (final JsonSyntaxException ex) {
             MeshLogger.error(TAG, "Error: " + ex.getMessage());
             return null;
@@ -160,21 +248,31 @@ class ImportExportUtils {
 
         // Initial list of nodes to export
         if (nodesConfig.getConfig() instanceof NodesConfig.ExportWithoutDeviceKey) {
-            for (ProvisionedMeshNode node : network.nodes)
+            for (ProvisionedMeshNode node : network.nodes) {
                 node.setDeviceKey(null);
+                // ✅ Preserve MAC address even when device key is removed
+                // MAC address remains as is
+            }
         } else if (nodesConfig.getConfig() instanceof NodesConfig.ExportSome) {
             network.nodes.clear();
             final List<ProvisionedMeshNode> withDeviceKey = ((NodesConfig.ExportSome) nodesConfig.getConfig()).getWithDeviceKey();
             final List<ProvisionedMeshNode> withoutDeviceKey = ((NodesConfig.ExportSome) nodesConfig.getConfig()).getWithoutDeviceKey();
-            for (ProvisionedMeshNode node : withoutDeviceKey)
+
+            // Remove device key but keep MAC address
+            for (ProvisionedMeshNode node : withoutDeviceKey) {
                 node.setDeviceKey(null);
+                // ✅ MAC address is preserved automatically
+            }
+
             network.nodes.addAll(withDeviceKey);
             network.nodes.addAll(withoutDeviceKey);
 
             // Add any missing provisioner nodes if they were not selected when selecting nodes.
             for (Provisioner provisioner : network.provisioners) {
                 if (!isProvisionerExistsInNodes(provisioner, network.nodes)) {
-                    network.nodes.add(new ProvisionedMeshNode(provisioner, network.netKeys, network.appKeys));
+                    ProvisionedMeshNode provisionerNode = new ProvisionedMeshNode(provisioner, network.netKeys, network.appKeys);
+                    // ✅ Provisioner node has no MAC address (as per constructor)
+                    network.nodes.add(provisionerNode);
                 }
             }
         }

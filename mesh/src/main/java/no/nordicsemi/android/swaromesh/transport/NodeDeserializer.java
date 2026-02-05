@@ -53,7 +53,7 @@ public final class NodeDeserializer implements JsonSerializer<List<ProvisionedMe
                         "Database, invalid node UUID.");
             node.uuid = uuid;
 
-            // ✅ MAC ADDRESS READ KAREIN
+            // ✅ MAC ADDRESS READ
             if (jsonObject.has("mac_address") && !jsonObject.get("mac_address").isJsonNull()) {
                 String macAddress = jsonObject.get("mac_address").getAsString();
                 if (macAddress != null && !macAddress.isEmpty()) {
@@ -89,6 +89,13 @@ public final class NodeDeserializer implements JsonSerializer<List<ProvisionedMe
 
                 node.nodeFeatures = new Features();
                 if(featuresJson.has("friend")){
+
+
+
+
+
+
+
                     node.nodeFeatures.setFriend(featuresJson.get("friend").getAsInt());
                 }
                 if(featuresJson.has("lowPower")){
@@ -191,7 +198,7 @@ public final class NodeDeserializer implements JsonSerializer<List<ProvisionedMe
             nodeJson.addProperty("UUID", node.getUuid().toUpperCase(Locale.US));
             nodeJson.addProperty("name", node.getNodeName());
 
-            // ✅ MAC ADDRESS ADD KAREIN
+            // ✅ MAC ADDRESS ADD
             String macAddress = node.getMacAddress();
             if (macAddress != null && !macAddress.isEmpty()) {
                 nodeJson.addProperty("mac_address", macAddress);
