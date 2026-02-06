@@ -86,6 +86,9 @@ public class Utils {
 
     public static final Comparator<Scene> sceneComparator = (scene1, scene2) -> Integer.compare(scene1.getNumber(), scene2.getNumber());
 
+    public static final String EXTRA_TARGET_PROXY_MAC =
+            "no.nordicsemi.android.swaromesh.EXTRA_TARGET_PROXY_MAC";
+
     /**
      * Checks whether Bluetooth is enabled.
      *

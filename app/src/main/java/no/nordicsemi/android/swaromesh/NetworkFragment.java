@@ -123,6 +123,25 @@ public class NetworkFragment extends Fragment implements
         return binding.getRoot();
     }
 
+//    @Override
+//    public void onConfigureClicked(final ProvisionedMeshNode node) {
+//        mViewModel.setSelectedMeshNode(node);
+//
+//        if (!mViewModel.isProxyEnabled()) {
+//            startActivity(new Intent(requireActivity(), NodeConfigurationActivity.class));
+//            return;
+//        }
+//
+//        final Boolean isConnected = mViewModel.isConnectedToProxy().getValue();
+//
+//        if (Boolean.TRUE.equals(isConnected)) {
+//            startActivity(new Intent(requireActivity(), NodeConfigurationActivity.class));
+//        } else {
+//            startProxyConnectInBackground();
+//        }
+//    }
+
+
     @Override
     public void onConfigureClicked(final ProvisionedMeshNode node) {
         mViewModel.setSelectedMeshNode(node);
@@ -137,16 +156,18 @@ public class NetworkFragment extends Fragment implements
         if (Boolean.TRUE.equals(isConnected)) {
             startActivity(new Intent(requireActivity(), NodeConfigurationActivity.class));
         } else {
-            startProxyConnectInBackground();
+            startProxyConnectInBackground(node.getMacAddress());
         }
     }
 
-    private void startProxyConnectInBackground() {
+    private void startProxyConnectInBackground(@Nullable String macAddress) {
         final Intent intent = new Intent(requireContext(), ScannerActivity.class);
         intent.putExtra(Utils.EXTRA_DATA_PROVISIONING_SERVICE, false);
         intent.putExtra(Utils.EXTRA_SILENT_CONNECT, true);
+        intent.putExtra(Utils.EXTRA_TARGET_PROXY_MAC, macAddress); // ⭐ IMPORTANT
         proxyConnector.launch(intent);
     }
+
 
     @Override
     public void onItemDismiss(final RemovableViewHolder viewHolder) {
@@ -204,3 +225,7 @@ public class NetworkFragment extends Fragment implements
                 .show(getChildFragmentManager(), null);
     }
 }
+
+
+
+
