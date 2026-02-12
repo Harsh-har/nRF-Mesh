@@ -4,7 +4,6 @@ import android.os.Bundle;
 
 import dagger.hilt.android.AndroidEntryPoint;
 import no.nordicsemi.android.swaromesh.transport.MeshMessage;
-
 @AndroidEntryPoint
 public class GenericModelConfigurationActivity extends ModelConfigurationActivity {
 

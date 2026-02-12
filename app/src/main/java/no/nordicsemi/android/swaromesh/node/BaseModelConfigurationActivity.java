@@ -19,6 +19,7 @@ import android.view.inputmethod.EditorInfo;
 import android.widget.Button;
 import android.widget.ProgressBar;
 import android.widget.TextView;
+import android.widget.Toast;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
@@ -61,6 +62,7 @@ import no.nordicsemi.android.swaromesh.transport.ConfigVendorModelSubscriptionGe
 import no.nordicsemi.android.swaromesh.transport.Element;
 import no.nordicsemi.android.swaromesh.transport.GenericLightSet;
 import no.nordicsemi.android.swaromesh.transport.GenericOnOffSet;
+import no.nordicsemi.android.swaromesh.transport.GenericSceneSet;
 import no.nordicsemi.android.swaromesh.transport.MeshMessage;
 import no.nordicsemi.android.swaromesh.transport.MeshModel;
 import no.nordicsemi.android.swaromesh.transport.ProvisionedMeshNode;
@@ -98,9 +100,15 @@ public abstract class BaseModelConfigurationActivity extends BaseActivity implem
     private static final int MAX_LENGTH = 8;
     private static final int MAX_TID = 255; // 8-bit TID (0-255)
 
+    // Press type constants
+    private static final String PRESS_TYPE_SINGLE = "Single";
+    private static final String PRESS_TYPE_DOUBLE = "Double";
+    private static final String PRESS_TYPE_LONG = "Long";
+
     // TID counters for different models/elements
     private final AtomicInteger genericOnOffTidCounter = new AtomicInteger(0);
     private final AtomicInteger genericLightTidCounter = new AtomicInteger(0);
+    private final AtomicInteger sceneTidCounter = new AtomicInteger(0);
 
     protected ActivityModelConfigurationBinding binding;
 
@@ -137,6 +145,18 @@ public abstract class BaseModelConfigurationActivity extends BaseActivity implem
     protected TextInputEditText mLongAddressEditText;
     protected List<TextInputLayout> mLongDataFields = new ArrayList<>();
     protected List<TextInputEditText> mLongDataEditTexts = new ArrayList<>();
+
+    // Scene Command Controls
+    protected TextInputEditText mSceneIdEditText;
+    protected TextInputEditText mTypeEditText;
+    protected TextInputEditText mPressEditText;
+    protected TextInputEditText mModeEditText;
+    protected TextInputEditText mDeviceEditText;
+    protected TextInputEditText mSceneStateEditText;
+    protected Button mBtnPressSingle;
+    protected Button mBtnPressDouble;
+    protected Button mBtnPressLong;
+    protected Button mSceneSendButton;
 
     protected Button mSetNetworkTransmitStateButton;
 
@@ -201,8 +221,23 @@ public abstract class BaseModelConfigurationActivity extends BaseActivity implem
         mLongAddressEditText = binding.etLongCommand;
         mLengthEditText.setText(String.valueOf(MAX_LENGTH)); // default = 8
 
+        // Scene Command Controls references
+        mSceneIdEditText = binding.etSceneId;
+        mTypeEditText = binding.etType;
+        mPressEditText = binding.etPress;
+        mModeEditText = binding.etMode;
+        mDeviceEditText = binding.etDevice;
+        mSceneStateEditText = binding.etSceneState;
+        mBtnPressSingle = binding.btnPressSingle;
+        mBtnPressDouble = binding.btnPressDouble;
+        mBtnPressLong = binding.btnPressLong;
+        mSceneSendButton = binding.btnSend;
+
         // Initialize long data fields with brightness values
         initializeLongDataFields();
+
+        // Initialize scene controls
+        initializeSceneControls();
 
         // ViewModel
         mViewModel = new ViewModelProvider(this).get(ModelConfigurationViewModel.class);
@@ -275,6 +310,9 @@ public abstract class BaseModelConfigurationActivity extends BaseActivity implem
         mLongSendButton.setOnClickListener(v -> sendLongBrightnessCommand());
         mLongReadButton.setOnClickListener(v -> readLongCommand());
 
+        // Scene command button
+        mSceneSendButton.setOnClickListener(v -> sendSceneCommand());
+
         // Length watcher
         setupLengthTextWatcher();
 
@@ -310,14 +348,192 @@ public abstract class BaseModelConfigurationActivity extends BaseActivity implem
         mViewModel.getSelectedElement().observe(this, element -> tryAutoBind());
         mViewModel.getSelectedModel().observe(this, model -> tryAutoBind());
         tryAutoBind();
+    }
 
+    private void initializeSceneControls() {
+        // Set default values
+        mSceneIdEditText.setText("1");
+        mTypeEditText.setText("1");
+        mPressEditText.setText(PRESS_TYPE_SINGLE);
+        mModeEditText.setText("1");
+        mDeviceEditText.setText("1");
+        mSceneStateEditText.setText("0");
 
+        // Press type button listeners
+        mBtnPressSingle.setOnClickListener(v -> {
+            mPressEditText.setText(PRESS_TYPE_SINGLE);
+            Toast.makeText(this, "Single Press Selected", Toast.LENGTH_SHORT).show();
+        });
+
+        mBtnPressDouble.setOnClickListener(v -> {
+            mPressEditText.setText(PRESS_TYPE_DOUBLE);
+            Toast.makeText(this, "Double Press Selected", Toast.LENGTH_SHORT).show();
+        });
+
+        mBtnPressLong.setOnClickListener(v -> {
+            mPressEditText.setText(PRESS_TYPE_LONG);
+            Toast.makeText(this, "Long Press Selected", Toast.LENGTH_SHORT).show();
+        });
+
+        // Add validation listeners
+        addSceneValidationListeners();
+    }
+
+    private void addSceneValidationListeners() {
+        // Scene ID validation (1-240)
+        mSceneIdEditText.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {}
+
+            @Override
+            public void afterTextChanged(Editable s) {
+                validateSceneId();
+            }
+        });
+
+        // Type validation (1-39)
+        mTypeEditText.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {}
+
+            @Override
+            public void afterTextChanged(Editable s) {
+                validateType();
+            }
+        });
+
+        // Mode validation (1-8)
+        mModeEditText.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {}
+
+            @Override
+            public void afterTextChanged(Editable s) {
+                validateMode();
+            }
+        });
+
+        // Device validation (1-8)
+        mDeviceEditText.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {}
+
+            @Override
+            public void afterTextChanged(Editable s) {
+                validateDevice();
+            }
+        });
+
+        // Scene State validation (0-3)
+        mSceneStateEditText.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {}
+
+            @Override
+            public void afterTextChanged(Editable s) {
+                validateSceneState();
+            }
+        });
+    }
+
+    private void validateSceneId() {
+        try {
+            String text = mSceneIdEditText.getText().toString().trim();
+            if (!text.isEmpty()) {
+                int sceneId = Integer.parseInt(text);
+                if (sceneId < 1 || sceneId > 240) {
+                    mSceneIdEditText.setError("Scene ID must be between 1 and 240");
+                } else {
+                    mSceneIdEditText.setError(null);
+                }
+            }
+        } catch (NumberFormatException e) {
+            mSceneIdEditText.setError("Invalid Scene ID");
+        }
+    }
+
+    private void validateType() {
+        try {
+            String text = mTypeEditText.getText().toString().trim();
+            if (!text.isEmpty()) {
+                int type = Integer.parseInt(text);
+                if (type < 1 || type > 39) {
+                    mTypeEditText.setError("Type must be between 1 and 39");
+                } else {
+                    mTypeEditText.setError(null);
+                }
+            }
+        } catch (NumberFormatException e) {
+            mTypeEditText.setError("Invalid Type");
+        }
+    }
+
+    private void validateMode() {
+        try {
+            String text = mModeEditText.getText().toString().trim();
+            if (!text.isEmpty()) {
+                int mode = Integer.parseInt(text);
+                if (mode < 1 || mode > 8) {
+                    mModeEditText.setError("Mode must be between 1 and 8");
+                } else {
+                    mModeEditText.setError(null);
+                }
+            }
+        } catch (NumberFormatException e) {
+            mModeEditText.setError("Invalid Mode");
+        }
+    }
+
+    private void validateDevice() {
+        try {
+            String text = mDeviceEditText.getText().toString().trim();
+            if (!text.isEmpty()) {
+                int device = Integer.parseInt(text);
+                if (device < 1 || device > 8) {
+                    mDeviceEditText.setError("Device must be between 1 and 8");
+                } else {
+                    mDeviceEditText.setError(null);
+                }
+            }
+        } catch (NumberFormatException e) {
+            mDeviceEditText.setError("Invalid Device");
+        }
+    }
+
+    private void validateSceneState() {
+        try {
+            String text = mSceneStateEditText.getText().toString().trim();
+            if (!text.isEmpty()) {
+                int state = Integer.parseInt(text);
+                if (state < 0 || state > 3) {
+                    mSceneStateEditText.setError("State must be between 0 and 3");
+                } else {
+                    mSceneStateEditText.setError(null);
+                }
+            }
+        } catch (NumberFormatException e) {
+            mSceneStateEditText.setError("Invalid State");
+        }
     }
 
     private boolean isAutoBindTriggered = false;
 
     private void tryAutoBind() {
-
         if (isAutoBindTriggered) return;
 
         final ProvisionedMeshNode node = mViewModel.getSelectedMeshNode().getValue();
@@ -353,8 +569,6 @@ public abstract class BaseModelConfigurationActivity extends BaseActivity implem
 
         sendAcknowledgedMessage(node.getUnicastAddress(), bindMessage);
     }
-
-
 
     private void initializeLongDataFields() {
         mLongDataFields.add(binding.layoutLongData1);
@@ -437,7 +651,6 @@ public abstract class BaseModelConfigurationActivity extends BaseActivity implem
             }
             mLengthEditText.setError(null);
 
-
             updateFieldValidationsBasedOnLength(length);
 
         } catch (NumberFormatException e) {
@@ -448,7 +661,6 @@ public abstract class BaseModelConfigurationActivity extends BaseActivity implem
     private void updateFieldValidationsBasedOnLength(int length) {
         for (int i = 0; i < MAX_LENGTH; i++) {
             if (i < length) {
-
                 String text = mLongDataEditTexts.get(i).getText().toString();
                 if (text.isEmpty()) {
                     mLongDataFields.get(i).setError("Required for length " + length);
@@ -465,7 +677,6 @@ public abstract class BaseModelConfigurationActivity extends BaseActivity implem
     private void validateBrightnessField(int index) {
         try {
             String text = mLongDataEditTexts.get(index).getText().toString().trim();
-
 
             String lengthText = mLengthEditText.getText().toString().trim();
             if (!lengthText.isEmpty()) {
@@ -806,6 +1017,16 @@ public abstract class BaseModelConfigurationActivity extends BaseActivity implem
             mLongSendButton.setEnabled(true);
         if (mLongReadButton != null)
             mLongReadButton.setEnabled(true);
+
+        // Enable scene command buttons
+        if (mBtnPressSingle != null)
+            mBtnPressSingle.setEnabled(true);
+        if (mBtnPressDouble != null)
+            mBtnPressDouble.setEnabled(true);
+        if (mBtnPressLong != null)
+            mBtnPressLong.setEnabled(true);
+        if (mSceneSendButton != null)
+            mSceneSendButton.setEnabled(true);
     }
 
     @Override
@@ -827,6 +1048,16 @@ public abstract class BaseModelConfigurationActivity extends BaseActivity implem
             mLongSendButton.setEnabled(false);
         if (mLongReadButton != null)
             mLongReadButton.setEnabled(false);
+
+        // Disable scene command buttons
+        if (mBtnPressSingle != null)
+            mBtnPressSingle.setEnabled(false);
+        if (mBtnPressDouble != null)
+            mBtnPressDouble.setEnabled(false);
+        if (mBtnPressLong != null)
+            mBtnPressLong.setEnabled(false);
+        if (mSceneSendButton != null)
+            mSceneSendButton.setEnabled(false);
     }
 
     protected void updateAppStatusUi(final MeshModel meshModel) {
@@ -982,11 +1213,26 @@ public abstract class BaseModelConfigurationActivity extends BaseActivity implem
     }
 
     /**
+     * Gets the next TID for Scene model
+     * Increments from 0 to 255 and wraps around
+     */
+    private int getNextSceneTid() {
+        int current = sceneTidCounter.getAndIncrement();
+        if (current > MAX_TID) {
+            sceneTidCounter.set(0);
+            current = 0;
+        }
+        Log.d("TID", "Scene TID: " + current);
+        return current;
+    }
+
+    /**
      * Reset TID counters (optional, can be called when needed)
      */
     public void resetTidCounters() {
         genericOnOffTidCounter.set(0);
         genericLightTidCounter.set(0);
+        sceneTidCounter.set(0);
         Log.d("TID", "TID counters reset to 0");
     }
 
@@ -1184,6 +1430,137 @@ public abstract class BaseModelConfigurationActivity extends BaseActivity implem
                     "Failed to send command",
                     Snackbar.LENGTH_SHORT);
             Log.e("LONG_CMD", "Error", e);
+        }
+    }
+
+    private void sendSceneCommand() {
+
+        final ProvisionedMeshNode node = mViewModel.getSelectedMeshNode().getValue();
+        final Element element = mViewModel.getSelectedElement().getValue();
+        final MeshModel model = mViewModel.getSelectedModel().getValue();
+
+        if (node == null || element == null || model == null) {
+            mViewModel.displaySnackBar(
+                    this, mContainer,
+                    "Node / Element / Model not selected",
+                    Snackbar.LENGTH_SHORT
+            );
+            return;
+        }
+
+        try {
+
+            /* ---------------- VALUES ---------------- */
+
+            final int sceneId = Integer.parseInt(
+                    mSceneIdEditText.getText().toString().trim()
+            );
+
+            final int type = Integer.parseInt(
+                    mTypeEditText.getText().toString().trim()
+            );
+
+            final int mode = Integer.parseInt(
+                    mModeEditText.getText().toString().trim()
+            );
+
+            final int device = Integer.parseInt(
+                    mDeviceEditText.getText().toString().trim()
+            );
+
+            final int sceneState = Integer.parseInt(
+                    mSceneStateEditText.getText().toString().trim()
+            );
+
+            final String pressTypeStr =
+                    mPressEditText.getText().toString().trim();
+
+            final int pressCode =
+                    GenericSceneSet.getPressTypeCode(pressTypeStr);
+
+            final int tid = getNextSceneTid();
+
+            /* ---------------- APP KEY ---------------- */
+
+            final List<Integer> boundKeys =
+                    model.getBoundAppKeyIndexes();
+
+            if (boundKeys == null || boundKeys.isEmpty()) {
+                mViewModel.displaySnackBar(
+                        this, mContainer,
+                        "No AppKey bound to model",
+                        Snackbar.LENGTH_SHORT
+                );
+                return;
+            }
+
+            final MeshNetwork network =
+                    mViewModel.getNetworkLiveData().getMeshNetwork();
+
+            final ApplicationKey appKey =
+                    network.getAppKey(boundKeys.get(0));
+
+            if (appKey == null) {
+                mViewModel.displaySnackBar(
+                        this, mContainer,
+                        "AppKey not found",
+                        Snackbar.LENGTH_SHORT
+                );
+                return;
+            }
+
+            /* ---------------- CREATE MESSAGE ---------------- */
+
+            final GenericSceneSet sceneSetMessage =
+                    new GenericSceneSet(
+                            appKey,
+                            sceneId,
+                            type,
+                            pressCode,
+                            mode,
+                            device,
+                            sceneState,
+                            tid
+                    );
+
+            /* ---------------- LOG ---------------- */
+
+            Log.d("SCENE_CMD", "========== GenericSceneSet ==========");
+            Log.d("SCENE_CMD", "Scene ID   : " + sceneId);
+            Log.d("SCENE_CMD", "Type       : " + type);
+            Log.d("SCENE_CMD", "Press      : " + pressCode);
+            Log.d("SCENE_CMD", "Mode       : " + mode);
+            Log.d("SCENE_CMD", "Device     : " + device);
+            Log.d("SCENE_CMD", "State      : " + sceneState);
+            Log.d("SCENE_CMD", "TID        : " + tid);
+            Log.d("SCENE_CMD", "OpCode     : 0x"
+                    + Integer.toHexString(sceneSetMessage.getOpCode()));
+            Log.d("SCENE_CMD", "Payload    : "
+                    + Arrays.toString(sceneSetMessage.getParameters()));
+            Log.d("SCENE_CMD", "===================================");
+
+            /* ---------------- SEND (UNACK) ---------------- */
+
+            sendUnacknowledgedMessage(
+                    node.getUnicastAddress(),
+                    sceneSetMessage
+            );
+
+            mViewModel.displaySnackBar(
+                    this, mContainer,
+                    "Scene Command Sent (4 bytes payload)",
+                    Snackbar.LENGTH_LONG
+            );
+
+        } catch (Exception e) {
+
+            Log.e("SCENE_CMD", "Send failed", e);
+
+            mViewModel.displaySnackBar(
+                    this, mContainer,
+                    "Failed: " + e.getMessage(),
+                    Snackbar.LENGTH_SHORT
+            );
         }
     }
 }

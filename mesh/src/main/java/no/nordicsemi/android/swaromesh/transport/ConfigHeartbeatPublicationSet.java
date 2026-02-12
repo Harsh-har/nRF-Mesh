@@ -37,7 +37,6 @@ import static no.nordicsemi.android.swaromesh.utils.MeshAddress.isValidHeartbeat
 import static no.nordicsemi.android.swaromesh.utils.MeshParserUtils.addKeyIndexPadding;
 import static no.nordicsemi.android.swaromesh.utils.MeshParserUtils.isValidHeartbeatCountLog;
 import static no.nordicsemi.android.swaromesh.utils.MeshParserUtils.isValidHeartbeatPublicationTtl;
-
 /**
  * To be used as a wrapper class to create the ConfigHeartbeatPublicationSet message.
  */

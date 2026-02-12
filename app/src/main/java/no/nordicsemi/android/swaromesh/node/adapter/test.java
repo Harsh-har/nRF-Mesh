@@ -1,226 +1,324 @@
+//package no.nordicsemi.android.swaromesh.viewmodels;
 //
-//package no.nordicsemi.android.swaromesh.node.adapter;
+//import static no.nordicsemi.android.swaromesh.models.SigModelParser.CONFIGURATION_CLIENT;
+//import static no.nordicsemi.android.swaromesh.models.SigModelParser.CONFIGURATION_SERVER;
+//import static no.nordicsemi.android.swaromesh.models.SigModelParser.SCENE_SERVER;
+//import static no.nordicsemi.android.swaromesh.models.SigModelParser.SCENE_SETUP_SERVER;
+//import static no.nordicsemi.android.swaromesh.models.SigModelParser.SENSOR_SERVER;
 //
+//import android.app.Activity;
 //import android.content.Context;
-//import android.view.LayoutInflater;
-//import android.view.View;
-//import android.view.ViewGroup;
-//import android.widget.ImageButton;
-//import android.widget.ImageView;
-//import android.widget.LinearLayout;
-//import android.widget.TextView;
+//import android.content.Intent;
 //
 //import androidx.annotation.NonNull;
-//import androidx.constraintlayout.widget.ConstraintLayout;
-//import androidx.recyclerview.widget.AsyncListDiffer;
-//import androidx.recyclerview.widget.RecyclerView;
+//import androidx.coordinatorlayout.widget.CoordinatorLayout;
+//import androidx.lifecycle.LiveData;
+//import androidx.lifecycle.ViewModel;
 //
-//import java.util.ArrayList;
+//import com.google.android.material.snackbar.Snackbar;
+//
+//import java.util.LinkedList;
 //import java.util.List;
+//import java.util.Queue;
 //
+//import no.nordicsemi.android.swaromesh.MeshManagerApi;
 //import no.nordicsemi.android.swaromesh.models.VendorModel;
 //import no.nordicsemi.android.swaromesh.transport.Element;
+//import no.nordicsemi.android.swaromesh.transport.MeshMessage;
 //import no.nordicsemi.android.swaromesh.transport.MeshModel;
 //import no.nordicsemi.android.swaromesh.transport.ProvisionedMeshNode;
-//import no.nordicsemi.android.swaromesh.utils.CompositionDataParser;
 //import no.nordicsemi.android.swaromesh.R;
-//import no.nordicsemi.android.swaromesh.databinding.ElementItemBinding;
+//import no.nordicsemi.android.swaromesh.adapter.ExtendedBluetoothDevice;
+//import no.nordicsemi.android.swaromesh.ble.BleMeshManager;
+//import no.nordicsemi.android.swaromesh.ble.ScannerActivity;
+//import no.nordicsemi.android.swaromesh.node.ConfigurationClientActivity;
+//import no.nordicsemi.android.swaromesh.node.ConfigurationServerActivity;
+////import no.nordicsemi.android.node.swaromesh.GenericLevelServerActivity;
+//import no.nordicsemi.android.swaromesh.node.GenericModelConfigurationActivity;
+////import no.nordicsemi.android.node.swaromesh.GenericOnOffServerActivity;
+//import no.nordicsemi.android.swaromesh.node.SceneServerModelActivity;
+//import no.nordicsemi.android.swaromesh.node.SceneSetupServerModelActivity;
+//import no.nordicsemi.android.swaromesh.node.SensorServerActivity;
+//import no.nordicsemi.android.swaromesh.node.VendorModelActivity;
+//import no.nordicsemi.android.swaromesh.utils.Utils;
 //
-//public class ElementAdapter extends RecyclerView.Adapter<ElementAdapter.ViewHolder> {
+///**
+// * abstract base class for ViewModels
+// */
+//public abstract class BaseViewModel extends ViewModel {
 //
-//    private final AsyncListDiffer<Element> differ =
-//            new AsyncListDiffer<>(this, new ElementDiffCallback());
+//    protected Queue<MeshMessage> messageQueue = new LinkedList<>();
+//    final NrfMeshRepository mNrfMeshRepository;
+//    boolean isActivityVisible = false;
 //
-//    private OnItemClickListener mOnItemClickListener;
-//    private ProvisionedMeshNode meshNode;
 //
-//    // ✅ Generic OnOff Server SIG Model ID
-//    private static final int GENERIC_ON_OFF_SERVER_MODEL_ID = 0x1000;
-//
-//    public void update(final ProvisionedMeshNode meshNode) {
-//        this.meshNode = meshNode;
-//        differ.submitList(populateList(meshNode));
-//    }
-//
-//    private List<Element> populateList(@NonNull final ProvisionedMeshNode meshNode) {
-//        final List<Element> elements = new ArrayList<>();
-//        for (Element element : meshNode.getElements().values()) {
-//            try {
-//                elements.add(element.clone());
-//            } catch (CloneNotSupportedException e) {
-//                e.printStackTrace();
-//            }
-//        }
-//        return elements;
-//    }
-//
-//    public void setOnItemClickListener(@NonNull final OnItemClickListener listener) {
-//        mOnItemClickListener = listener;
-//    }
-//
-//    @NonNull
-//    @Override
-//    public ViewHolder onCreateViewHolder(@NonNull final ViewGroup parent, final int viewType) {
-//        return new ViewHolder(
-//                ElementItemBinding.inflate(
-//                        LayoutInflater.from(parent.getContext()),
-//                        parent,
-//                        false
-//                )
-//        );
+//    /**
+//     * Constructs {@link BaseViewModel}
+//     *
+//     * @param nRfMeshRepository Mesh Repository {@link NrfMeshRepository}
+//     */
+//    BaseViewModel(@NonNull final NrfMeshRepository nRfMeshRepository) {
+//        mNrfMeshRepository = nRfMeshRepository;
 //    }
 //
 //    @Override
-//    public void onBindViewHolder(@NonNull final ViewHolder holder, final int position) {
-//        final Element element = differ.getCurrentList().get(position);
-//
-//        holder.mElementTitle.setText(element.getName());
-//
-//        // ✅ COUNT ONLY GENERIC ONOFF SERVER
-//        final int modelCount = getGenericOnOffServerCount(element);
-//
-//        holder.mElementSubtitle.setText(
-//                holder.mElementSubtitle.getContext()
-//                        .getString(R.string.model_count, modelCount)
-//        );
-//
-//        inflateModelViews(holder, new ArrayList<>(element.getMeshModels().values()));
+//    protected void onCleared() {
+//        super.onCleared();
 //    }
 //
 //    /**
-//     * ✅ Count only Generic OnOff Server models
+//     * Returns the Mesh repository
 //     */
-//    private int getGenericOnOffServerCount(@NonNull Element element) {
-//        int count = 0;
-//        for (MeshModel model : element.getMeshModels().values()) {
-//            if (model.getModelId() == GENERIC_ON_OFF_SERVER_MODEL_ID) {
-//                count++;
-//            }
+//    public final NrfMeshRepository getNrfMeshRepository() {
+//        return mNrfMeshRepository;
+//    }
+//
+//    /**
+//     * Returns the {@link BleMeshManager}
+//     */
+//    public final BleMeshManager getBleMeshManager() {
+//        return mNrfMeshRepository.getBleMeshManager();
+//    }
+//
+//    public Queue<MeshMessage> getMessageQueue() {
+//        return messageQueue;
+//    }
+//
+//    public void removeMessage() {
+//        if (!messageQueue.isEmpty())
+//            messageQueue.remove();
+//    }
+//
+//    /**
+//     * Navigate to scanner activity
+//     *
+//     * @param context                 Activity context
+//     * @param withProvisioningService Scan with provisioning service
+//     */
+//    public void navigateToScannerActivity(@NonNull final Context context, final boolean withProvisioningService) {
+//        final Intent intent = new Intent(context, ScannerActivity.class);
+//        intent.putExtra(Utils.EXTRA_DATA_PROVISIONING_SERVICE, withProvisioningService);
+//        context.startActivity(intent);
+//    }
+//
+//    /**
+//     * Start activity based on the type of the model
+//     *
+//     * <p> This way we can seperate the ui logic for different activities</p>
+//     *
+//     * @param context Activity context
+//     * @param model   {@link MeshModel}
+//     */
+//    public void navigateToModelActivity(@NonNull final Activity context, @NonNull final MeshModel model) {
+//        final Intent intent;
+//        if (model.getModelId() == CONFIGURATION_SERVER) {
+//            intent = new Intent(context, ConfigurationServerActivity.class);
+//        } else if (model.getModelId() == CONFIGURATION_CLIENT) {
+//            intent = new Intent(context, ConfigurationClientActivity.class);
 //        }
-//        return count;
-//    }
-//
-//
-//    private void inflateModelViews(final ViewHolder holder,
-//                                   final List<MeshModel> models) {
-//
-//        holder.mModelContainer.removeAllViews();
-//        final Context context = holder.mModelContainer.getContext();
-//
-//        for (MeshModel model : models) {
-//
-//            // ❌ Skip all except Generic OnOff Server
-//            if (model.getModelId() != GENERIC_ON_OFF_SERVER_MODEL_ID) {
-//                continue;
-//            }
-//
-//            final View modelView = LayoutInflater.from(context)
-//                    .inflate(R.layout.model_item, holder.mElementContainer, false);
-//
-//            modelView.setTag(model.getModelId());
-//
-//            final TextView modelNameView = modelView.findViewById(R.id.title);
-//            final TextView modelIdView = modelView.findViewById(R.id.subtitle);
-//
-//            modelNameView.setText(model.getModelName());
-//
-//            if (model instanceof VendorModel) {
-//                modelIdView.setText(
-//                        context.getString(
-//                                R.string.format_vendor_model_id,
-//                                CompositionDataParser.formatModelIdentifier(
-//                                        model.getModelId(), true
-//                                )
-//                        )
-//                );
-//            } else {
-//                modelIdView.setText(
-//                        context.getString(
-//                                R.string.format_sig_model_id,
-//                                CompositionDataParser.formatModelIdentifier(
-//                                        model.getModelId(), true
-//                                )
-//                        )
-//                );
-//            }
-//
-//            modelView.setOnClickListener(v -> {
-//                final int pos = holder.getBindingAdapterPosition();
-//                if (pos != RecyclerView.NO_POSITION) {
-//                    final Element element = differ.getCurrentList().get(pos);
-//                    mOnItemClickListener.onModelClicked(meshNode, element, model);
-//                }
-//            });
-//
-//            holder.mModelContainer.addView(modelView);
+////        else if (model.getModelId() == GENERIC_ON_OFF_SERVER) {
+////            intent = new Intent(context, GenericOnOffServerActivity.class);
+////        }
+////        else if (model.getModelId() == GENERIC_LEVEL_SERVER) {
+////            intent = new Intent(context, GenericLevelServerActivity.class);
+////        }
+//        else if (model.getModelId() == SCENE_SERVER) {
+//            intent = new Intent(context, SceneServerModelActivity.class);
+//        } else if (model.getModelId() == SCENE_SETUP_SERVER) {
+//            intent = new Intent(context, SceneSetupServerModelActivity.class);
+//        } else if (model.getModelId() == SENSOR_SERVER) {
+//            intent = new Intent(context, SensorServerActivity.class);
+//        } else if (model instanceof VendorModel) {
+//            intent = new Intent(context, VendorModelActivity.class);
+//        } else {
+//            intent = new Intent(context, GenericModelConfigurationActivity.class);
 //        }
-//
-//        // ❗ Hide container if no Generic OnOff Server
-//        holder.mModelContainer.setVisibility(
-//                holder.mModelContainer.getChildCount() == 0
-//                        ? View.GONE
-//                        : View.VISIBLE
-//        );
+//        context.startActivity(intent);
 //    }
 //
-//    @Override
-//    public int getItemCount() {
-//        return differ.getCurrentList().size();
+//    /**
+//     * Connect to peripheral
+//     *
+//     * @param context          Context
+//     * @param device           {@link ExtendedBluetoothDevice} device
+//     * @param connectToNetwork True if connecting to an unprovisioned node or proxy node
+//     */
+//    public final void connect(@NonNull final Context context, @NonNull final ExtendedBluetoothDevice device, final boolean connectToNetwork) {
+//        mNrfMeshRepository.connect(context, device, connectToNetwork);
 //    }
 //
-//    @Override
-//    public long getItemId(final int position) {
-//        return differ.getCurrentList().get(position).getElementAddress();
+//    /**
+//     * Disconnect from peripheral
+//     */
+//    public final void disconnect() {
+//        mNrfMeshRepository.disconnect();
 //    }
 //
-//    public interface OnItemClickListener {
-//        void onElementClicked(@NonNull final Element element);
-//
-//        void onModelClicked(@NonNull final ProvisionedMeshNode meshNode,
-//                            @NonNull final Element element,
-//                            @NonNull final MeshModel model);
+//    /**
+//     * Returns the address of the connected proxy address
+//     */
+//    public final LiveData<Integer> getConnectedProxyAddress() {
+//        return mNrfMeshRepository.getConnectedProxyAddress();
 //    }
 //
-//    final class ViewHolder extends RecyclerView.ViewHolder
-//            implements View.OnClickListener {
+//    /**
+//     * Returns true currently connected to a peripheral device.
+//     */
+//    public final LiveData<Boolean> isConnected() {
+//        return mNrfMeshRepository.isConnected();
+//    }
 //
-//        ConstraintLayout mElementContainer;
-//        ImageView mIcon;
-//        TextView mElementTitle;
-//        TextView mElementSubtitle;
-//        ImageButton mElementExpand;
-//        ImageButton mEdit;
-//        LinearLayout mModelContainer;
+//    /**
+//     * Returns true if the device is ready
+//     */
+//    public final LiveData<Void> isDeviceReady() {
+//        return mNrfMeshRepository.isDeviceReady();
+//    }
 //
-//        private ViewHolder(@NonNull final ElementItemBinding binding) {
-//            super(binding.getRoot());
-//            mElementContainer = binding.elementItemContainer;
-//            mIcon = binding.icon;
-//            mElementTitle = binding.elementTitle;
-//            mElementSubtitle = binding.elementSubtitle;
-//            mElementExpand = binding.elementExpand;
-//            mEdit = binding.edit;
-//            mModelContainer = binding.modelContainer;
+//    /**
+//     * Returns the connection state
+//     */
+//    public final LiveData<String> getConnectionState() {
+//        return mNrfMeshRepository.getConnectionState();
+//    }
 //
-//            mElementExpand.setOnClickListener(this);
-//            mEdit.setOnClickListener(this);
-//        }
+//    /**
+//     * Returns true if currently connected to the proxy node in the mesh network.
+//     */
+//    public final LiveData<Boolean> isConnectedToProxy() {
+//        return mNrfMeshRepository.isConnectedToProxy();
+//    }
 //
-//        @Override
-//        public void onClick(final View v) {
-//            if (v.getId() == R.id.element_expand) {
-//                if (mModelContainer.getVisibility() == View.VISIBLE) {
-//                    mElementExpand.setImageResource(R.drawable.ic_round_expand_more);
-//                    mModelContainer.setVisibility(View.GONE);
-//                } else {
-//                    mElementExpand.setImageResource(R.drawable.ic_round_expand_less);
-//                    mModelContainer.setVisibility(View.VISIBLE);
-//                }
-//            } else if (v.getId() == R.id.edit) {
-//                mOnItemClickListener.onElementClicked(
-//                        differ.getCurrentList().get(getAbsoluteAdapterPosition())
-//                );
-//            }
-//        }
+//    /**
+//     * Returns the mesh manager api
+//     */
+//    public final MeshManagerApi getMeshManagerApi() {
+//        return mNrfMeshRepository.getMeshManagerApi();
+//    }
+//
+//    /**
+//     * Returns live data object containing provisioning settings.
+//     */
+//    public final MeshNetworkLiveData getNetworkLiveData() {
+//        return mNrfMeshRepository.getMeshNetworkLiveData();
+//    }
+//
+//    /**
+//     * Returns the provisioned nodes as a live data object.
+//     */
+//    public LiveData<List<ProvisionedMeshNode>> getNodes() {
+//        return mNrfMeshRepository.getNodes();
+//    }
+//
+//    /**
+//     * Get selected {@link ProvisionedMeshNode} mesh node
+//     */
+//    public final LiveData<ProvisionedMeshNode> getSelectedMeshNode() {
+//        return mNrfMeshRepository.getSelectedMeshNode();
+//    }
+//
+//    /**
+//     * Set selected mesh node
+//     *
+//     * @param node {@link ProvisionedMeshNode}
+//     */
+//    public final void setSelectedMeshNode(@NonNull final ProvisionedMeshNode node) {
+//        mNrfMeshRepository.setSelectedMeshNode(node);
+//    }
+//
+//    /**
+//     * Get selected element
+//     */
+//    public final LiveData<Element> getSelectedElement() {
+//        return mNrfMeshRepository.getSelectedElement();
+//    }
+//
+//    /**
+//     * Set the element to be configured
+//     *
+//     * @param element {@link Element}
+//     */
+//    public final void setSelectedElement(@NonNull final Element element) {
+//        mNrfMeshRepository.setSelectedElement(element);
+//    }
+//
+//    /**
+//     * Get selected model
+//     */
+//    public final LiveData<MeshModel> getSelectedModel() {
+//        return mNrfMeshRepository.getSelectedModel();
+//    }
+//
+//    /**
+//     * Set the mesh model to be configured
+//     *
+//     * @param model {@link MeshModel}
+//     */
+//    public final void setSelectedModel(@NonNull final MeshModel model) {
+//        mNrfMeshRepository.setSelectedModel(model);
+//    }
+//
+//    /**
+//     * Reset mesh network
+//     */
+//    public final void resetMeshNetwork() {
+//        mNrfMeshRepository.resetMeshNetwork();
+//    }
+//
+//    /**
+//     * Returns the LiveData containing {@link MeshMessage}
+//     */
+//    public final LiveData<MeshMessage> getMeshMessage() {
+//        return mNrfMeshRepository.getMeshMessageLiveData();
+//    }
+//
+//    /**
+//     * Returns an observable live data object containing the transaction status.
+//     *
+//     * @return {@link TransactionStatus}
+//     */
+//    public final LiveData<TransactionStatus> getTransactionStatus() {
+//        return mNrfMeshRepository.getTransactionStatus();
+//    }
+//
+//    public boolean isModelExists(final int modelId) {
+//        final ProvisionedMeshNode node = getSelectedMeshNode().getValue();
+//        return node != null && node.isExist(modelId);
+//    }
+//
+//    /**
+//     * Display disconnected snack bar
+//     *
+//     * @param context   Activity context
+//     * @param container container
+//     */
+//    public void displayDisconnectedSnackBar(@NonNull final Activity context, @NonNull final CoordinatorLayout container) {
+//        Snackbar.make(container, context.getString(R.string.disconnected_network_rationale), Snackbar.LENGTH_LONG)
+//                .setActionTextColor(context.getResources().getColor(R.color.colorSecondary))
+//                .setAction(context.getString(R.string.action_connect), v ->
+//                        navigateToScannerActivity(context, false))
+//                .show();
+//    }
+//
+//    /**
+//     * Display snack bar
+//     *
+//     * @param context   Activity context
+//     * @param container Coordinator layout
+//     * @param message   Message
+//     * @param duration  Snack bar duration
+//     */
+//    public void displaySnackBar(@NonNull final Context context, @NonNull final CoordinatorLayout container, @NonNull final String message, final int duration) {
+//        Snackbar.make(container, message, duration)
+//                .setActionTextColor(context.getResources().getColor(R.color.colorSecondary))
+//                .show();
+//    }
+//
+//    public boolean isActivityVisible() {
+//        return isActivityVisible;
+//    }
+//
+//    public void setActivityVisible(final boolean visible) {
+//        isActivityVisible = visible;
 //    }
 //}

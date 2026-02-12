@@ -29,10 +29,15 @@ public class ApplicationMessageOpCodes {
      */
     public static final int GENERIC_ON_OFF_GET = 0x8201;
 
+
+    // For Long Command
     public static final int GENERIC_LIGHT_CONTROL_OPCODE = 0x8211;
 
     public static final int GENERIC_LIGHT_CONTROL_OPCODE_STATUS = 0x8212;
 
+    // For Sence Command
+    public static final int GENERIC_BUTTON_OPCODE_STATUS      = 0x820E; // UNACK
+    public static final int GENERIC_BUTTON_OPCODE_STATUS_ACK  = 0x8213; // ACK
     /**
      * Opcode for the "Generic OnOff Set" message.
      */

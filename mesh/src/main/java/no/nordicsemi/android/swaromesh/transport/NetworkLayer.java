@@ -41,7 +41,6 @@ import no.nordicsemi.android.swaromesh.utils.ExtendedInvalidCipherTextException;
 import no.nordicsemi.android.swaromesh.utils.MeshAddress;
 import no.nordicsemi.android.swaromesh.utils.MeshParserUtils;
 import no.nordicsemi.android.swaromesh.utils.SecureUtils;
-
 /**
  * NetworkLayer implementation of the mesh network architecture as per the mesh profile specification.
  * <p>
