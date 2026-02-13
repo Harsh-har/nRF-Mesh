@@ -62,7 +62,7 @@
                 app:layout_constraintEnd_toStartOf="@id/node_name"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="@id/node_name"
-                app:srcCompat="@drawable/network" />
+                app:srcCompat="@drawable/networkmesh" />
 
             <com.google.android.material.textview.MaterialTextView
                 android:id="@+id/node_name"

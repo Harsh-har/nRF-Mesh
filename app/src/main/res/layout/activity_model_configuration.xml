@@ -1,32 +1,12 @@
-<?xml version="1.0" encoding="utf-8"?><!--
-  ~ Copyright (c) 2018, Nordic Semiconductor
-  ~ All rights reserved.
-  ~
-  ~ Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
-  ~
-  ~ 1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
-  ~
-  ~ 2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the
-  ~ documentation and/or other materials provided with the distribution.
-  ~
-  ~ 3. Neither the name of the copyright holder nor the names of its contributors may be used to endorse or promote products derived from this
-  ~ software without specific prior written permission.
-  ~
-  ~ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-  ~ LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-  ~ HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-  ~ LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
-  ~ ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE
-  ~ USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-  -->
-
+<?xml version="1.0" encoding="utf-8"?>
 <androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/container"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".node.BaseModelConfigurationActivity"
+    android:windowSoftInputMode="stateAlwaysHidden|adjustResize"
+    tools:context="no.nordicsemi.android.swaromesh.node.BaseModelConfigurationActivity"
     tools:ignore="ContentDescription">
 
     <LinearLayout
@@ -44,7 +24,7 @@
             <com.google.android.material.appbar.MaterialToolbar
                 android:id="@+id/toolbar"
                 android:layout_width="match_parent"
-                android:layout_height="?actionBarSize"
+                android:layout_height="?attr/actionBarSize"
                 app:popupTheme="@style/AppTheme.PopupOverlay" />
 
             <ProgressBar
@@ -64,13 +44,14 @@
         <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
             android:id="@+id/swipe_refresh"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content">
+            android:layout_height="match_parent">
 
             <androidx.core.widget.NestedScrollView
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:layout_height="match_parent"
                 android:clipToPadding="false"
-                android:paddingBottom="@dimen/activity_vertical_margin">
+                android:fillViewport="true"
+                android:paddingBottom="300dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -79,6 +60,7 @@
                     android:orientation="vertical"
                     android:paddingBottom="@dimen/activity_vertical_margin">
 
+                    <!-- App Keys Card -->
                     <com.google.android.material.card.MaterialCardView
                         android:id="@+id/app_key_card"
                         android:layout_width="match_parent"
@@ -93,7 +75,7 @@
                             <com.google.android.material.appbar.MaterialToolbar
                                 android:id="@+id/app_key_tool_bar"
                                 android:layout_width="0dp"
-                                android:layout_height="?actionBarSize"
+                                android:layout_height="?attr/actionBarSize"
                                 app:layout_constraintEnd_toEndOf="parent"
                                 app:layout_constraintStart_toStartOf="parent"
                                 app:layout_constraintTop_toTopOf="parent"
@@ -102,15 +84,30 @@
                                 app:titleMarginStart="@dimen/toolbar_title_margin"
                                 app:titleTextAppearance="@style/Toolbar.TitleText" />
 
-
                             <androidx.constraintlayout.widget.ConstraintLayout
                                 android:id="@+id/container_app_key_bind"
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
-                                android:background="?selectableItemBackground"
-                                app:layout_constraintLeft_toLeftOf="parent"
-                                app:layout_constraintRight_toRightOf="parent"
-                                app:layout_constraintTop_toBottomOf="@+id/app_key_tool_bar">
+                                android:background="?attr/selectableItemBackground"
+                                app:layout_constraintEnd_toEndOf="parent"
+                                app:layout_constraintStart_toStartOf="parent"
+                                app:layout_constraintTop_toBottomOf="@id/app_key_tool_bar">
+
+                                <androidx.recyclerview.widget.RecyclerView
+                                    android:id="@+id/recycler_view_bound_keys"
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:clipToPadding="false"
+                                    android:overScrollMode="never"
+                                    android:scrollbars="none"
+                                    android:visibility="visible"
+                                    app:layout_constraintBottom_toBottomOf="parent"
+                                    app:layout_constraintEnd_toEndOf="parent"
+                                    app:layout_constraintHorizontal_bias="0.0"
+                                    app:layout_constraintStart_toStartOf="parent"
+                                    app:layout_constraintTop_toTopOf="parent"
+                                    app:layout_constraintVertical_bias="1.0"
+                                    tools:listitem="@layout/removable_row_item" />
 
                                 <com.google.android.material.textview.MaterialTextView
                                     android:id="@+id/bound_keys"
@@ -121,26 +118,11 @@
                                     android:paddingEnd="@dimen/activity_horizontal_margin"
                                     android:paddingBottom="@dimen/item_padding_bottom"
                                     android:text="@string/no_app_keys_bound"
-                                    android:textColor="?android:textColorPrimary"
+                                    android:textColor="?android:attr/textColorPrimary"
                                     android:textSize="14sp"
                                     app:layout_constraintEnd_toEndOf="parent"
                                     app:layout_constraintStart_toStartOf="parent"
                                     app:layout_constraintTop_toTopOf="parent" />
-
-                                <androidx.recyclerview.widget.RecyclerView
-                                    android:id="@+id/recycler_view_bound_keys"
-                                    android:layout_width="0dp"
-                                    android:layout_height="wrap_content"
-                                    android:clipToPadding="false"
-                                    android:overScrollMode="never"
-                                    android:scrollbars="none"
-                                    android:visibility="gone"
-                                    app:layout_constraintBottom_toBottomOf="parent"
-                                    app:layout_constraintEnd_toEndOf="parent"
-                                    app:layout_constraintStart_toStartOf="parent"
-                                    app:layout_constraintTop_toTopOf="parent"
-                                    tools:listitem="@layout/removable_row_item"
-                                    tools:visibility="visible" />
 
                             </androidx.constraintlayout.widget.ConstraintLayout>
 
@@ -160,7 +142,7 @@
                                 android:layout_marginEnd="@dimen/item_padding_end"
                                 android:padding="@dimen/activity_horizontal_margin"
                                 android:text="@string/hint_unbind"
-                                android:textColor="?android:textColorSecondary"
+                                android:textColor="?android:attr/textColorSecondary"
                                 android:visibility="invisible"
                                 app:layout_constraintBottom_toBottomOf="parent"
                                 app:layout_constraintStart_toStartOf="parent"
@@ -182,6 +164,7 @@
                         </androidx.constraintlayout.widget.ConstraintLayout>
                     </com.google.android.material.card.MaterialCardView>
 
+                    <!-- Publish Address Card -->
                     <com.google.android.material.card.MaterialCardView
                         android:id="@+id/publish_address_card"
                         android:layout_width="match_parent"
@@ -192,14 +175,14 @@
                         <androidx.constraintlayout.widget.ConstraintLayout
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:background="?selectableItemBackground">
+                            android:background="?attr/selectableItemBackground">
 
                             <com.google.android.material.appbar.MaterialToolbar
                                 android:id="@+id/publish_address_tool_bar"
                                 android:layout_width="match_parent"
-                                android:layout_height="?actionBarSize"
-                                app:layout_constraintLeft_toLeftOf="parent"
-                                app:layout_constraintRight_toRightOf="parent"
+                                android:layout_height="?attr/actionBarSize"
+                                app:layout_constraintEnd_toEndOf="parent"
+                                app:layout_constraintStart_toStartOf="parent"
                                 app:layout_constraintTop_toTopOf="parent"
                                 app:logo="@drawable/ic_publish"
                                 app:title="@string/title_publish_address_configuration"
@@ -210,13 +193,13 @@
                                 android:id="@+id/container_publish_address"
                                 android:layout_width="0dp"
                                 android:layout_height="wrap_content"
-                                android:background="?selectableItemBackground"
+                                android:background="?attr/selectableItemBackground"
                                 android:paddingStart="@dimen/activity_horizontal_margin"
                                 android:paddingTop="@dimen/item_padding_top"
                                 android:paddingEnd="@dimen/activity_horizontal_margin"
                                 android:paddingBottom="@dimen/item_padding_bottom"
-                                app:layout_constraintLeft_toLeftOf="parent"
-                                app:layout_constraintRight_toRightOf="parent"
+                                app:layout_constraintEnd_toEndOf="parent"
+                                app:layout_constraintStart_toStartOf="parent"
                                 app:layout_constraintTop_toBottomOf="@id/publish_address_tool_bar">
 
                                 <com.google.android.material.textview.MaterialTextView
@@ -226,7 +209,7 @@
                                     android:paddingStart="@dimen/activity_horizontal_margin"
                                     android:paddingEnd="@dimen/activity_horizontal_margin"
                                     android:text="@string/title_publish_address"
-                                    android:textColor="?android:textColorPrimary"
+                                    android:textColor="?android:attr/textColorPrimary"
                                     android:textSize="16sp"
                                     app:layout_constraintEnd_toEndOf="parent"
                                     app:layout_constraintStart_toEndOf="@id/image_pub_address"
@@ -238,20 +221,20 @@
                                     android:layout_height="wrap_content"
                                     android:paddingStart="@dimen/activity_horizontal_margin"
                                     android:text="None"
-                                    android:textColor="?android:textColorSecondary"
+                                    android:textColor="?android:attr/textColorSecondary"
                                     android:textSize="12sp"
                                     app:layout_constraintEnd_toEndOf="parent"
                                     app:layout_constraintStart_toEndOf="@id/image_pub_address"
                                     app:layout_constraintTop_toBottomOf="@id/publish_address_title"
-                                    tools:ignore="HardcodedText,RtlSymmetry" />
+                                    tools:ignore="HardcodedText" />
 
                                 <ImageView
                                     android:id="@+id/image_pub_address"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
-                                    app:layout_constraintBottom_toBottomOf="@+id/publish_address"
+                                    app:layout_constraintBottom_toBottomOf="@id/publish_address"
                                     app:layout_constraintStart_toStartOf="parent"
-                                    app:layout_constraintTop_toTopOf="@+id/publish_address_title"
+                                    app:layout_constraintTop_toTopOf="@id/publish_address_title"
                                     app:srcCompat="@drawable/ic_lan_24dp" />
 
                             </androidx.constraintlayout.widget.ConstraintLayout>
@@ -264,18 +247,6 @@
                                 app:layout_constraintEnd_toEndOf="parent"
                                 app:layout_constraintStart_toStartOf="parent"
                                 app:layout_constraintTop_toBottomOf="@id/container_publish_address" />
-
-                            <com.google.android.material.button.MaterialButton
-                                android:id="@+id/action_set_publication"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginStart="@dimen/item_padding_end"
-                                android:layout_marginEnd="@dimen/item_padding_start"
-                                android:padding="@dimen/item_padding_end"
-                                android:text="@string/action_set_publish_address"
-                                app:layout_constraintBottom_toBottomOf="parent"
-                                app:layout_constraintEnd_toEndOf="parent"
-                                app:layout_constraintTop_toBottomOf="@id/div2" />
 
                             <com.google.android.material.button.MaterialButton
                                 android:id="@+id/action_clear_publication"
@@ -291,27 +262,40 @@
                                 app:layout_constraintTop_toBottomOf="@id/div2"
                                 tools:visibility="visible" />
 
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/action_set_publication"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="@dimen/item_padding_end"
+                                android:layout_marginEnd="@dimen/item_padding_start"
+                                android:padding="@dimen/item_padding_end"
+                                android:text="@string/action_set_publish_address"
+                                app:layout_constraintBottom_toBottomOf="parent"
+                                app:layout_constraintEnd_toEndOf="parent"
+                                app:layout_constraintTop_toBottomOf="@id/div2" />
+
                         </androidx.constraintlayout.widget.ConstraintLayout>
                     </com.google.android.material.card.MaterialCardView>
 
+                    <!-- Subscription Address Card -->
                     <com.google.android.material.card.MaterialCardView
                         android:id="@+id/subscription_address_card"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginBottom="@dimen/activity_vertical_margin"
+                        android:layout_marginBottom="@dimen/activity_horizontal_margin"
                         app:cardElevation="1dp">
 
                         <androidx.constraintlayout.widget.ConstraintLayout
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:background="?selectableItemBackground">
+                            android:background="?attr/selectableItemBackground">
 
                             <com.google.android.material.appbar.MaterialToolbar
                                 android:id="@+id/subscribe_address_tool_bar"
                                 android:layout_width="match_parent"
-                                android:layout_height="?actionBarSize"
-                                app:layout_constraintLeft_toLeftOf="parent"
-                                app:layout_constraintRight_toRightOf="parent"
+                                android:layout_height="?attr/actionBarSize"
+                                app:layout_constraintEnd_toEndOf="parent"
+                                app:layout_constraintStart_toStartOf="parent"
                                 app:layout_constraintTop_toTopOf="parent"
                                 app:logo="@drawable/ic_subscribe"
                                 app:title="@string/title_subscription_addresses_configuration"
@@ -322,10 +306,10 @@
                                 android:id="@+id/container_subscribe_address"
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
-                                android:background="?selectableItemBackground"
-                                app:layout_constraintLeft_toLeftOf="parent"
-                                app:layout_constraintRight_toRightOf="parent"
-                                app:layout_constraintTop_toBottomOf="@+id/subscribe_address_tool_bar">
+                                android:background="?attr/selectableItemBackground"
+                                app:layout_constraintEnd_toEndOf="parent"
+                                app:layout_constraintStart_toStartOf="parent"
+                                app:layout_constraintTop_toBottomOf="@id/subscribe_address_tool_bar">
 
                                 <com.google.android.material.textview.MaterialTextView
                                     android:id="@+id/subscribe_addresses"
@@ -336,7 +320,7 @@
                                     android:paddingEnd="@dimen/activity_horizontal_margin"
                                     android:paddingBottom="@dimen/item_padding_bottom"
                                     android:text="@string/not_subscribed_to_groups"
-                                    android:textColor="?android:textColorPrimary"
+                                    android:textColor="?android:attr/textColorPrimary"
                                     android:textSize="14sp"
                                     app:layout_constraintEnd_toEndOf="parent"
                                     app:layout_constraintStart_toStartOf="parent"
@@ -372,7 +356,7 @@
                                 android:layout_marginEnd="@dimen/item_padding_end"
                                 android:padding="@dimen/activity_horizontal_margin"
                                 android:text="@string/hint_unsubscribe"
-                                android:textColor="?android:textColorSecondary"
+                                android:textColor="?android:attr/textColorSecondary"
                                 android:visibility="invisible"
                                 app:layout_constraintBottom_toBottomOf="parent"
                                 app:layout_constraintStart_toStartOf="parent"
@@ -394,13 +378,552 @@
                         </androidx.constraintlayout.widget.ConstraintLayout>
                     </com.google.android.material.card.MaterialCardView>
 
+                    <!-- Short Command Controls Card -->
+                    <com.google.android.material.card.MaterialCardView
+                        android:id="@+id/node_controls_card"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="@dimen/activity_vertical_margin"
+                        app:cardElevation="1dp">
+
+                        <androidx.constraintlayout.widget.ConstraintLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:padding="8dp">
+
+                            <com.google.android.material.appbar.MaterialToolbar
+                                android:id="@+id/node_controls_tool_bar"
+                                android:layout_width="0dp"
+                                android:layout_height="?attr/actionBarSize"
+                                app:layout_constraintEnd_toEndOf="parent"
+                                app:layout_constraintStart_toStartOf="parent"
+                                app:layout_constraintTop_toTopOf="parent"
+                                app:logo="@drawable/ic_lightbulb_outline_black_24dp"
+                                app:title=" Short Command On Off Controls"
+                                app:titleTextAppearance="@style/Toolbar.TitleText" />
+
+                            <com.google.android.material.textfield.TextInputLayout
+                                android:id="@+id/layout_mcommand"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:hint="Enter Command"
+                                android:layout_marginTop="16dp"
+                                app:layout_constraintEnd_toEndOf="parent"
+                                app:layout_constraintStart_toStartOf="parent"
+                                app:layout_constraintTop_toBottomOf="@id/node_controls_tool_bar">
+
+                                <com.google.android.material.textfield.TextInputEditText
+                                    android:id="@+id/et_command"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:imeOptions="actionDone"
+                                    android:inputType="text" />
+                            </com.google.android.material.textfield.TextInputLayout>
+
+                            <com.google.android.material.textfield.TextInputLayout
+                                android:id="@+id/layout_mstate"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:hint="Enter Data"
+                                android:layout_marginTop="16dp"
+                                app:layout_constraintEnd_toEndOf="parent"
+                                app:layout_constraintStart_toStartOf="parent"
+                                app:layout_constraintTop_toBottomOf="@id/layout_mcommand">
+
+                                <com.google.android.material.textfield.TextInputEditText
+                                    android:id="@+id/et_state"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:imeOptions="actionDone"
+                                    android:inputType="number" />
+                            </com.google.android.material.textfield.TextInputLayout>
+
+                            <include
+                                android:id="@+id/div_controls"
+                                layout="@layout/layout_divider"
+                                android:layout_width="0dp"
+                                android:layout_height="1dp"
+                                android:layout_marginTop="16dp"
+                                app:layout_constraintEnd_toEndOf="parent"
+                                app:layout_constraintStart_toStartOf="parent"
+                                app:layout_constraintTop_toBottomOf="@id/layout_mstate" />
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/action_read_state"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_marginEnd="8dp"
+                                android:layout_marginTop="16dp"
+                                android:text="@string/action_generic_read_state"
+                                app:layout_constraintEnd_toStartOf="@id/action_on"
+                                app:layout_constraintStart_toStartOf="parent"
+                                app:layout_constraintTop_toBottomOf="@id/div_controls" />
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/action_on"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="8dp"
+                                android:layout_marginTop="16dp"
+                                android:text="SEND"
+                                app:layout_constraintEnd_toEndOf="parent"
+                                app:layout_constraintStart_toEndOf="@id/action_read_state"
+                                app:layout_constraintTop_toBottomOf="@id/div_controls" />
+
+                        </androidx.constraintlayout.widget.ConstraintLayout>
+                    </com.google.android.material.card.MaterialCardView>
+
+                    <!-- Long Command Controls Card -->
+                    <com.google.android.material.card.MaterialCardView
+                        android:id="@+id/long_command_controls_card"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="@dimen/activity_horizontal_margin"
+                        app:cardElevation="1dp">
+
+                        <androidx.constraintlayout.widget.ConstraintLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:padding="8dp">
+
+                            <com.google.android.material.appbar.MaterialToolbar
+                                android:id="@+id/long_command_tool_bar"
+                                android:layout_width="0dp"
+                                android:layout_height="?attr/actionBarSize"
+                                app:layout_constraintEnd_toEndOf="parent"
+                                app:layout_constraintStart_toStartOf="parent"
+                                app:layout_constraintTop_toTopOf="parent"
+                                app:logo="@drawable/ic_lightbulb_outline_black_24dp"
+                                app:title="Long Command On Off Controls"
+                                app:titleTextAppearance="@style/Toolbar.TitleText" />
+
+                            <com.google.android.material.textfield.TextInputLayout
+                                android:id="@+id/layout_element_address"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:hint="Enter Length (1-8)"
+                                android:layout_marginTop="16dp"
+                                app:layout_constraintEnd_toEndOf="parent"
+                                app:layout_constraintStart_toStartOf="parent"
+                                app:layout_constraintTop_toBottomOf="@id/long_command_tool_bar">
+
+                                <com.google.android.material.textfield.TextInputEditText
+                                    android:id="@+id/et_element_address"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:imeOptions="actionNext"
+                                    android:inputType="number"
+                                    android:text="" />
+                            </com.google.android.material.textfield.TextInputLayout>
+
+                            <com.google.android.material.textfield.TextInputLayout
+                                android:id="@+id/layout_long_command"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:hint="Enter Command"
+                                android:layout_marginTop="16dp"
+                                app:layout_constraintEnd_toEndOf="parent"
+                                app:layout_constraintStart_toStartOf="parent"
+                                app:layout_constraintTop_toBottomOf="@id/layout_element_address">
+
+                                <com.google.android.material.textfield.TextInputEditText
+                                    android:id="@+id/et_long_command"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:imeOptions="actionNext"
+                                    android:inputType="text" />
+                            </com.google.android.material.textfield.TextInputLayout>
+
+                            <LinearLayout
+                                android:id="@+id/data_fields_container"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="16dp"
+                                android:orientation="vertical"
+                                app:layout_constraintEnd_toEndOf="parent"
+                                app:layout_constraintStart_toStartOf="parent"
+                                app:layout_constraintTop_toBottomOf="@id/layout_long_command">
+
+                                <com.google.android.material.textfield.TextInputLayout
+                                    android:id="@+id/layout_long_data_1"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:hint="Enter Brightness 1"
+                                    android:layout_marginTop="8dp"
+                                    android:visibility="visible">
+
+                                    <com.google.android.material.textfield.TextInputEditText
+                                        android:id="@+id/et_long_data_1"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:imeOptions="actionNext"
+                                        android:inputType="number" />
+                                </com.google.android.material.textfield.TextInputLayout>
+
+                                <com.google.android.material.textfield.TextInputLayout
+                                    android:id="@+id/layout_long_data_2"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:hint="Enter Brightness 2"
+                                    android:layout_marginTop="8dp"
+                                    android:visibility="gone">
+
+                                    <com.google.android.material.textfield.TextInputEditText
+                                        android:id="@+id/et_long_data_2"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:imeOptions="actionNext"
+                                        android:inputType="number" />
+                                </com.google.android.material.textfield.TextInputLayout>
+
+                                <com.google.android.material.textfield.TextInputLayout
+                                    android:id="@+id/layout_long_data_3"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:hint="Enter Brightness 3"
+                                    android:layout_marginTop="8dp"
+                                    android:visibility="gone">
+
+                                    <com.google.android.material.textfield.TextInputEditText
+                                        android:id="@+id/et_long_data_3"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:imeOptions="actionNext"
+                                        android:inputType="number" />
+                                </com.google.android.material.textfield.TextInputLayout>
+
+                                <com.google.android.material.textfield.TextInputLayout
+                                    android:id="@+id/layout_long_data_4"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:hint="Enter Brightness 4"
+                                    android:layout_marginTop="8dp"
+                                    android:visibility="gone">
+
+                                    <com.google.android.material.textfield.TextInputEditText
+                                        android:id="@+id/et_long_data_4"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:imeOptions="actionNext"
+                                        android:inputType="number" />
+                                </com.google.android.material.textfield.TextInputLayout>
+
+                                <com.google.android.material.textfield.TextInputLayout
+                                    android:id="@+id/layout_long_data_5"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:hint="Enter Brightness 5"
+                                    android:layout_marginTop="8dp"
+                                    android:visibility="gone">
+
+                                    <com.google.android.material.textfield.TextInputEditText
+                                        android:id="@+id/et_long_data_5"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:imeOptions="actionNext"
+                                        android:inputType="number" />
+                                </com.google.android.material.textfield.TextInputLayout>
+
+                                <com.google.android.material.textfield.TextInputLayout
+                                    android:id="@+id/layout_long_data_6"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:hint="Enter Brightness 6"
+                                    android:layout_marginTop="8dp"
+                                    android:visibility="gone">
+
+                                    <com.google.android.material.textfield.TextInputEditText
+                                        android:id="@+id/et_long_data_6"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:imeOptions="actionNext"
+                                        android:inputType="number" />
+                                </com.google.android.material.textfield.TextInputLayout>
+
+                                <com.google.android.material.textfield.TextInputLayout
+                                    android:id="@+id/layout_long_data_7"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:hint="Enter Brightness 7"
+                                    android:layout_marginTop="8dp"
+                                    android:visibility="gone">
+
+                                    <com.google.android.material.textfield.TextInputEditText
+                                        android:id="@+id/et_long_data_7"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:imeOptions="actionNext"
+                                        android:inputType="number" />
+                                </com.google.android.material.textfield.TextInputLayout>
+
+                                <com.google.android.material.textfield.TextInputLayout
+                                    android:id="@+id/layout_long_data_8"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:hint="Enter Brightness 8"
+                                    android:layout_marginTop="8dp"
+                                    android:visibility="gone">
+
+                                    <com.google.android.material.textfield.TextInputEditText
+                                        android:id="@+id/et_long_data_8"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:imeOptions="actionDone"
+                                        android:inputType="number" />
+                                </com.google.android.material.textfield.TextInputLayout>
+                            </LinearLayout>
+
+                            <include
+                                android:id="@+id/div_long_controls"
+                                layout="@layout/layout_divider"
+                                android:layout_width="0dp"
+                                android:layout_height="1dp"
+                                android:layout_marginTop="16dp"
+                                app:layout_constraintEnd_toEndOf="parent"
+                                app:layout_constraintStart_toStartOf="parent"
+                                app:layout_constraintTop_toBottomOf="@id/data_fields_container" />
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/action_long_read_state"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_marginEnd="8dp"
+                                android:layout_marginTop="16dp"
+                                android:text="@string/action_generic_read_state"
+                                app:layout_constraintEnd_toStartOf="@id/action_long_send"
+                                app:layout_constraintStart_toStartOf="parent"
+                                app:layout_constraintTop_toBottomOf="@id/div_long_controls" />
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/action_long_send"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="8dp"
+                                android:layout_marginTop="16dp"
+                                android:text="SEND LONG"
+                                app:layout_constraintEnd_toEndOf="parent"
+                                app:layout_constraintStart_toEndOf="@id/action_long_read_state"
+                                app:layout_constraintTop_toBottomOf="@id/div_long_controls" />
+
+                        </androidx.constraintlayout.widget.ConstraintLayout>
+                    </com.google.android.material.card.MaterialCardView>
+
+
+
+
+
+                    <!-- Scene Command Controls Card -->
+                    <com.google.android.material.card.MaterialCardView
+                        android:id="@+id/scene_command_controls_card"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="@dimen/activity_vertical_margin"
+                        app:cardElevation="1dp">
+
+
+                        <androidx.constraintlayout.widget.ConstraintLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:padding="8dp">
+                            <com.google.android.material.appbar.MaterialToolbar
+                                android:id="@+id/scene_toolbar"
+                                android:layout_width="0dp"
+                                android:layout_height="?attr/actionBarSize"
+                                android:layout_marginBottom="8dp"
+                                app:layout_constraintEnd_toEndOf="parent"
+                                app:layout_constraintStart_toStartOf="parent"
+                                app:layout_constraintTop_toTopOf="parent"
+                                app:logo="@drawable/ic_lightbulb_outline_black_24dp"
+                                app:title="Scene Command Controls"
+                                app:titleTextAppearance="@style/Toolbar.TitleText" />
+
+                            <com.google.android.material.textfield.TextInputLayout
+                                android:id="@+id/layout_scene_id"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="8dp"
+                                android:hint="Enter Scene ID (1-240)"
+                                app:layout_constraintEnd_toEndOf="parent"
+                                app:layout_constraintStart_toStartOf="parent"
+                                app:layout_constraintTop_toBottomOf="@id/scene_toolbar">
+
+                                <com.google.android.material.textfield.TextInputEditText
+                                    android:id="@+id/et_scene_id"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:inputType="number"
+                                    android:maxLength="3"
+                                    android:text="1" />
+                            </com.google.android.material.textfield.TextInputLayout>
+
+                            <com.google.android.material.textfield.TextInputLayout
+                                android:id="@+id/layout_type"
+                                android:layout_width="0dp"
+                                android:visibility="gone"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="12dp"
+                                android:hint="Enter Type (1-39)"
+                                app:layout_constraintEnd_toEndOf="parent"
+                                app:layout_constraintStart_toStartOf="parent"
+                                app:layout_constraintTop_toBottomOf="@id/layout_scene_id">
+
+                                <com.google.android.material.textfield.TextInputEditText
+                                    android:id="@+id/et_type"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:inputType="number"
+                                    android:maxLength="2"
+                                    android:text="1" />
+                            </com.google.android.material.textfield.TextInputLayout>
+
+                            <!-- Press type selector buttons -->
+                            <LinearLayout
+                                android:id="@+id/press_type_container"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="12dp"
+                                android:orientation="horizontal"
+                                android:visibility="gone"
+                                android:gravity="center"
+                                app:layout_constraintEnd_toEndOf="parent"
+                                app:layout_constraintStart_toStartOf="parent"
+                                app:layout_constraintTop_toBottomOf="@id/layout_type">
+
+                                <com.google.android.material.button.MaterialButton
+                                    android:id="@+id/btn_press_single"
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:layout_marginEnd="4dp"
+                                    android:text="Single"
+                                    style="@style/Widget.MaterialComponents.Button.OutlinedButton" />
+
+                                <com.google.android.material.button.MaterialButton
+                                    android:id="@+id/btn_press_double"
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:layout_marginStart="4dp"
+                                    android:layout_marginEnd="4dp"
+                                    android:text="Double"
+                                    style="@style/Widget.MaterialComponents.Button.OutlinedButton" />
+
+                                <com.google.android.material.button.MaterialButton
+                                    android:id="@+id/btn_press_long"
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:layout_marginStart="4dp"
+                                    android:text="Long"
+                                    style="@style/Widget.MaterialComponents.Button.OutlinedButton" />
+                            </LinearLayout>
+
+                            <!-- Press type display (read-only) -->
+                            <com.google.android.material.textfield.TextInputLayout
+                                android:id="@+id/layout_press"
+                                android:layout_width="0dp"
+                                android:visibility="gone"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="12dp"
+                                android:hint="Selected Press Type"
+                                app:layout_constraintEnd_toEndOf="parent"
+                                app:layout_constraintStart_toStartOf="parent"
+                                app:layout_constraintTop_toBottomOf="@+id/press_type_container">
+
+                                <com.google.android.material.textfield.TextInputEditText
+                                    android:id="@+id/et_press"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:cursorVisible="false"
+                                    android:focusable="false"
+                                    android:focusableInTouchMode="false"
+                                    android:inputType="text"
+                                    android:text="Single" />
+                            </com.google.android.material.textfield.TextInputLayout>
+
+                            <com.google.android.material.textfield.TextInputLayout
+                                android:id="@+id/layout_mode"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="12dp"
+                                android:hint="Enter Mode (1-8)"
+                                android:visibility="gone"
+                                app:layout_constraintEnd_toEndOf="parent"
+                                app:layout_constraintStart_toStartOf="parent"
+                                app:layout_constraintTop_toBottomOf="@id/layout_press">
+
+                                <com.google.android.material.textfield.TextInputEditText
+                                    android:id="@+id/et_mode"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:inputType="number"
+                                    android:maxLength="1"
+                                    android:text="1" />
+                            </com.google.android.material.textfield.TextInputLayout>
+
+                            <com.google.android.material.textfield.TextInputLayout
+                                android:id="@+id/layout_device"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="12dp"
+                                android:hint="Enter Device (1-8)"
+                                android:visibility="gone"
+                                app:layout_constraintEnd_toEndOf="parent"
+                                app:layout_constraintStart_toStartOf="parent"
+                                app:layout_constraintTop_toBottomOf="@id/layout_mode">
+
+                                <com.google.android.material.textfield.TextInputEditText
+                                    android:id="@+id/et_device"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:inputType="number"
+                                    android:maxLength="1"
+                                    android:text="1" />
+                            </com.google.android.material.textfield.TextInputLayout>
+
+                            <com.google.android.material.textfield.TextInputLayout
+                                android:id="@+id/layout_scene_state"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="12dp"
+                                android:hint="Enter State (0-3)"
+                                app:layout_constraintEnd_toEndOf="parent"
+                                app:layout_constraintStart_toStartOf="parent"
+                                app:layout_constraintTop_toBottomOf="@id/layout_device">
+
+                                <com.google.android.material.textfield.TextInputEditText
+                                    android:id="@+id/et_scene_state"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:inputType="number"
+                                    android:maxLength="1"
+                                    android:text="0" />
+                            </com.google.android.material.textfield.TextInputLayout>
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/btn_send"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="16dp"
+                                android:text="SEND COMMAND"
+                                app:layout_constraintEnd_toEndOf="parent"
+                                app:layout_constraintStart_toStartOf="parent"
+                                app:layout_constraintTop_toBottomOf="@id/layout_scene_state" />
+
+                        </androidx.constraintlayout.widget.ConstraintLayout>
+                    </com.google.android.material.card.MaterialCardView>
+
+
+
+
                     <androidx.constraintlayout.widget.ConstraintLayout
                         android:id="@+id/node_controls_container"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
+                        android:layout_marginBottom="30dp"
+                        android:clipToPadding="false"
                         android:paddingBottom="@dimen/activity_vertical_margin"
-                        android:layout_marginBottom="@dimen/activity_vertical_margin"
-                        android:clipToPadding="false" />
+                        android:visibility="gone" />
                 </LinearLayout>
             </androidx.core.widget.NestedScrollView>
         </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>

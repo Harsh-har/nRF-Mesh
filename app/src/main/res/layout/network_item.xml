@@ -41,15 +41,17 @@
                 app:layout_constraintEnd_toStartOf="@id/node_name"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="@id/node_name"
-                app:srcCompat="@drawable/network" />
+                app:srcCompat="@drawable/networkmesh" />
 
             <com.google.android.material.textview.MaterialTextView
                 android:id="@+id/node_name"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_margin="@dimen/activity_horizontal_margin"
-                android:ellipsize="marquee"
-                android:singleLine="true"
+                android:clickable="true"
+                android:ellipsize="end"
+                android:focusable="true"
+                android:maxLines="1"
                 android:text="@string/nrf_mesh_node"
                 android:textAppearance="@style/TextAppearance.MaterialComponents.Headline6"
                 android:textSize="18sp"
@@ -91,6 +93,33 @@
                     app:layout_constraintTop_toTopOf="@id/unicast_title"
                     tools:ignore="HardcodedText" />
 
+                <!-- ✅ NEW: MAC Address Title -->
+                <com.google.android.material.textview.MaterialTextView
+                    android:id="@+id/mac_title"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="MAC:"
+                    android:textAppearance="@style/TextAppearance.MaterialComponents.Body2"
+                    android:textColor="?android:textColorSecondary"
+                    app:layout_constraintStart_toStartOf="@+id/unicast_title"
+                    app:layout_constraintTop_toBottomOf="@+id/unicast"
+                    tools:ignore="HardcodedText" />
+
+                <!-- ✅ NEW: MAC Address Value -->
+                <com.google.android.material.textview.MaterialTextView
+                    android:id="@+id/macAddress"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="16dp"
+                    android:ellipsize="end"
+                    android:maxLines="1"
+                    android:text="E7:B4:F3:F4:31:44"
+                    android:textAppearance="@style/TextAppearance.MaterialComponents.Body2"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toEndOf="@id/mac_title"
+                    app:layout_constraintTop_toTopOf="@id/mac_title"
+                    tools:ignore="HardcodedText" />
+
                 <com.google.android.material.textview.MaterialTextView
                     android:id="@+id/company_identifier_title"
                     android:layout_width="wrap_content"
@@ -99,7 +128,7 @@
                     android:textAppearance="@style/TextAppearance.MaterialComponents.Body2"
                     android:textColor="?android:textColorSecondary"
                     app:layout_constraintStart_toStartOf="@+id/unicast_title"
-                    app:layout_constraintTop_toBottomOf="@+id/unicast" />
+                    app:layout_constraintTop_toBottomOf="@+id/mac_title" />
 
                 <com.google.android.material.textview.MaterialTextView
                     android:id="@+id/company_identifier"
@@ -113,7 +142,7 @@
                     android:textSize="14sp"
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintStart_toStartOf="@+id/unicast"
-                    app:layout_constraintTop_toBottomOf="@+id/unicast"
+                    app:layout_constraintTop_toBottomOf="@+id/mac_title"
                     tools:ignore="RtlSymmetry" />
 
                 <com.google.android.material.textview.MaterialTextView
@@ -157,7 +186,9 @@
                     app:layout_constraintStart_toStartOf="@+id/unicast"
                     app:layout_constraintTop_toBottomOf="@+id/elements"
                     tools:ignore="HardcodedText" />
+
             </androidx.constraintlayout.widget.ConstraintLayout>
+
         </androidx.constraintlayout.widget.ConstraintLayout>
     </FrameLayout>
 </FrameLayout>

@@ -1,4 +1,12 @@
 <resources>
+    <!-- Mac Address -->
+    <string name="unknown_error">Unknown error</string>
+    <string name="title_configuration_complete">Configuration Complete</string>
+
+
+
+
+
     <string name="app_name">Swaro Mesh</string>
     <string name="feature_name">Mesh</string>
     <string name="title_scanner">Scanner</string>
@@ -258,6 +266,8 @@
         You may do this by going back to the main screen and connecting to the node.</string>
     <string name="no_elements_guide_composition_data">No elements were found! \nGet composition data to see what elements are on this node.</string>
     <string name="action_connect">Connect</string>
+    <string name="action_mac_connect">Same Connect</string>
+
     <string name="action_disconnect">Disconnect</string>
 
     <string name="hint_publish_address">Publish Address</string>
@@ -284,7 +294,7 @@
     <string name="summary_version">App Version</string>
     <string name="title_node_configuration">Node Configuration</string>
     <string name="title_added_net_keys">Added Net Keys</string>
-    <string name="title_added_app_keys">Added App Keys</string>
+    <string name="title_added_app_keys">Added Apps Keys</string>
     <string name="title_added_keys">Added Keys</string>
     <string name="title_keys">Keys</string>
     <string name="title_key">Key</string>
@@ -476,13 +486,6 @@
         Step 1. Connect to the network.\n\n
         Step 2. Click on the node.\n\n
         Step 3. Add app key</string>
-    <!--    <string name="init_config_error_all">Initial configuration of the node has failed.-->
-    <!--        Continue with the following steps to configure the node\n\n-->
-    <!--        Step 1. Connect to the network.\n\n-->
-    <!--        Step 2. Click on the node.\n\n-->
-    <!--        Step 3. Click get composition data\n\n-->
-    <!--        Step 4. Get default TTL\n\n-->
-    <!--        Step 5. Add app key</string>-->
     <string name="network_transmit_interval_steps_summary">10 ms step(s)</string>
     <string name="please_connect_to_network">Please connect to network to control devices!</string>
     <string name="action_edit">Edit</string>
@@ -667,4 +670,13 @@
     <string name="message_public_key">Enter the 128-character hexadecimal Public Key of the device.</string>
     <string name="skip">skip</string>
     <string name="skip_oob_public_key_summary">Skipping this process will mark the provisioned node and any Network Key associated with this node as insecure.</string>
+
+    <!-- Filter Control Strings -->
+    <string name="title_filter_control">Proxy Filter Control</string>
+    <string name="subtitle_filter_control">Enable or disable address filtering</string>
+    <string name="filter_enabled">● Active</string>
+    <string name="filter_disabled">● Inactive</string>
+    <string name="filter_enabled_message">Address filter is now active</string>
+    <string name="filter_disabled_message">Address filter is now inactive</string>
+    <string name="proxy_disconnected">● Disconnected</string>
 </resources>

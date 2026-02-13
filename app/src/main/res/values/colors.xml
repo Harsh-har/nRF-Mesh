@@ -79,4 +79,11 @@
     <color name="vendorNordicMediumGray">@color/nordicMediumGray</color>
     <color name="uncheckedColor">#a1a1a1</color>
     <color name="colorSurfaceContain">#FFE4EFF2</color>
+
+          <!--Proxy filter Color -->
+    <color name="green_500">#4CAF50</color>
+    <color name="material_red_500">#F44336</color>
+    <color name="primaryColor">#3F51B5</color>
+    <color name="material_grey_500">#9E9E9E</color>
+
 </resources>

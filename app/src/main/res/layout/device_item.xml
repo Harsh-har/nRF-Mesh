@@ -39,7 +39,7 @@
         android:layout_height="48dp"
         android:layout_centerVertical="true"
         android:padding="@dimen/mesh_list_icon_padding"
-        app:srcCompat="@drawable/network" />
+        app:srcCompat="@drawable/networkmesh" />
 
     <com.google.android.material.textview.MaterialTextView
         android:id="@+id/device_name"

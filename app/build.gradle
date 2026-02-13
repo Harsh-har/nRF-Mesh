@@ -5,12 +5,12 @@ apply plugin: 'org.jetbrains.kotlin.android'
 
 android {
 
-    namespace 'no.nordicsemi.android.nrfmesh'
+    namespace 'no.nordicsemi.android.swaromesh'
 
     compileSdk 36
 
     defaultConfig {
-        applicationId "no.nordicsemi.android.nrfmeshprovisioner"
+        applicationId "no.nordicsemi.android.swaromeshprovisioner"
 
         minSdk 23
         targetSdk 35
@@ -71,6 +71,7 @@ android {
 dependencies {
 
     implementation fileTree(dir: 'libs', include: ['*.jar'])
+    implementation 'androidx.room:room-runtime:2.8.4'
 
     // -------------------- Testing --------------------
     testImplementation 'junit:junit:4.13.2'
@@ -118,6 +119,7 @@ dependencies {
 
     // -------------------- Mesh Module --------------------
     implementation project(':mesh')
+    annotationProcessor 'androidx.room:room-compiler:2.8.4'
 }
 
 repositories {
