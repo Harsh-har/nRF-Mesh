@@ -85,6 +85,8 @@ import no.nordicsemi.android.swaromesh.widgets.ItemTouchHelperAdapter;
 import no.nordicsemi.android.swaromesh.widgets.RemovableItemTouchHelperCallback;
 import no.nordicsemi.android.swaromesh.widgets.RemovableViewHolder;
 
+
+
 public abstract class BaseModelConfigurationActivity extends BaseActivity implements
         GroupCallbacks,
         ItemTouchHelperAdapter,
@@ -93,6 +95,7 @@ public abstract class BaseModelConfigurationActivity extends BaseActivity implem
 
     private static final String DIALOG_FRAGMENT_CONFIGURATION_STATUS = "DIALOG_FRAGMENT_CONFIGURATION_STATUS";
     private static final String PROGRESS_BAR_STATE = "PROGRESS_BAR_STATE";
+
     private static final int DEFAULT_BRIGHTNESS_VALUE = 30;
     private static final int MIN_BRIGHTNESS = 0;
     private static final int MAX_BRIGHTNESS = 255;
@@ -157,7 +160,6 @@ public abstract class BaseModelConfigurationActivity extends BaseActivity implem
     protected Button mBtnPressDouble;
     protected Button mBtnPressLong;
     protected Button mSceneSendButton;
-
     protected Button mSetNetworkTransmitStateButton;
 
     private RecyclerView recyclerViewBoundKeys, recyclerViewSubscriptions;
@@ -183,13 +185,10 @@ public abstract class BaseModelConfigurationActivity extends BaseActivity implem
             });
 
     @Override
-    protected void onCreate(@Nullable final Bundle savedInstanceState) {
+    protected void onCreate(final Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
         binding = ActivityModelConfigurationBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
-
-        // Base UI references
         mContainer = binding.container;
         mContainerAppKeyBinding = binding.appKeyCard;
         mActionBindAppKey = binding.actionBindAppKey;
@@ -206,8 +205,6 @@ public abstract class BaseModelConfigurationActivity extends BaseActivity implem
         mProgressbar = binding.configurationProgressBar;
         mSwipe = binding.swipeRefresh;
 
-        // Swipe refresh listener
-        mSwipe.setOnRefreshListener(this);
 
         // Node controls references
         mCommandEditText = binding.etCommand;
@@ -239,123 +236,95 @@ public abstract class BaseModelConfigurationActivity extends BaseActivity implem
         // Initialize scene controls
         initializeSceneControls();
 
-        // ViewModel
         mViewModel = new ViewModelProvider(this).get(ModelConfigurationViewModel.class);
         initialize();
-
-        // Toolbar setup
         final MeshModel meshModel = mViewModel.getSelectedModel().getValue();
         if (meshModel != null) {
             setSupportActionBar(binding.toolbar);
-
             if (getSupportActionBar() != null) {
                 getSupportActionBar().setDisplayHomeAsUpEnabled(true);
                 getSupportActionBar().setTitle(meshModel.getModelName());
-
-                final int modelId = meshModel.getModelId();
-                getSupportActionBar().setSubtitle(
-                        getString(R.string.model_id,
-                                CompositionDataParser.formatModelIdentifier(modelId, true))
-                );
             }
-        }
 
-        // RecyclerView: Subscriptions
-        recyclerViewSubscriptions = findViewById(R.id.recycler_view_subscriptions);
-        recyclerViewSubscriptions.setLayoutManager(new LinearLayoutManager(this));
-        final ItemTouchHelper.Callback itemTouchHelperCallback = new RemovableItemTouchHelperCallback(this);
-        final ItemTouchHelper itemTouchHelper = new ItemTouchHelper(itemTouchHelperCallback);
-        itemTouchHelper.attachToRecyclerView(recyclerViewSubscriptions);
+            final int modelId = meshModel.getModelId();
+            getSupportActionBar().setSubtitle(getString(R.string.model_id, CompositionDataParser.formatModelIdentifier(modelId, true)));
 
-        mSubscriptionAdapter = new GroupAddressAdapter(
-                this,
-                mViewModel.getNetworkLiveData().getMeshNetwork(),
-                mViewModel.getSelectedModel()
-        );
-        recyclerViewSubscriptions.setAdapter(mSubscriptionAdapter);
+            recyclerViewSubscriptions = findViewById(R.id.recycler_view_subscriptions);
+            recyclerViewSubscriptions.setLayoutManager(new LinearLayoutManager(this));
+            final ItemTouchHelper.Callback itemTouchHelperCallback = new RemovableItemTouchHelperCallback(this);
+            final ItemTouchHelper itemTouchHelper = new ItemTouchHelper(itemTouchHelperCallback);
+            itemTouchHelper.attachToRecyclerView(recyclerViewSubscriptions);
+            mSubscriptionAdapter = new GroupAddressAdapter(this, mViewModel.getNetworkLiveData().getMeshNetwork(), mViewModel.getSelectedModel());
+            recyclerViewSubscriptions.setAdapter(mSubscriptionAdapter);
 
-        // RecyclerView: Bound Keys
-        recyclerViewBoundKeys = findViewById(R.id.recycler_view_bound_keys);
-        recyclerViewBoundKeys.setLayoutManager(new LinearLayoutManager(this));
-        recyclerViewBoundKeys.setItemAnimator(null);
-
-        final ItemTouchHelper.Callback itemTouchHelperCallbackKeys = new RemovableItemTouchHelperCallback(this);
-        final ItemTouchHelper itemTouchHelperKeys = new ItemTouchHelper(itemTouchHelperCallbackKeys);
-        itemTouchHelperKeys.attachToRecyclerView(recyclerViewBoundKeys);
-
-        mBoundAppKeyAdapter = new BoundAppKeysAdapter(
-                this,
-                mViewModel.getNetworkLiveData().getAppKeys(),
-                mViewModel.getSelectedModel()
-        );
-        recyclerViewBoundKeys.setAdapter(mBoundAppKeyAdapter);
-
-        // Manual Bind Button (optional)
-        mActionBindAppKey.setOnClickListener(v -> {
-            final ProvisionedMeshNode node = mViewModel.getSelectedMeshNode().getValue();
-            if (node != null && !node.isExist(SigModelParser.CONFIGURATION_SERVER)) {
-                return;
-            }
-            if (!checkConnectivity(mContainer)) return;
-
-            final Intent bindAppKeysIntent = new Intent(BaseModelConfigurationActivity.this, AppKeysActivity.class);
-            bindAppKeysIntent.putExtra(EXTRA_DATA, BIND_APP_KEY);
-            appKeySelector.launch(bindAppKeysIntent);
-        });
-
-        // Send button
-        mSendButton.setOnClickListener(v -> sendGenericOnOffCommand());
-
-        // Long command buttons
-        mLongSendButton.setOnClickListener(v -> sendLongBrightnessCommand());
-        mLongReadButton.setOnClickListener(v -> readLongCommand());
-
-        // Scene command button
-        mSceneSendButton.setOnClickListener(v -> sendSceneCommand());
-
-        // Length watcher
-        setupLengthTextWatcher();
-
-        // Publication buttons
-        mPublishAddressView.setText(R.string.none);
-        mActionSetPublication.setOnClickListener(v -> navigateToPublication());
-        mActionClearPublication.setOnClickListener(v -> clearPublication());
-
-        // Subscription button
-        mActionSubscribe.setOnClickListener(v -> {
-            if (!checkConnectivity(mContainer)) return;
-            final ArrayList<Group> groups = new ArrayList<>(
-                    mViewModel.getNetworkLiveData().getMeshNetwork().getGroups()
+            recyclerViewBoundKeys = findViewById(R.id.recycler_view_bound_keys);
+            recyclerViewBoundKeys.setLayoutManager(new LinearLayoutManager(this));
+            recyclerViewBoundKeys.setItemAnimator(null);
+            final ItemTouchHelper.Callback itemTouchHelperCallbackKeys = new RemovableItemTouchHelperCallback(this);
+            final ItemTouchHelper itemTouchHelperKeys = new ItemTouchHelper(itemTouchHelperCallbackKeys);
+            itemTouchHelperKeys.attachToRecyclerView(recyclerViewBoundKeys);
+            mBoundAppKeyAdapter = new BoundAppKeysAdapter(
+                    this,
+                    mViewModel.getNetworkLiveData().getAppKeys(),
+                    mViewModel.getSelectedModel()
             );
-            final DialogFragmentGroupSubscription fragmentSubscriptionAddress =
-                    DialogFragmentGroupSubscription.newInstance(groups);
-            fragmentSubscriptionAddress.show(getSupportFragmentManager(), null);
-        });
+            recyclerViewBoundKeys.setAdapter(mBoundAppKeyAdapter);
 
-        // Transaction timeout observer
-        mViewModel.getTransactionStatus().observe(this, transactionStatus -> {
-            if (transactionStatus != null) {
-                hideProgressBar();
-                final String message = getString(R.string.operation_timed_out);
-                DialogFragmentTransactionStatus fragmentMessage =
-                        DialogFragmentTransactionStatus.newInstance("", message);
-                fragmentMessage.show(getSupportFragmentManager(), null);
-            }
-        });
+            mActionBindAppKey.setOnClickListener(v -> {
+                final ProvisionedMeshNode node = mViewModel.getSelectedMeshNode().getValue();
+                if (node != null && !node.isExist(SigModelParser.CONFIGURATION_SERVER)) {
+                    return;
+                }
+                if (!checkConnectivity(mContainer)) return;
+                final Intent bindAppKeysIntent = new Intent(BaseModelConfigurationActivity.this, AppKeysActivity.class);
+                bindAppKeysIntent.putExtra(EXTRA_DATA, BIND_APP_KEY);
+                appKeySelector.launch(bindAppKeysIntent);
+            });
 
+            // Send button
+            mSendButton.setOnClickListener(v -> sendGenericOnOffCommand());
+
+            // Long command buttons
+            mLongSendButton.setOnClickListener(v -> sendLongBrightnessCommand());
+            mLongReadButton.setOnClickListener(v -> readLongCommand());
+
+            // Scene command button
+            mSceneSendButton.setOnClickListener(v -> sendSceneCommand());
+
+            mPublishAddressView.setText(R.string.none);
+            mActionSetPublication.setOnClickListener(v -> navigateToPublication());
+
+            mActionClearPublication.setOnClickListener(v -> clearPublication());
+
+            mActionSubscribe.setOnClickListener(v -> {
+                if (!checkConnectivity(mContainer)) return;
+                final ArrayList<Group> groups = new ArrayList<>(mViewModel.getNetworkLiveData().getMeshNetwork().getGroups());
+                final DialogFragmentGroupSubscription fragmentSubscriptionAddress = DialogFragmentGroupSubscription.newInstance(groups);
+                fragmentSubscriptionAddress.show(getSupportFragmentManager(), null);
+            });
+
+            mViewModel.getTransactionStatus().observe(this, transactionStatus -> {
+                if (transactionStatus != null) {
+                    hideProgressBar();
+                    final String message = getString(R.string.operation_timed_out);
+                    DialogFragmentTransactionStatus fragmentMessage = DialogFragmentTransactionStatus.newInstance("Transaction Failed", message);
+                    fragmentMessage.show(getSupportFragmentManager(), null);
+                }
+            });
+        }
         // ✅ AUTO BIND TRIGGER USING OBSERVERS (IMPORTANT)
         mViewModel.getSelectedMeshNode().observe(this, node -> tryAutoBind());
         mViewModel.getSelectedElement().observe(this, element -> tryAutoBind());
         mViewModel.getSelectedModel().observe(this, model -> tryAutoBind());
         tryAutoBind();
-    }
 
+    }
     private void initializeSceneControls() {
         // Set default values
         mSceneIdEditText.setText("1");
         mTypeEditText.setText("1");
         mPressEditText.setText(PRESS_TYPE_SINGLE);
-        mModeEditText.setText("1");
+        mModeEditText.setText("2");
         mDeviceEditText.setText("1");
         mSceneStateEditText.setText("0");
 
@@ -378,7 +347,6 @@ public abstract class BaseModelConfigurationActivity extends BaseActivity implem
         // Add validation listeners
         addSceneValidationListeners();
     }
-
     private void addSceneValidationListeners() {
         // Scene ID validation (1-240)
         mSceneIdEditText.addTextChangedListener(new TextWatcher() {
@@ -1011,22 +979,6 @@ public abstract class BaseModelConfigurationActivity extends BaseActivity implem
 
         if (mActionRead != null && !mActionRead.isEnabled())
             mActionRead.setEnabled(true);
-
-        // Enable long command buttons
-        if (mLongSendButton != null)
-            mLongSendButton.setEnabled(true);
-        if (mLongReadButton != null)
-            mLongReadButton.setEnabled(true);
-
-        // Enable scene command buttons
-        if (mBtnPressSingle != null)
-            mBtnPressSingle.setEnabled(true);
-        if (mBtnPressDouble != null)
-            mBtnPressDouble.setEnabled(true);
-        if (mBtnPressLong != null)
-            mBtnPressLong.setEnabled(true);
-        if (mSceneSendButton != null)
-            mSceneSendButton.setEnabled(true);
     }
 
     @Override
@@ -1042,22 +994,6 @@ public abstract class BaseModelConfigurationActivity extends BaseActivity implem
             mSetNetworkTransmitStateButton.setEnabled(false);
         if (mActionRead != null)
             mActionRead.setEnabled(false);
-
-        // Disable long command buttons
-        if (mLongSendButton != null)
-            mLongSendButton.setEnabled(false);
-        if (mLongReadButton != null)
-            mLongReadButton.setEnabled(false);
-
-        // Disable scene command buttons
-        if (mBtnPressSingle != null)
-            mBtnPressSingle.setEnabled(false);
-        if (mBtnPressDouble != null)
-            mBtnPressDouble.setEnabled(false);
-        if (mBtnPressLong != null)
-            mBtnPressLong.setEnabled(false);
-        if (mSceneSendButton != null)
-            mSceneSendButton.setEnabled(false);
     }
 
     protected void updateAppStatusUi(final MeshModel meshModel) {
@@ -1153,6 +1089,7 @@ public abstract class BaseModelConfigurationActivity extends BaseActivity implem
         }
     }
 
+
     protected void sendUnacknowledgedMessage(final int address, @NonNull final MeshMessage meshMessage) {
         try {
             if (!checkConnectivity(mContainer))
@@ -1183,6 +1120,7 @@ public abstract class BaseModelConfigurationActivity extends BaseActivity implem
             fragmentAppKeyBindStatus.show(getSupportFragmentManager(), DIALOG_FRAGMENT_CONFIGURATION_STATUS);
         }
     }
+
 
     /**
      * Gets the next TID for GenericOnOff model
@@ -1434,133 +1372,222 @@ public abstract class BaseModelConfigurationActivity extends BaseActivity implem
     }
 
     private void sendSceneCommand() {
-
         final ProvisionedMeshNode node = mViewModel.getSelectedMeshNode().getValue();
         final Element element = mViewModel.getSelectedElement().getValue();
         final MeshModel model = mViewModel.getSelectedModel().getValue();
 
         if (node == null || element == null || model == null) {
-            mViewModel.displaySnackBar(
-                    this, mContainer,
-                    "Node / Element / Model not selected",
-                    Snackbar.LENGTH_SHORT
-            );
+            mViewModel.displaySnackBar(this, mContainer,
+                    "Node / Element / Model not selected", Snackbar.LENGTH_SHORT);
             return;
         }
 
         try {
+            /* ---------------- INPUT VALIDATION ---------------- */
 
-            /* ---------------- VALUES ---------------- */
+            // Parse and validate Scene ID (0-255)
+            final int sceneId = parseAndValidateInt(
+                    mSceneIdEditText, "Scene ID", 0, 255);
 
-            final int sceneId = Integer.parseInt(
-                    mSceneIdEditText.getText().toString().trim()
-            );
+            // Parse and validate Type (0-63 for 6 bits)
+            final int type = parseAndValidateInt(
+                    mTypeEditText, "Type", 0, 63);
 
-            final int type = Integer.parseInt(
-                    mTypeEditText.getText().toString().trim()
-            );
+            // Parse and validate Mode (0-7 for 3 bits)
+            final int mode = parseAndValidateInt(
+                    mModeEditText, "Mode", 0, 7);
 
-            final int mode = Integer.parseInt(
-                    mModeEditText.getText().toString().trim()
-            );
+            // Parse and validate Device (0-7 for 3 bits)
+            final int device = parseAndValidateInt(
+                    mDeviceEditText, "Device", 0, 7);
 
-            final int device = Integer.parseInt(
-                    mDeviceEditText.getText().toString().trim()
-            );
+            // Parse and validate Scene State (0-3 for 2 bits)
+            final int sceneState = parseAndValidateInt(
+                    mSceneStateEditText, "State", 0, 3);
 
-            final int sceneState = Integer.parseInt(
-                    mSceneStateEditText.getText().toString().trim()
-            );
-
-            final String pressTypeStr =
-                    mPressEditText.getText().toString().trim();
-
-            final int pressCode =
-                    GenericSceneSet.getPressTypeCode(pressTypeStr);
-
-            final int tid = getNextSceneTid();
-
-            /* ---------------- APP KEY ---------------- */
-
-            final List<Integer> boundKeys =
-                    model.getBoundAppKeyIndexes();
-
-            if (boundKeys == null || boundKeys.isEmpty()) {
-                mViewModel.displaySnackBar(
-                        this, mContainer,
-                        "No AppKey bound to model",
-                        Snackbar.LENGTH_SHORT
-                );
+            // Validate Press Type
+            final String pressTypeStr = mPressEditText.getText().toString().trim();
+            final int pressCode = GenericSceneSet.getPressTypeCode(pressTypeStr);
+            if (pressCode < 0 || pressCode > 3) {
+                mViewModel.displaySnackBar(this, mContainer,
+                        "Invalid press type. Use Single, Double, or Long",
+                        Snackbar.LENGTH_SHORT);
                 return;
             }
 
-            final MeshNetwork network =
-                    mViewModel.getNetworkLiveData().getMeshNetwork();
+            /* ---------------- TID ---------------- */
+            final int tid = getNextSceneTid() & 0xFF;
 
-            final ApplicationKey appKey =
-                    network.getAppKey(boundKeys.get(0));
+            /* ---------------- APP KEY ---------------- */
+            final List<Integer> boundKeys = model.getBoundAppKeyIndexes();
+            if (boundKeys == null || boundKeys.isEmpty()) {
+                mViewModel.displaySnackBar(this, mContainer,
+                        "No AppKey bound to model", Snackbar.LENGTH_SHORT);
+                return;
+            }
 
+            final MeshNetwork network = mViewModel.getNetworkLiveData().getMeshNetwork();
+            final ApplicationKey appKey = network.getAppKey(boundKeys.get(0));
             if (appKey == null) {
-                mViewModel.displaySnackBar(
-                        this, mContainer,
-                        "AppKey not found",
-                        Snackbar.LENGTH_SHORT
-                );
+                mViewModel.displaySnackBar(this, mContainer,
+                        "AppKey not found", Snackbar.LENGTH_SHORT);
                 return;
             }
 
             /* ---------------- CREATE MESSAGE ---------------- */
-
-            final GenericSceneSet sceneSetMessage =
-                    new GenericSceneSet(
-                            appKey,
-                            sceneId,
-                            type,
-                            pressCode,
-                            mode,
-                            device,
-                            sceneState,
-                            tid
-                    );
-
-            /* ---------------- LOG ---------------- */
-
-            Log.d("SCENE_CMD", "========== GenericSceneSet ==========");
-            Log.d("SCENE_CMD", "Scene ID   : " + sceneId);
-            Log.d("SCENE_CMD", "Type       : " + type);
-            Log.d("SCENE_CMD", "Press      : " + pressCode);
-            Log.d("SCENE_CMD", "Mode       : " + mode);
-            Log.d("SCENE_CMD", "Device     : " + device);
-            Log.d("SCENE_CMD", "State      : " + sceneState);
-            Log.d("SCENE_CMD", "TID        : " + tid);
-            Log.d("SCENE_CMD", "OpCode     : 0x"
-                    + Integer.toHexString(sceneSetMessage.getOpCode()));
-            Log.d("SCENE_CMD", "Payload    : "
-                    + Arrays.toString(sceneSetMessage.getParameters()));
-            Log.d("SCENE_CMD", "===================================");
-
-            /* ---------------- SEND (UNACK) ---------------- */
-
-            sendUnacknowledgedMessage(
-                    node.getUnicastAddress(),
-                    sceneSetMessage
+            final GenericSceneSet sceneSetMessage = new GenericSceneSet(
+                    appKey, sceneId, type, pressCode, mode, device, sceneState, tid
             );
 
-            mViewModel.displaySnackBar(
-                    this, mContainer,
-                    "Scene Command Sent (4 bytes payload)",
-                    Snackbar.LENGTH_LONG
-            );
+            /* ---------------- VERIFY MESSAGE (Optional) ---------------- */
+            if (!verifyMessageStructure(sceneSetMessage, sceneId, type, pressCode,
+                    mode, device, sceneState, tid)) {
+                mViewModel.displaySnackBar(this, mContainer,
+                        "Message verification failed", Snackbar.LENGTH_SHORT);
+                return;
+            }
 
+            /* ---------------- SEND ---------------- */
+            final int elementAddress = element.getElementAddress();
+
+            // Log message details
+            logSceneCommand(sceneSetMessage, elementAddress, network);
+
+            // Send message
+            sendUnacknowledgedMessage(elementAddress, sceneSetMessage);
+
+            mViewModel.displaySnackBar(this, mContainer,
+                    String.format("Scene Command sent to Element 0x%04X", elementAddress),
+                    Snackbar.LENGTH_LONG);
+
+        } catch (NumberFormatException e) {
+            mViewModel.displaySnackBar(this, mContainer,
+                    "Invalid numeric input: " + e.getMessage(), Snackbar.LENGTH_SHORT);
+        } catch (IllegalArgumentException e) {
+            mViewModel.displaySnackBar(this, mContainer,
+                    "Validation error: " + e.getMessage(), Snackbar.LENGTH_SHORT);
         } catch (Exception e) {
-
             Log.e("SCENE_CMD", "Send failed", e);
-
-            mViewModel.displaySnackBar(
-                    this, mContainer,
-                    "Failed: " + e.getMessage(),
-                    Snackbar.LENGTH_SHORT
-            );
+            mViewModel.displaySnackBar(this, mContainer,
+                    "Failed: " + e.getMessage(), Snackbar.LENGTH_SHORT);
         }
     }
+
+    /**
+     * Helper method to parse and validate integer input
+     */
+    private int parseAndValidateInt(TextInputEditText editText,
+                                    String fieldName,
+                                    int min, int max)
+            throws NumberFormatException, IllegalArgumentException {
+
+        String text = editText.getText().toString().trim();
+        if (text.isEmpty()) {
+            throw new IllegalArgumentException(fieldName + " cannot be empty");
+        }
+
+        int value = Integer.parseInt(text);
+        if (value < min || value > max) {
+            throw new IllegalArgumentException(
+                    String.format("%s must be between %d and %d", fieldName, min, max));
+        }
+
+        return value;
+    }
+
+    /**
+     * Verify that the message bytes match the input values
+     */
+    private boolean verifyMessageStructure(GenericSceneSet message,
+                                           int sceneId, int type, int press,
+                                           int mode, int device, int state, int tid) {
+        byte[] params = message.getParameters();
+        if (params == null || params.length != 4) {
+            Log.e("SCENE_CMD", "Invalid message parameters");
+            return false;
+        }
+
+        // Verify byte 0: scene_id
+        if ((params[0] & 0xFF) != sceneId) {
+            Log.e("SCENE_CMD", String.format(
+                    "Scene ID mismatch: expected %d, got %d", sceneId, params[0] & 0xFF));
+            return false;
+        }
+
+        // Verify byte 1: type + press
+        int extractedType = (params[1] >> 2) & 0x3F;
+        int extractedPress = params[1] & 0x03;
+        if (extractedType != type || extractedPress != press) {
+            Log.e("SCENE_CMD", String.format(
+                    "Type/Press mismatch: expected type=%d press=%d, got type=%d press=%d",
+                    type, press, extractedType, extractedPress));
+            return false;
+        }
+
+        // Verify byte 2: mode + device + state
+        int extractedMode = (params[2] >> 5) & 0x07;
+        int extractedDevice = (params[2] >> 2) & 0x07;
+        int extractedState = params[2] & 0x03;
+        if (extractedMode != mode || extractedDevice != device || extractedState != state) {
+            Log.e("SCENE_CMD", String.format(
+                    "Mode/Device/State mismatch: expected mode=%d dev=%d state=%d, got mode=%d dev=%d state=%d",
+                    mode, device, state, extractedMode, extractedDevice, extractedState));
+            return false;
+        }
+
+        // Verify byte 3: tid
+        if ((params[3] & 0xFF) != tid) {
+            Log.e("SCENE_CMD", String.format(
+                    "TID mismatch: expected %d, got %d", tid, params[3] & 0xFF));
+            return false;
+        }
+
+        Log.d("SCENE_CMD", "Message verification PASSED");
+        return true;
+    }
+
+    /**
+     * Enhanced logging with hex representation
+     */
+    private void logSceneCommand(GenericSceneSet message, int elementAddress, MeshNetwork network) {
+        byte[] params = message.getParameters();
+
+        Log.d("SCENE_CMD", "========== GenericSceneSet ==========");
+        Log.d("SCENE_CMD", String.format("Source Addr      : 0x%04X", network.getProvisionerAddress()));
+        Log.d("SCENE_CMD", String.format("Dest Addr        : 0x%04X (Element)", elementAddress));
+        Log.d("SCENE_CMD", "------------------------------------");
+        Log.d("SCENE_CMD", "Field     : Dec    : Hex    : Binary");
+        Log.d("SCENE_CMD", "------------------------------------");
+        Log.d("SCENE_CMD", String.format("Scene ID  : %3d    : 0x%02X   : %8s",
+                params[0] & 0xFF, params[0] & 0xFF,
+                String.format("%8s", Integer.toBinaryString(params[0] & 0xFF)).replace(' ', '0')));
+
+        Log.d("SCENE_CMD", String.format("Byte 1    : %3d    : 0x%02X   : %8s",
+                params[1] & 0xFF, params[1] & 0xFF,
+                String.format("%8s", Integer.toBinaryString(params[1] & 0xFF)).replace(' ', '0')));
+        Log.d("SCENE_CMD", String.format("  - Type  : %3d    : 0x%02X   :    (bits 7-2)",
+                (params[1] >> 2) & 0x3F, (params[1] >> 2) & 0x3F));
+        Log.d("SCENE_CMD", String.format("  - Press : %3d    : 0x%02X   :    (bits 1-0)",
+                params[1] & 0x03, params[1] & 0x03));
+
+        Log.d("SCENE_CMD", String.format("Byte 2    : %3d    : 0x%02X   : %8s",
+                params[2] & 0xFF, params[2] & 0xFF,
+                String.format("%8s", Integer.toBinaryString(params[2] & 0xFF)).replace(' ', '0')));
+        Log.d("SCENE_CMD", String.format("  - Mode  : %3d    : 0x%02X   :   (bits 7-5)",
+                (params[2] >> 5) & 0x07, (params[2] >> 5) & 0x07));
+        Log.d("SCENE_CMD", String.format("  - Device: %3d    : 0x%02X   :   (bits 4-2)",
+                (params[2] >> 2) & 0x07, (params[2] >> 2) & 0x07));
+        Log.d("SCENE_CMD", String.format("  - State : %3d    : 0x%02X   :   (bits 1-0)",
+                params[2] & 0x03, params[2] & 0x03));
+
+        Log.d("SCENE_CMD", String.format("TID       : %3d    : 0x%02X   : %8s",
+                params[3] & 0xFF, params[3] & 0xFF,
+                String.format("%8s", Integer.toBinaryString(params[3] & 0xFF)).replace(' ', '0')));
+        Log.d("SCENE_CMD", "------------------------------------");
+        Log.d("SCENE_CMD", String.format("Full Message     : %02X %02X %02X %02X",
+                params[0] & 0xFF, params[1] & 0xFF, params[2] & 0xFF, params[3] & 0xFF));
+        Log.d("SCENE_CMD", "====================================");
+    }
+
 }
+

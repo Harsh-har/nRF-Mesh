@@ -2,6 +2,7 @@ package no.nordicsemi.android.swaromesh.node;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
@@ -294,19 +295,40 @@ public class NodeConfigurationActivity extends BaseActivity implements
         outState.putBoolean(REQUESTED_PROXY_STATE, mRequestedState);
     }
 
+
     @Override
     public void onElementClicked(@NonNull final Element element) {
-        DialogFragmentElementName.newInstance(element).show(getSupportFragmentManager(), null);
+
+        int elementAddress = element.getElementAddress();
+
+        // ✅ Save element object
+        mViewModel.setSelectedElement(element);
+
+        // ✅ Save element address globally
+        mViewModel.setSelectedElementAddress(elementAddress);
+
+        // ✅ Debug log
+        Log.d(
+                "ELEMENT_CLICKED",
+                "name=" + element.getName() +
+                        ", address=0x" + String.format("%04X", elementAddress)
+        );
     }
+
+
 
     @Override
     public void onModelClicked(@NonNull final ProvisionedMeshNode meshNode,
                                @NonNull final Element element,
                                @NonNull final MeshModel model) {
+
         mViewModel.setSelectedElement(element);
+        mViewModel.setSelectedElementAddress(element.getElementAddress());
         mViewModel.setSelectedModel(model);
+
         mViewModel.navigateToModelActivity(this, model);
     }
+
 
     @Override
     public void onNodeReset() {

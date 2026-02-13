@@ -26,11 +26,20 @@ import no.nordicsemi.android.swaromesh.transport.ProvisionedMeshNode;
 import no.nordicsemi.android.swaromesh.utils.CompositionDataParser;
 
 public class ElementAdapter extends RecyclerView.Adapter<ElementAdapter.ViewHolder> {
-    private final AsyncListDiffer<Element> differ = new AsyncListDiffer<>(this, new ElementDiffCallback());
+
+    private final AsyncListDiffer<Element> differ =
+            new AsyncListDiffer<>(this, new ElementDiffCallback());
+
     private OnItemClickListener mOnItemClickListener;
     private ProvisionedMeshNode meshNode;
 
-    public void update(final ProvisionedMeshNode meshNode) {
+    // ✅ Generic OnOff SIG Models
+    private static final int GENERIC_ONOFF_SERVER = 0x1000;
+    private static final int GENERIC_ONOFF_CLIENT = 0x1001;
+
+    /* ---------------------------------------------------------- */
+
+    public void update(@NonNull final ProvisionedMeshNode meshNode) {
         this.meshNode = meshNode;
         differ.submitList(populateList(meshNode));
     }
@@ -47,61 +56,129 @@ public class ElementAdapter extends RecyclerView.Adapter<ElementAdapter.ViewHold
         return elements;
     }
 
-    public void setOnItemClickListener(@NonNull final ElementAdapter.OnItemClickListener listener) {
+    public void setOnItemClickListener(@NonNull final OnItemClickListener listener) {
         mOnItemClickListener = listener;
     }
 
+    /* ---------------------------------------------------------- */
+
     @NonNull
     @Override
-    public ViewHolder onCreateViewHolder(@NonNull final ViewGroup parent, final int viewType) {
-        return new ViewHolder(ElementItemBinding.inflate(LayoutInflater.from(parent.getContext()), parent, false));
-    }
-
-
-    @Override
-    public void onBindViewHolder(@NonNull final ViewHolder holder, final int position, @NonNull final List<Object> payloads) {
-        if (payloads.isEmpty()) {
-            super.onBindViewHolder(holder, position, payloads);
-        } else {
-            if ((Boolean) payloads.get(0)) {
-                holder.mElementTitle.setText(differ.getCurrentList().get(position).getName());
-            }
-        }
+    public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+        return new ViewHolder(
+                ElementItemBinding.inflate(
+                        LayoutInflater.from(parent.getContext()),
+                        parent,
+                        false
+                )
+        );
     }
 
     @Override
-    public void onBindViewHolder(@NonNull final ViewHolder holder, final int position) {
+    public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         final Element element = differ.getCurrentList().get(position);
-        final int modelCount = element.getMeshModels().size();
+
         holder.mElementTitle.setText(element.getName());
-        holder.mElementSubtitle.setText(holder.mElementSubtitle.getContext().getString(R.string.model_count, modelCount));
+
+        // ✅ Count only OnOff Server + Client
+        int modelCount = getGenericOnOffCount(element);
+
+        holder.mElementSubtitle.setText(
+                holder.mElementSubtitle.getContext()
+                        .getString(R.string.model_count, modelCount)
+        );
+
         inflateModelViews(holder, new ArrayList<>(element.getMeshModels().values()));
     }
 
-    private void inflateModelViews(final ViewHolder holder, final List<MeshModel> models) {
-        //Remove all child views to avoid duplicating
+    /* ---------------------------------------------------------- */
+
+    private int getGenericOnOffCount(@NonNull Element element) {
+        int count = 0;
+        for (MeshModel model : element.getMeshModels().values()) {
+            int id = model.getModelId();
+            if (id == GENERIC_ONOFF_SERVER || id == GENERIC_ONOFF_CLIENT) {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    private boolean isGenericOnOffModel(@NonNull MeshModel model) {
+        int id = model.getModelId();
+        return id == GENERIC_ONOFF_SERVER || id == GENERIC_ONOFF_CLIENT;
+    }
+
+    /* ---------------------------------------------------------- */
+
+    private void inflateModelViews(@NonNull ViewHolder holder,
+                                   @NonNull List<MeshModel> models) {
+
         holder.mModelContainer.removeAllViews();
         final Context context = holder.mModelContainer.getContext();
-        for (int i = 0; i < models.size(); i++) {
-            final MeshModel model = models.get(i);
-            final View modelView = LayoutInflater.from(context).inflate(R.layout.model_item, holder.mElementContainer, false);
-            modelView.setTag(model.getModelId());
-            final TextView modelNameView = modelView.findViewById(R.id.title);
-            final TextView modelIdView = modelView.findViewById(R.id.subtitle);
-            modelNameView.setText(model.getModelName());
-            if (model instanceof VendorModel) {
-                modelIdView.setText(context.getString(R.string.format_vendor_model_id, CompositionDataParser.formatModelIdentifier(model.getModelId(), true)));
-            } else {
-                modelIdView.setText(context.getString(R.string.format_sig_model_id, CompositionDataParser.formatModelIdentifier(model.getModelId(), true)));
+
+        for (MeshModel model : models) {
+
+            // ❌ Skip all other models
+            if (!isGenericOnOffModel(model)) {
+                continue;
             }
+
+            final View modelView = LayoutInflater.from(context)
+                    .inflate(R.layout.model_item, holder.mElementContainer, false);
+
+            modelView.setTag(model.getModelId());
+
+            TextView modelNameView = modelView.findViewById(R.id.title);
+            TextView modelIdView = modelView.findViewById(R.id.subtitle);
+
+            // ✅ Clean names
+            modelNameView.setText(
+                    model.getModelId() == GENERIC_ONOFF_SERVER
+                            ? "Generic OnOff Server"
+                            : "Generic OnOff Client"
+            );
+
+            if (model instanceof VendorModel) {
+                modelIdView.setText(
+                        context.getString(
+                                R.string.format_vendor_model_id,
+                                CompositionDataParser.formatModelIdentifier(
+                                        model.getModelId(), true
+                                )
+                        )
+                );
+            } else {
+                modelIdView.setText(
+                        context.getString(
+                                R.string.format_sig_model_id,
+                                CompositionDataParser.formatModelIdentifier(
+                                        model.getModelId(), true
+                                )
+                        )
+                );
+            }
+
             modelView.setOnClickListener(v -> {
-                final int position = holder.getBindingAdapterPosition();
-                final Element element = differ.getCurrentList().get(position);
-                mOnItemClickListener.onModelClicked(meshNode, element, model);
+                int pos = holder.getBindingAdapterPosition();
+                if (pos != RecyclerView.NO_POSITION && mOnItemClickListener != null) {
+                    Element element = differ.getCurrentList().get(pos);
+                    mOnItemClickListener.onModelClicked(meshNode, element, model);
+                }
             });
+
             holder.mModelContainer.addView(modelView);
         }
+
+        // ✅ Hide if no OnOff models exist
+        holder.mModelContainer.setVisibility(
+                holder.mModelContainer.getChildCount() == 0
+                        ? View.GONE
+                        : View.VISIBLE
+        );
     }
+
+    /* ---------------------------------------------------------- */
 
     @Override
     public int getItemCount() {
@@ -109,21 +186,25 @@ public class ElementAdapter extends RecyclerView.Adapter<ElementAdapter.ViewHold
     }
 
     @Override
-    public long getItemId(final int position) {
+    public long getItemId(int position) {
         return differ.getCurrentList().get(position).getElementAddress();
     }
 
-    public boolean isEmpty() {
-        return getItemCount() == 0;
-    }
+    /* ---------------------------------------------------------- */
 
     public interface OnItemClickListener {
-        void onElementClicked(@NonNull final Element element);
+        void onElementClicked(@NonNull Element element);
 
-        void onModelClicked(@NonNull final ProvisionedMeshNode meshNode, @NonNull final Element element, @NonNull final MeshModel model);
+        void onModelClicked(@NonNull ProvisionedMeshNode meshNode,
+                            @NonNull Element element,
+                            @NonNull MeshModel model);
     }
 
-    final class ViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
+    /* ---------------------------------------------------------- */
+
+    final class ViewHolder extends RecyclerView.ViewHolder
+            implements View.OnClickListener {
+
         ConstraintLayout mElementContainer;
         ImageView mIcon;
         TextView mElementTitle;
@@ -132,7 +213,7 @@ public class ElementAdapter extends RecyclerView.Adapter<ElementAdapter.ViewHold
         ImageButton mEdit;
         LinearLayout mModelContainer;
 
-        private ViewHolder(@NonNull final ElementItemBinding binding) {
+        ViewHolder(@NonNull ElementItemBinding binding) {
             super(binding.getRoot());
             mElementContainer = binding.elementItemContainer;
             mIcon = binding.icon;
@@ -141,22 +222,27 @@ public class ElementAdapter extends RecyclerView.Adapter<ElementAdapter.ViewHold
             mElementExpand = binding.elementExpand;
             mEdit = binding.edit;
             mModelContainer = binding.modelContainer;
+
             mElementExpand.setOnClickListener(this);
             mEdit.setOnClickListener(this);
         }
 
         @Override
-        public void onClick(final View v) {
+        public void onClick(View v) {
             if (v.getId() == R.id.element_expand) {
-                if (mModelContainer.getVisibility() == View.VISIBLE) {
-                    mElementExpand.setImageResource(R.drawable.ic_round_expand_more);
-                    mModelContainer.setVisibility(View.GONE);
-                } else {
-                    mElementExpand.setImageResource(R.drawable.ic_round_expand_less);
-                    mModelContainer.setVisibility(View.VISIBLE);
-                }
+                boolean expanded = mModelContainer.getVisibility() == View.VISIBLE;
+                mModelContainer.setVisibility(expanded ? View.GONE : View.VISIBLE);
+                mElementExpand.setImageResource(
+                        expanded
+                                ? R.drawable.ic_round_expand_more
+                                : R.drawable.ic_round_expand_less
+                );
             } else if (v.getId() == R.id.edit) {
-                mOnItemClickListener.onElementClicked(differ.getCurrentList().get(getAbsoluteAdapterPosition()));
+                if (mOnItemClickListener != null) {
+                    mOnItemClickListener.onElementClicked(
+                            differ.getCurrentList().get(getAbsoluteAdapterPosition())
+                    );
+                }
             }
         }
     }

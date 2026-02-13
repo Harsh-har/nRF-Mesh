@@ -31,6 +31,7 @@ import no.nordicsemi.android.swaromesh.opcodes.ConfigMessageOpCodes;
 import no.nordicsemi.android.swaromesh.utils.CompositionDataParser;
 import no.nordicsemi.android.swaromesh.utils.MeshAddress;
 
+
 /**
  * Creates a ConfigSigModelAppGet message.
  */

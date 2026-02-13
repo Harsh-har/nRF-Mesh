@@ -759,6 +759,7 @@
                             <com.google.android.material.textfield.TextInputLayout
                                 android:id="@+id/layout_type"
                                 android:layout_width="0dp"
+                                android:visibility="gone"
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="12dp"
                                 android:hint="Enter Type (1-39)"
@@ -782,6 +783,7 @@
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="12dp"
                                 android:orientation="horizontal"
+                                android:visibility="gone"
                                 android:gravity="center"
                                 app:layout_constraintEnd_toEndOf="parent"
                                 app:layout_constraintStart_toStartOf="parent"
@@ -820,6 +822,7 @@
                             <com.google.android.material.textfield.TextInputLayout
                                 android:id="@+id/layout_press"
                                 android:layout_width="0dp"
+                                android:visibility="gone"
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="12dp"
                                 android:hint="Selected Press Type"
@@ -844,6 +847,7 @@
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="12dp"
                                 android:hint="Enter Mode (1-8)"
+                                android:visibility="gone"
                                 app:layout_constraintEnd_toEndOf="parent"
                                 app:layout_constraintStart_toStartOf="parent"
                                 app:layout_constraintTop_toBottomOf="@id/layout_press">
@@ -863,6 +867,7 @@
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="12dp"
                                 android:hint="Enter Device (1-8)"
+                                android:visibility="gone"
                                 app:layout_constraintEnd_toEndOf="parent"
                                 app:layout_constraintStart_toStartOf="parent"
                                 app:layout_constraintTop_toBottomOf="@id/layout_mode">

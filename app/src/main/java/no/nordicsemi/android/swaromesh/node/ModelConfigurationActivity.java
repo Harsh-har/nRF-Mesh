@@ -2,56 +2,62 @@ package no.nordicsemi.android.swaromesh.node;
 
 import android.os.Bundle;
 import android.util.Log;
-
 import com.google.android.material.snackbar.Snackbar;
-
 import dagger.hilt.android.AndroidEntryPoint;
 import no.nordicsemi.android.swaromesh.transport.*;
 import no.nordicsemi.android.swaromesh.R;
 
-@AndroidEntryPoint
-public abstract class ModelConfigurationActivity
-        extends BaseModelConfigurationActivity {
 
-    private static final String TAG = "MESH_FLOW";
+
+@AndroidEntryPoint
+public abstract class ModelConfigurationActivity extends BaseModelConfigurationActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        Log.d(TAG, "SCREEN → ModelConfigurationActivity CREATED");
     }
 
     @Override
     protected void updateMeshMessage(final MeshMessage meshMessage) {
-
-        Log.d(TAG, "CONFIG RECEIVE → " +
-                meshMessage.getClass().getSimpleName());
-
         if (meshMessage instanceof ConfigModelAppStatus) {
-            ConfigModelAppStatus status = (ConfigModelAppStatus) meshMessage;
-
-            Log.d(TAG, "CONFIG → AppKey status = " +
-                    status.getStatusCodeName());
-
+            final ConfigModelAppStatus status = (ConfigModelAppStatus) meshMessage;
             if (status.isSuccessful()) {
-                Snackbar.make(mContainer,
-                        R.string.operation_success,
-                        Snackbar.LENGTH_SHORT).show();
+                mViewModel.displaySnackBar(this, mContainer, getString(R.string.operation_success), Snackbar.LENGTH_SHORT);
+            } else {
+                displayStatusDialogFragment(getString(R.string.title_appkey_status), status.getStatusCodeName());
             }
-
+        } else if (meshMessage instanceof ConfigSigModelAppList) {
+            final ConfigSigModelAppList status = (ConfigSigModelAppList) meshMessage;
+            mViewModel.removeMessage();
+            if (status.isSuccessful()) {
+                handleStatuses();
+            } else {
+                displayStatusDialogFragment(getString(R.string.title_sig_model_subscription_list), status.getStatusCodeName());
+            }
         } else if (meshMessage instanceof ConfigModelPublicationStatus) {
-
-            Log.d(TAG, "CONFIG → Publication updated");
-
+            final ConfigModelPublicationStatus status = (ConfigModelPublicationStatus) meshMessage;
+            mViewModel.removeMessage();
+            if (status.isSuccessful()) {
+                handleStatuses();
+            } else {
+                displayStatusDialogFragment(getString(R.string.title_publication_status), status.getStatusCodeName());
+            }
         } else if (meshMessage instanceof ConfigModelSubscriptionStatus) {
-
-            Log.d(TAG, "CONFIG → Subscription updated");
-
-        } else if (meshMessage instanceof ConfigSigModelAppList ||
-                meshMessage instanceof ConfigSigModelSubscriptionList) {
-
-            Log.d(TAG, "CONFIG → List received");
-            handleStatuses();
+            final ConfigModelSubscriptionStatus status = (ConfigModelSubscriptionStatus) meshMessage;
+            mViewModel.removeMessage();
+            if (status.isSuccessful()) {
+                handleStatuses();
+            } else {
+                displayStatusDialogFragment(getString(R.string.title_subscription_status), status.getStatusCodeName());
+            }
+        } else if (meshMessage instanceof ConfigSigModelSubscriptionList) {
+            final ConfigSigModelSubscriptionList status = (ConfigSigModelSubscriptionList) meshMessage;
+            mViewModel.removeMessage();
+            if (status.isSuccessful()) {
+                handleStatuses();
+            } else {
+                displayStatusDialogFragment(getString(R.string.title_sig_model_subscription_list), status.getStatusCodeName());
+            }
         }
     }
 }

@@ -31,9 +31,7 @@ import no.nordicsemi.android.swaromesh.opcodes.ConfigMessageOpCodes;
 import no.nordicsemi.android.swaromesh.utils.MeshAddress;
 import no.nordicsemi.android.swaromesh.utils.MeshParserUtils;
 
-/**
- * Creates the ConfigModelSubscriptionStatus Message.
- */
+
 @SuppressWarnings({"unused", "WeakerAccess"})
 public class ConfigModelSubscriptionStatus extends ConfigStatusMessage implements Parcelable {
 

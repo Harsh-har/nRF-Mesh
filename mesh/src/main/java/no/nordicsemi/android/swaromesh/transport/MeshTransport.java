@@ -36,6 +36,8 @@ import no.nordicsemi.android.swaromesh.MeshManagerApi;
 import no.nordicsemi.android.swaromesh.utils.MeshAddress;
 import no.nordicsemi.android.swaromesh.utils.MeshParserUtils;
 
+
+
 /**
  * MeshTransport class is responsible for building the configuration and application layer mesh messages.
  */

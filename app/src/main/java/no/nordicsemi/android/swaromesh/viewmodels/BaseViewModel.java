@@ -13,6 +13,7 @@ import android.content.Intent;
 import androidx.annotation.NonNull;
 import androidx.coordinatorlayout.widget.CoordinatorLayout;
 import androidx.lifecycle.LiveData;
+import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 
 import com.google.android.material.snackbar.Snackbar;
@@ -48,6 +49,19 @@ public abstract class BaseViewModel extends ViewModel {
     protected Queue<MeshMessage> messageQueue = new LinkedList<>();
     final NrfMeshRepository mNrfMeshRepository;
     boolean isActivityVisible = false;
+
+    // 🔹 Global Selected Element Address
+    private final MutableLiveData<Integer> selectedElementAddress = new MutableLiveData<>();
+
+    public void setSelectedElementAddress(final int address) {
+        selectedElementAddress.setValue(address);
+    }
+
+    public LiveData<Integer> getSelectedElementAddress() {
+        return selectedElementAddress;
+    }
+
+
 
     /**
      * Constructs {@link BaseViewModel}

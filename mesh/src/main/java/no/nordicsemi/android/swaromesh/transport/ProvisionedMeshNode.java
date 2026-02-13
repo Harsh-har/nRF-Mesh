@@ -39,7 +39,6 @@ import no.nordicsemi.android.swaromesh.utils.SparseIntArrayParcelable;
 
 import static androidx.room.ForeignKey.CASCADE;
 
-@SuppressWarnings({"WeakerAccess"})
 @Entity(tableName = "nodes",
         foreignKeys = @ForeignKey(entity = MeshNetwork.class,
                 parentColumns = "mesh_uuid",
@@ -78,7 +77,9 @@ public final class ProvisionedMeshNode extends ProvisionedBaseMeshNode {
     @Ignore
     @RestrictTo(RestrictTo.Scope.LIBRARY)
     public ProvisionedMeshNode(final UnprovisionedMeshNode node) {
+
         uuid = node.getDeviceUuid().toString();
+        //isConfigured = node.isConfigured();
         nodeName = node.getNodeName();
         mAddedNetKeys.add(new NodeKey(node.getKeyIndex()));
         mFlags = node.getFlags();
@@ -128,16 +129,13 @@ public final class ProvisionedMeshNode extends ProvisionedBaseMeshNode {
         deviceKey = SecureUtils.generateRandomNumber();
         ttl = provisioner.getGlobalTtl();
         mTimeStampInMillis = System.currentTimeMillis();
-
         final MeshModel model = SigModelParser.getSigModel(SigModelParser.CONFIGURATION_CLIENT);
         final HashMap<Integer, MeshModel> models = new HashMap<>();
         models.put(model.getModelId(), model);
-
         final Element element = new Element(unicastAddress, 0, models);
         final HashMap<Integer, Element> elements = new HashMap<>();
         elements.put(unicastAddress, element);
         mElements = elements;
-
         nodeFeatures = new Features(Features.UNSUPPORTED, Features.UNSUPPORTED, Features.UNSUPPORTED, Features.UNSUPPORTED);
 
         // Provisioner node has no MAC
@@ -184,7 +182,7 @@ public final class ProvisionedMeshNode extends ProvisionedBaseMeshNode {
         dest.writeInt(unicastAddress);
         dest.writeByteArray(deviceKey);
         dest.writeValue(ttl);
-        dest.writeValue(sequenceNumber);
+        dest.writeInt(sequenceNumber);
         dest.writeValue(companyIdentifier);
         dest.writeValue(productIdentifier);
         dest.writeValue(versionIdentifier);
@@ -281,7 +279,7 @@ public final class ProvisionedMeshNode extends ProvisionedBaseMeshNode {
     public Integer getVersionIdentifier() {
         return versionIdentifier;
     }
-//star
+
     @RestrictTo(RestrictTo.Scope.LIBRARY)
     public void setVersionIdentifier(final Integer versionIdentifier) {
         this.versionIdentifier = versionIdentifier;
@@ -367,13 +365,13 @@ public final class ProvisionedMeshNode extends ProvisionedBaseMeshNode {
         mAddedAppKeys = addedAppKeyIndexes;
     }
 
+
     @RestrictTo(RestrictTo.Scope.LIBRARY)
     void setAddedAppKeyIndex(final int index) {
         if (!MeshParserUtils.isNodeKeyExists(mAddedAppKeys, index)) {
             this.mAddedAppKeys.add(new NodeKey(index));
         }
     }
-
     @RestrictTo(RestrictTo.Scope.LIBRARY)
     void updateAddedAppKey(final int index) {
         final NodeKey nodeKey = MeshParserUtils.getNodeKey(mAddedNetKeys, index);
@@ -436,25 +434,22 @@ public final class ProvisionedMeshNode extends ProvisionedBaseMeshNode {
         }
     }
 
-    void setCompositionData(@NonNull final ConfigCompositionDataStatus configCompositionDataStatus) {
+    void setCompositionData(
+            @NonNull final ConfigCompositionDataStatus configCompositionDataStatus) {
         companyIdentifier = configCompositionDataStatus.getCompanyIdentifier();
         productIdentifier = configCompositionDataStatus.getProductIdentifier();
         versionIdentifier = configCompositionDataStatus.getVersionIdentifier();
         crpl = configCompositionDataStatus.getCrpl();
-
         final boolean relayFeatureSupported = configCompositionDataStatus.isRelayFeatureSupported();
         final boolean proxyFeatureSupported = configCompositionDataStatus.isProxyFeatureSupported();
         final boolean friendFeatureSupported = configCompositionDataStatus.isFriendFeatureSupported();
         final boolean lowPowerFeatureSupported = configCompositionDataStatus.isLowPowerFeatureSupported();
-
         nodeFeatures = new Features(friendFeatureSupported ? Features.DISABLED : Features.UNSUPPORTED,
                 lowPowerFeatureSupported ? Features.DISABLED : Features.UNSUPPORTED,
                 proxyFeatureSupported ? Features.DISABLED : Features.UNSUPPORTED,
                 relayFeatureSupported ? Features.DISABLED : Features.UNSUPPORTED);
-
         mElements.putAll(configCompositionDataStatus.getElements());
     }
-
     void setAppKeyBindStatus(@NonNull final ConfigModelAppStatus configModelAppStatus) {
         if (configModelAppStatus.isSuccessful()) {
             final Element element = mElements.get(configModelAppStatus.getElementAddress());
@@ -520,4 +515,5 @@ public final class ProvisionedMeshNode extends ProvisionedBaseMeshNode {
     public int incrementSequenceNumber() {
         return sequenceNumber = sequenceNumber + 1;
     }
+
 }
