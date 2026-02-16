@@ -378,540 +378,561 @@
                         </androidx.constraintlayout.widget.ConstraintLayout>
                     </com.google.android.material.card.MaterialCardView>
 
-                    <!-- Short Command Controls Card -->
-                    <com.google.android.material.card.MaterialCardView
-                        android:id="@+id/node_controls_card"
+                    <!-- Short & Long Command Controls Container -->
+                    <LinearLayout
+                        android:id="@+id/container_short_long_commands"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginBottom="@dimen/activity_vertical_margin"
-                        app:cardElevation="1dp">
+                        android:orientation="vertical"
+                        android:visibility="gone">
 
-                        <androidx.constraintlayout.widget.ConstraintLayout
+                        <!-- Short Command Controls Card -->
+                        <com.google.android.material.card.MaterialCardView
+                            android:id="@+id/node_controls_card"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:padding="8dp">
+                            android:layout_marginBottom="@dimen/activity_vertical_margin"
+                            app:cardElevation="1dp">
 
-                            <com.google.android.material.appbar.MaterialToolbar
-                                android:id="@+id/node_controls_tool_bar"
-                                android:layout_width="0dp"
-                                android:layout_height="?attr/actionBarSize"
-                                app:layout_constraintEnd_toEndOf="parent"
-                                app:layout_constraintStart_toStartOf="parent"
-                                app:layout_constraintTop_toTopOf="parent"
-                                app:logo="@drawable/ic_lightbulb_outline_black_24dp"
-                                app:title=" Short Command On Off Controls"
-                                app:titleTextAppearance="@style/Toolbar.TitleText" />
-
-                            <com.google.android.material.textfield.TextInputLayout
-                                android:id="@+id/layout_mcommand"
-                                android:layout_width="0dp"
+                            <androidx.constraintlayout.widget.ConstraintLayout
+                                android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
-                                android:hint="Enter Command"
-                                android:layout_marginTop="16dp"
-                                app:layout_constraintEnd_toEndOf="parent"
-                                app:layout_constraintStart_toStartOf="parent"
-                                app:layout_constraintTop_toBottomOf="@id/node_controls_tool_bar">
+                                android:padding="8dp">
 
-                                <com.google.android.material.textfield.TextInputEditText
-                                    android:id="@+id/et_command"
-                                    android:layout_width="match_parent"
-                                    android:layout_height="wrap_content"
-                                    android:imeOptions="actionDone"
-                                    android:inputType="text" />
-                            </com.google.android.material.textfield.TextInputLayout>
-
-                            <com.google.android.material.textfield.TextInputLayout
-                                android:id="@+id/layout_mstate"
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:hint="Enter Data"
-                                android:layout_marginTop="16dp"
-                                app:layout_constraintEnd_toEndOf="parent"
-                                app:layout_constraintStart_toStartOf="parent"
-                                app:layout_constraintTop_toBottomOf="@id/layout_mcommand">
-
-                                <com.google.android.material.textfield.TextInputEditText
-                                    android:id="@+id/et_state"
-                                    android:layout_width="match_parent"
-                                    android:layout_height="wrap_content"
-                                    android:imeOptions="actionDone"
-                                    android:inputType="number" />
-                            </com.google.android.material.textfield.TextInputLayout>
-
-                            <include
-                                android:id="@+id/div_controls"
-                                layout="@layout/layout_divider"
-                                android:layout_width="0dp"
-                                android:layout_height="1dp"
-                                android:layout_marginTop="16dp"
-                                app:layout_constraintEnd_toEndOf="parent"
-                                app:layout_constraintStart_toStartOf="parent"
-                                app:layout_constraintTop_toBottomOf="@id/layout_mstate" />
-
-                            <com.google.android.material.button.MaterialButton
-                                android:id="@+id/action_read_state"
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_marginEnd="8dp"
-                                android:layout_marginTop="16dp"
-                                android:text="@string/action_generic_read_state"
-                                app:layout_constraintEnd_toStartOf="@id/action_on"
-                                app:layout_constraintStart_toStartOf="parent"
-                                app:layout_constraintTop_toBottomOf="@id/div_controls" />
-
-                            <com.google.android.material.button.MaterialButton
-                                android:id="@+id/action_on"
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_marginStart="8dp"
-                                android:layout_marginTop="16dp"
-                                android:text="SEND"
-                                app:layout_constraintEnd_toEndOf="parent"
-                                app:layout_constraintStart_toEndOf="@id/action_read_state"
-                                app:layout_constraintTop_toBottomOf="@id/div_controls" />
-
-                        </androidx.constraintlayout.widget.ConstraintLayout>
-                    </com.google.android.material.card.MaterialCardView>
-
-                    <!-- Long Command Controls Card -->
-                    <com.google.android.material.card.MaterialCardView
-                        android:id="@+id/long_command_controls_card"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginBottom="@dimen/activity_horizontal_margin"
-                        app:cardElevation="1dp">
-
-                        <androidx.constraintlayout.widget.ConstraintLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:padding="8dp">
-
-                            <com.google.android.material.appbar.MaterialToolbar
-                                android:id="@+id/long_command_tool_bar"
-                                android:layout_width="0dp"
-                                android:layout_height="?attr/actionBarSize"
-                                app:layout_constraintEnd_toEndOf="parent"
-                                app:layout_constraintStart_toStartOf="parent"
-                                app:layout_constraintTop_toTopOf="parent"
-                                app:logo="@drawable/ic_lightbulb_outline_black_24dp"
-                                app:title="Long Command On Off Controls"
-                                app:titleTextAppearance="@style/Toolbar.TitleText" />
-
-                            <com.google.android.material.textfield.TextInputLayout
-                                android:id="@+id/layout_element_address"
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:hint="Enter Length (1-8)"
-                                android:layout_marginTop="16dp"
-                                app:layout_constraintEnd_toEndOf="parent"
-                                app:layout_constraintStart_toStartOf="parent"
-                                app:layout_constraintTop_toBottomOf="@id/long_command_tool_bar">
-
-                                <com.google.android.material.textfield.TextInputEditText
-                                    android:id="@+id/et_element_address"
-                                    android:layout_width="match_parent"
-                                    android:layout_height="wrap_content"
-                                    android:imeOptions="actionNext"
-                                    android:inputType="number"
-                                    android:text="" />
-                            </com.google.android.material.textfield.TextInputLayout>
-
-                            <com.google.android.material.textfield.TextInputLayout
-                                android:id="@+id/layout_long_command"
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:hint="Enter Command"
-                                android:layout_marginTop="16dp"
-                                app:layout_constraintEnd_toEndOf="parent"
-                                app:layout_constraintStart_toStartOf="parent"
-                                app:layout_constraintTop_toBottomOf="@id/layout_element_address">
-
-                                <com.google.android.material.textfield.TextInputEditText
-                                    android:id="@+id/et_long_command"
-                                    android:layout_width="match_parent"
-                                    android:layout_height="wrap_content"
-                                    android:imeOptions="actionNext"
-                                    android:inputType="text" />
-                            </com.google.android.material.textfield.TextInputLayout>
-
-                            <LinearLayout
-                                android:id="@+id/data_fields_container"
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_marginTop="16dp"
-                                android:orientation="vertical"
-                                app:layout_constraintEnd_toEndOf="parent"
-                                app:layout_constraintStart_toStartOf="parent"
-                                app:layout_constraintTop_toBottomOf="@id/layout_long_command">
+                                <com.google.android.material.appbar.MaterialToolbar
+                                    android:id="@+id/node_controls_tool_bar"
+                                    android:layout_width="0dp"
+                                    android:layout_height="?attr/actionBarSize"
+                                    app:layout_constraintEnd_toEndOf="parent"
+                                    app:layout_constraintStart_toStartOf="parent"
+                                    app:layout_constraintTop_toTopOf="parent"
+                                    app:logo="@drawable/ic_lightbulb_outline_black_24dp"
+                                    app:title=" Short Command On Off Controls"
+                                    app:titleTextAppearance="@style/Toolbar.TitleText" />
 
                                 <com.google.android.material.textfield.TextInputLayout
-                                    android:id="@+id/layout_long_data_1"
-                                    android:layout_width="match_parent"
+                                    android:id="@+id/layout_mcommand"
+                                    android:layout_width="0dp"
                                     android:layout_height="wrap_content"
-                                    android:hint="Enter Brightness 1"
-                                    android:layout_marginTop="8dp"
-                                    android:visibility="visible">
+                                    android:hint="Enter Command"
+                                    android:layout_marginTop="16dp"
+                                    app:layout_constraintEnd_toEndOf="parent"
+                                    app:layout_constraintStart_toStartOf="parent"
+                                    app:layout_constraintTop_toBottomOf="@id/node_controls_tool_bar">
 
                                     <com.google.android.material.textfield.TextInputEditText
-                                        android:id="@+id/et_long_data_1"
+                                        android:id="@+id/et_command"
                                         android:layout_width="match_parent"
                                         android:layout_height="wrap_content"
-                                        android:imeOptions="actionNext"
-                                        android:inputType="number" />
+                                        android:imeOptions="actionDone"
+                                        android:inputType="text" />
                                 </com.google.android.material.textfield.TextInputLayout>
 
                                 <com.google.android.material.textfield.TextInputLayout
-                                    android:id="@+id/layout_long_data_2"
-                                    android:layout_width="match_parent"
+                                    android:id="@+id/layout_mstate"
+                                    android:layout_width="0dp"
                                     android:layout_height="wrap_content"
-                                    android:hint="Enter Brightness 2"
-                                    android:layout_marginTop="8dp"
-                                    android:visibility="gone">
+                                    android:hint="Enter Data"
+                                    android:layout_marginTop="16dp"
+                                    app:layout_constraintEnd_toEndOf="parent"
+                                    app:layout_constraintStart_toStartOf="parent"
+                                    app:layout_constraintTop_toBottomOf="@id/layout_mcommand">
 
                                     <com.google.android.material.textfield.TextInputEditText
-                                        android:id="@+id/et_long_data_2"
-                                        android:layout_width="match_parent"
-                                        android:layout_height="wrap_content"
-                                        android:imeOptions="actionNext"
-                                        android:inputType="number" />
-                                </com.google.android.material.textfield.TextInputLayout>
-
-                                <com.google.android.material.textfield.TextInputLayout
-                                    android:id="@+id/layout_long_data_3"
-                                    android:layout_width="match_parent"
-                                    android:layout_height="wrap_content"
-                                    android:hint="Enter Brightness 3"
-                                    android:layout_marginTop="8dp"
-                                    android:visibility="gone">
-
-                                    <com.google.android.material.textfield.TextInputEditText
-                                        android:id="@+id/et_long_data_3"
-                                        android:layout_width="match_parent"
-                                        android:layout_height="wrap_content"
-                                        android:imeOptions="actionNext"
-                                        android:inputType="number" />
-                                </com.google.android.material.textfield.TextInputLayout>
-
-                                <com.google.android.material.textfield.TextInputLayout
-                                    android:id="@+id/layout_long_data_4"
-                                    android:layout_width="match_parent"
-                                    android:layout_height="wrap_content"
-                                    android:hint="Enter Brightness 4"
-                                    android:layout_marginTop="8dp"
-                                    android:visibility="gone">
-
-                                    <com.google.android.material.textfield.TextInputEditText
-                                        android:id="@+id/et_long_data_4"
-                                        android:layout_width="match_parent"
-                                        android:layout_height="wrap_content"
-                                        android:imeOptions="actionNext"
-                                        android:inputType="number" />
-                                </com.google.android.material.textfield.TextInputLayout>
-
-                                <com.google.android.material.textfield.TextInputLayout
-                                    android:id="@+id/layout_long_data_5"
-                                    android:layout_width="match_parent"
-                                    android:layout_height="wrap_content"
-                                    android:hint="Enter Brightness 5"
-                                    android:layout_marginTop="8dp"
-                                    android:visibility="gone">
-
-                                    <com.google.android.material.textfield.TextInputEditText
-                                        android:id="@+id/et_long_data_5"
-                                        android:layout_width="match_parent"
-                                        android:layout_height="wrap_content"
-                                        android:imeOptions="actionNext"
-                                        android:inputType="number" />
-                                </com.google.android.material.textfield.TextInputLayout>
-
-                                <com.google.android.material.textfield.TextInputLayout
-                                    android:id="@+id/layout_long_data_6"
-                                    android:layout_width="match_parent"
-                                    android:layout_height="wrap_content"
-                                    android:hint="Enter Brightness 6"
-                                    android:layout_marginTop="8dp"
-                                    android:visibility="gone">
-
-                                    <com.google.android.material.textfield.TextInputEditText
-                                        android:id="@+id/et_long_data_6"
-                                        android:layout_width="match_parent"
-                                        android:layout_height="wrap_content"
-                                        android:imeOptions="actionNext"
-                                        android:inputType="number" />
-                                </com.google.android.material.textfield.TextInputLayout>
-
-                                <com.google.android.material.textfield.TextInputLayout
-                                    android:id="@+id/layout_long_data_7"
-                                    android:layout_width="match_parent"
-                                    android:layout_height="wrap_content"
-                                    android:hint="Enter Brightness 7"
-                                    android:layout_marginTop="8dp"
-                                    android:visibility="gone">
-
-                                    <com.google.android.material.textfield.TextInputEditText
-                                        android:id="@+id/et_long_data_7"
-                                        android:layout_width="match_parent"
-                                        android:layout_height="wrap_content"
-                                        android:imeOptions="actionNext"
-                                        android:inputType="number" />
-                                </com.google.android.material.textfield.TextInputLayout>
-
-                                <com.google.android.material.textfield.TextInputLayout
-                                    android:id="@+id/layout_long_data_8"
-                                    android:layout_width="match_parent"
-                                    android:layout_height="wrap_content"
-                                    android:hint="Enter Brightness 8"
-                                    android:layout_marginTop="8dp"
-                                    android:visibility="gone">
-
-                                    <com.google.android.material.textfield.TextInputEditText
-                                        android:id="@+id/et_long_data_8"
+                                        android:id="@+id/et_state"
                                         android:layout_width="match_parent"
                                         android:layout_height="wrap_content"
                                         android:imeOptions="actionDone"
                                         android:inputType="number" />
                                 </com.google.android.material.textfield.TextInputLayout>
-                            </LinearLayout>
 
-                            <include
-                                android:id="@+id/div_long_controls"
-                                layout="@layout/layout_divider"
-                                android:layout_width="0dp"
-                                android:layout_height="1dp"
-                                android:layout_marginTop="16dp"
-                                app:layout_constraintEnd_toEndOf="parent"
-                                app:layout_constraintStart_toStartOf="parent"
-                                app:layout_constraintTop_toBottomOf="@id/data_fields_container" />
+                                <include
+                                    android:id="@+id/div_controls"
+                                    layout="@layout/layout_divider"
+                                    android:layout_width="0dp"
+                                    android:layout_height="1dp"
+                                    android:layout_marginTop="16dp"
+                                    app:layout_constraintEnd_toEndOf="parent"
+                                    app:layout_constraintStart_toStartOf="parent"
+                                    app:layout_constraintTop_toBottomOf="@id/layout_mstate" />
 
-                            <com.google.android.material.button.MaterialButton
-                                android:id="@+id/action_long_read_state"
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_marginEnd="8dp"
-                                android:layout_marginTop="16dp"
-                                android:text="@string/action_generic_read_state"
-                                app:layout_constraintEnd_toStartOf="@id/action_long_send"
-                                app:layout_constraintStart_toStartOf="parent"
-                                app:layout_constraintTop_toBottomOf="@id/div_long_controls" />
+                                <com.google.android.material.button.MaterialButton
+                                    android:id="@+id/action_read_state"
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginEnd="8dp"
+                                    android:layout_marginTop="16dp"
+                                    android:text="@string/action_generic_read_state"
+                                    app:layout_constraintEnd_toStartOf="@id/action_on"
+                                    app:layout_constraintStart_toStartOf="parent"
+                                    app:layout_constraintTop_toBottomOf="@id/div_controls" />
 
-                            <com.google.android.material.button.MaterialButton
-                                android:id="@+id/action_long_send"
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_marginStart="8dp"
-                                android:layout_marginTop="16dp"
-                                android:text="SEND LONG"
-                                app:layout_constraintEnd_toEndOf="parent"
-                                app:layout_constraintStart_toEndOf="@id/action_long_read_state"
-                                app:layout_constraintTop_toBottomOf="@id/div_long_controls" />
+                                <com.google.android.material.button.MaterialButton
+                                    android:id="@+id/action_on"
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginStart="8dp"
+                                    android:layout_marginTop="16dp"
+                                    android:text="SEND"
+                                    app:layout_constraintEnd_toEndOf="parent"
+                                    app:layout_constraintStart_toEndOf="@id/action_read_state"
+                                    app:layout_constraintTop_toBottomOf="@id/div_controls" />
 
-                        </androidx.constraintlayout.widget.ConstraintLayout>
-                    </com.google.android.material.card.MaterialCardView>
+                            </androidx.constraintlayout.widget.ConstraintLayout>
+                        </com.google.android.material.card.MaterialCardView>
 
-
-
-
-
-                    <!-- Scene Command Controls Card -->
-                    <com.google.android.material.card.MaterialCardView
-                        android:id="@+id/scene_command_controls_card"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginBottom="@dimen/activity_vertical_margin"
-                        app:cardElevation="1dp">
-
-
-                        <androidx.constraintlayout.widget.ConstraintLayout
+                        <!-- Long Command Controls Card -->
+                        <com.google.android.material.card.MaterialCardView
+                            android:id="@+id/long_command_controls_card"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:padding="8dp">
-                            <com.google.android.material.appbar.MaterialToolbar
-                                android:id="@+id/scene_toolbar"
-                                android:layout_width="0dp"
-                                android:layout_height="?attr/actionBarSize"
-                                android:layout_marginBottom="8dp"
-                                app:layout_constraintEnd_toEndOf="parent"
-                                app:layout_constraintStart_toStartOf="parent"
-                                app:layout_constraintTop_toTopOf="parent"
-                                app:logo="@drawable/ic_lightbulb_outline_black_24dp"
-                                app:title="Scene Command Controls"
-                                app:titleTextAppearance="@style/Toolbar.TitleText" />
+                            android:layout_marginBottom="@dimen/activity_horizontal_margin"
+                            app:cardElevation="1dp">
 
-                            <com.google.android.material.textfield.TextInputLayout
-                                android:id="@+id/layout_scene_id"
-                                android:layout_width="0dp"
+                            <androidx.constraintlayout.widget.ConstraintLayout
+                                android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
-                                android:layout_marginTop="8dp"
-                                android:hint="Enter Scene ID (1-240)"
-                                app:layout_constraintEnd_toEndOf="parent"
-                                app:layout_constraintStart_toStartOf="parent"
-                                app:layout_constraintTop_toBottomOf="@id/scene_toolbar">
+                                android:padding="8dp">
 
-                                <com.google.android.material.textfield.TextInputEditText
-                                    android:id="@+id/et_scene_id"
-                                    android:layout_width="match_parent"
-                                    android:layout_height="wrap_content"
-                                    android:inputType="number"
-                                    android:maxLength="3"
-                                    android:text="1" />
-                            </com.google.android.material.textfield.TextInputLayout>
+                                <com.google.android.material.appbar.MaterialToolbar
+                                    android:id="@+id/long_command_tool_bar"
+                                    android:layout_width="0dp"
+                                    android:layout_height="?attr/actionBarSize"
+                                    app:layout_constraintEnd_toEndOf="parent"
+                                    app:layout_constraintStart_toStartOf="parent"
+                                    app:layout_constraintTop_toTopOf="parent"
+                                    app:logo="@drawable/ic_lightbulb_outline_black_24dp"
+                                    app:title="Long Command On Off Controls"
+                                    app:titleTextAppearance="@style/Toolbar.TitleText" />
 
-                            <com.google.android.material.textfield.TextInputLayout
-                                android:id="@+id/layout_type"
-                                android:layout_width="0dp"
-                                android:visibility="gone"
-                                android:layout_height="wrap_content"
-                                android:layout_marginTop="12dp"
-                                android:hint="Enter Type (1-39)"
-                                app:layout_constraintEnd_toEndOf="parent"
-                                app:layout_constraintStart_toStartOf="parent"
-                                app:layout_constraintTop_toBottomOf="@id/layout_scene_id">
-
-                                <com.google.android.material.textfield.TextInputEditText
-                                    android:id="@+id/et_type"
-                                    android:layout_width="match_parent"
-                                    android:layout_height="wrap_content"
-                                    android:inputType="number"
-                                    android:maxLength="2"
-                                    android:text="1" />
-                            </com.google.android.material.textfield.TextInputLayout>
-
-                            <!-- Press type selector buttons -->
-                            <LinearLayout
-                                android:id="@+id/press_type_container"
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_marginTop="12dp"
-                                android:orientation="horizontal"
-                                android:visibility="gone"
-                                android:gravity="center"
-                                app:layout_constraintEnd_toEndOf="parent"
-                                app:layout_constraintStart_toStartOf="parent"
-                                app:layout_constraintTop_toBottomOf="@id/layout_type">
-
-                                <com.google.android.material.button.MaterialButton
-                                    android:id="@+id/btn_press_single"
+                                <com.google.android.material.textfield.TextInputLayout
+                                    android:id="@+id/layout_element_address"
                                     android:layout_width="0dp"
                                     android:layout_height="wrap_content"
-                                    android:layout_weight="1"
-                                    android:layout_marginEnd="4dp"
-                                    android:text="Single"
-                                    style="@style/Widget.MaterialComponents.Button.OutlinedButton" />
+                                    android:hint="Enter Length (1-8)"
+                                    android:layout_marginTop="16dp"
+                                    app:layout_constraintEnd_toEndOf="parent"
+                                    app:layout_constraintStart_toStartOf="parent"
+                                    app:layout_constraintTop_toBottomOf="@id/long_command_tool_bar">
 
-                                <com.google.android.material.button.MaterialButton
-                                    android:id="@+id/btn_press_double"
+                                    <com.google.android.material.textfield.TextInputEditText
+                                        android:id="@+id/et_element_address"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:imeOptions="actionNext"
+                                        android:inputType="number"
+                                        android:text="" />
+                                </com.google.android.material.textfield.TextInputLayout>
+
+                                <com.google.android.material.textfield.TextInputLayout
+                                    android:id="@+id/layout_long_command"
                                     android:layout_width="0dp"
                                     android:layout_height="wrap_content"
-                                    android:layout_weight="1"
-                                    android:layout_marginStart="4dp"
-                                    android:layout_marginEnd="4dp"
-                                    android:text="Double"
-                                    style="@style/Widget.MaterialComponents.Button.OutlinedButton" />
+                                    android:hint="Enter Command"
+                                    android:layout_marginTop="16dp"
+                                    app:layout_constraintEnd_toEndOf="parent"
+                                    app:layout_constraintStart_toStartOf="parent"
+                                    app:layout_constraintTop_toBottomOf="@id/layout_element_address">
 
-                                <com.google.android.material.button.MaterialButton
-                                    android:id="@+id/btn_press_long"
+                                    <com.google.android.material.textfield.TextInputEditText
+                                        android:id="@+id/et_long_command"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:imeOptions="actionNext"
+                                        android:inputType="text" />
+                                </com.google.android.material.textfield.TextInputLayout>
+
+                                <LinearLayout
+                                    android:id="@+id/data_fields_container"
                                     android:layout_width="0dp"
                                     android:layout_height="wrap_content"
-                                    android:layout_weight="1"
-                                    android:layout_marginStart="4dp"
-                                    android:text="Long"
-                                    style="@style/Widget.MaterialComponents.Button.OutlinedButton" />
-                            </LinearLayout>
+                                    android:layout_marginTop="16dp"
+                                    android:orientation="vertical"
+                                    app:layout_constraintEnd_toEndOf="parent"
+                                    app:layout_constraintStart_toStartOf="parent"
+                                    app:layout_constraintTop_toBottomOf="@id/layout_long_command">
 
-                            <!-- Press type display (read-only) -->
-                            <com.google.android.material.textfield.TextInputLayout
-                                android:id="@+id/layout_press"
-                                android:layout_width="0dp"
-                                android:visibility="gone"
-                                android:layout_height="wrap_content"
-                                android:layout_marginTop="12dp"
-                                android:hint="Selected Press Type"
-                                app:layout_constraintEnd_toEndOf="parent"
-                                app:layout_constraintStart_toStartOf="parent"
-                                app:layout_constraintTop_toBottomOf="@+id/press_type_container">
+                                    <com.google.android.material.textfield.TextInputLayout
+                                        android:id="@+id/layout_long_data_1"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:hint="Enter Brightness 1"
+                                        android:layout_marginTop="8dp"
+                                        android:visibility="visible">
 
-                                <com.google.android.material.textfield.TextInputEditText
-                                    android:id="@+id/et_press"
-                                    android:layout_width="match_parent"
+                                        <com.google.android.material.textfield.TextInputEditText
+                                            android:id="@+id/et_long_data_1"
+                                            android:layout_width="match_parent"
+                                            android:layout_height="wrap_content"
+                                            android:imeOptions="actionNext"
+                                            android:inputType="number" />
+                                    </com.google.android.material.textfield.TextInputLayout>
+
+                                    <com.google.android.material.textfield.TextInputLayout
+                                        android:id="@+id/layout_long_data_2"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:hint="Enter Brightness 2"
+                                        android:layout_marginTop="8dp"
+                                        android:visibility="gone">
+
+                                        <com.google.android.material.textfield.TextInputEditText
+                                            android:id="@+id/et_long_data_2"
+                                            android:layout_width="match_parent"
+                                            android:layout_height="wrap_content"
+                                            android:imeOptions="actionNext"
+                                            android:inputType="number" />
+                                    </com.google.android.material.textfield.TextInputLayout>
+
+                                    <com.google.android.material.textfield.TextInputLayout
+                                        android:id="@+id/layout_long_data_3"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:hint="Enter Brightness 3"
+                                        android:layout_marginTop="8dp"
+                                        android:visibility="gone">
+
+                                        <com.google.android.material.textfield.TextInputEditText
+                                            android:id="@+id/et_long_data_3"
+                                            android:layout_width="match_parent"
+                                            android:layout_height="wrap_content"
+                                            android:imeOptions="actionNext"
+                                            android:inputType="number" />
+                                    </com.google.android.material.textfield.TextInputLayout>
+
+                                    <com.google.android.material.textfield.TextInputLayout
+                                        android:id="@+id/layout_long_data_4"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:hint="Enter Brightness 4"
+                                        android:layout_marginTop="8dp"
+                                        android:visibility="gone">
+
+                                        <com.google.android.material.textfield.TextInputEditText
+                                            android:id="@+id/et_long_data_4"
+                                            android:layout_width="match_parent"
+                                            android:layout_height="wrap_content"
+                                            android:imeOptions="actionNext"
+                                            android:inputType="number" />
+                                    </com.google.android.material.textfield.TextInputLayout>
+
+                                    <com.google.android.material.textfield.TextInputLayout
+                                        android:id="@+id/layout_long_data_5"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:hint="Enter Brightness 5"
+                                        android:layout_marginTop="8dp"
+                                        android:visibility="gone">
+
+                                        <com.google.android.material.textfield.TextInputEditText
+                                            android:id="@+id/et_long_data_5"
+                                            android:layout_width="match_parent"
+                                            android:layout_height="wrap_content"
+                                            android:imeOptions="actionNext"
+                                            android:inputType="number" />
+                                    </com.google.android.material.textfield.TextInputLayout>
+
+                                    <com.google.android.material.textfield.TextInputLayout
+                                        android:id="@+id/layout_long_data_6"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:hint="Enter Brightness 6"
+                                        android:layout_marginTop="8dp"
+                                        android:visibility="gone">
+
+                                        <com.google.android.material.textfield.TextInputEditText
+                                            android:id="@+id/et_long_data_6"
+                                            android:layout_width="match_parent"
+                                            android:layout_height="wrap_content"
+                                            android:imeOptions="actionNext"
+                                            android:inputType="number" />
+                                    </com.google.android.material.textfield.TextInputLayout>
+
+                                    <com.google.android.material.textfield.TextInputLayout
+                                        android:id="@+id/layout_long_data_7"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:hint="Enter Brightness 7"
+                                        android:layout_marginTop="8dp"
+                                        android:visibility="gone">
+
+                                        <com.google.android.material.textfield.TextInputEditText
+                                            android:id="@+id/et_long_data_7"
+                                            android:layout_width="match_parent"
+                                            android:layout_height="wrap_content"
+                                            android:imeOptions="actionNext"
+                                            android:inputType="number" />
+                                    </com.google.android.material.textfield.TextInputLayout>
+
+                                    <com.google.android.material.textfield.TextInputLayout
+                                        android:id="@+id/layout_long_data_8"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:hint="Enter Brightness 8"
+                                        android:layout_marginTop="8dp"
+                                        android:visibility="gone">
+
+                                        <com.google.android.material.textfield.TextInputEditText
+                                            android:id="@+id/et_long_data_8"
+                                            android:layout_width="match_parent"
+                                            android:layout_height="wrap_content"
+                                            android:imeOptions="actionDone"
+                                            android:inputType="number" />
+                                    </com.google.android.material.textfield.TextInputLayout>
+                                </LinearLayout>
+
+                                <include
+                                    android:id="@+id/div_long_controls"
+                                    layout="@layout/layout_divider"
+                                    android:layout_width="0dp"
+                                    android:layout_height="1dp"
+                                    android:layout_marginTop="16dp"
+                                    app:layout_constraintEnd_toEndOf="parent"
+                                    app:layout_constraintStart_toStartOf="parent"
+                                    app:layout_constraintTop_toBottomOf="@id/data_fields_container" />
+
+                                <com.google.android.material.button.MaterialButton
+                                    android:id="@+id/action_long_read_state"
+                                    android:layout_width="0dp"
                                     android:layout_height="wrap_content"
-                                    android:cursorVisible="false"
-                                    android:focusable="false"
-                                    android:focusableInTouchMode="false"
-                                    android:inputType="text"
-                                    android:text="Single" />
-                            </com.google.android.material.textfield.TextInputLayout>
+                                    android:layout_marginEnd="8dp"
+                                    android:layout_marginTop="16dp"
+                                    android:text="@string/action_generic_read_state"
+                                    app:layout_constraintEnd_toStartOf="@id/action_long_send"
+                                    app:layout_constraintStart_toStartOf="parent"
+                                    app:layout_constraintTop_toBottomOf="@id/div_long_controls" />
 
-                            <com.google.android.material.textfield.TextInputLayout
-                                android:id="@+id/layout_mode"
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_marginTop="12dp"
-                                android:hint="Enter Mode (1-8)"
-                                android:visibility="gone"
-                                app:layout_constraintEnd_toEndOf="parent"
-                                app:layout_constraintStart_toStartOf="parent"
-                                app:layout_constraintTop_toBottomOf="@id/layout_press">
-
-                                <com.google.android.material.textfield.TextInputEditText
-                                    android:id="@+id/et_mode"
-                                    android:layout_width="match_parent"
+                                <com.google.android.material.button.MaterialButton
+                                    android:id="@+id/action_long_send"
+                                    android:layout_width="0dp"
                                     android:layout_height="wrap_content"
-                                    android:inputType="number"
-                                    android:maxLength="1"
-                                    android:text="1" />
-                            </com.google.android.material.textfield.TextInputLayout>
+                                    android:layout_marginStart="8dp"
+                                    android:layout_marginTop="16dp"
+                                    android:text="SEND LONG"
+                                    app:layout_constraintEnd_toEndOf="parent"
+                                    app:layout_constraintStart_toEndOf="@id/action_long_read_state"
+                                    app:layout_constraintTop_toBottomOf="@id/div_long_controls" />
 
-                            <com.google.android.material.textfield.TextInputLayout
-                                android:id="@+id/layout_device"
-                                android:layout_width="0dp"
+                            </androidx.constraintlayout.widget.ConstraintLayout>
+                        </com.google.android.material.card.MaterialCardView>
+                    </LinearLayout>
+
+                    <!-- Scene Command Controls Container -->
+                    <LinearLayout
+                        android:id="@+id/container_scene_commands"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:visibility="gone">
+
+                        <!-- Scene Command Controls Card -->
+                        <com.google.android.material.card.MaterialCardView
+                            android:id="@+id/scene_command_controls_card"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginBottom="@dimen/activity_vertical_margin"
+                            app:cardElevation="1dp">
+
+                            <androidx.constraintlayout.widget.ConstraintLayout
+                                android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
-                                android:layout_marginTop="12dp"
-                                android:hint="Enter Device (1-8)"
-                                android:visibility="gone"
-                                app:layout_constraintEnd_toEndOf="parent"
-                                app:layout_constraintStart_toStartOf="parent"
-                                app:layout_constraintTop_toBottomOf="@id/layout_mode">
+                                android:padding="8dp">
 
-                                <com.google.android.material.textfield.TextInputEditText
-                                    android:id="@+id/et_device"
-                                    android:layout_width="match_parent"
+                                <com.google.android.material.appbar.MaterialToolbar
+                                    android:id="@+id/scene_toolbar"
+                                    android:layout_width="0dp"
+                                    android:layout_height="?attr/actionBarSize"
+                                    android:layout_marginBottom="8dp"
+                                    app:layout_constraintEnd_toEndOf="parent"
+                                    app:layout_constraintStart_toStartOf="parent"
+                                    app:layout_constraintTop_toTopOf="parent"
+                                    app:logo="@drawable/ic_lightbulb_outline_black_24dp"
+                                    app:title="Scene Command Controls"
+                                    app:titleTextAppearance="@style/Toolbar.TitleText" />
+
+                                <!-- Scene ID Field (Visible) -->
+                                <com.google.android.material.textfield.TextInputLayout
+                                    android:id="@+id/layout_scene_id"
+                                    android:layout_width="0dp"
                                     android:layout_height="wrap_content"
-                                    android:inputType="number"
-                                    android:maxLength="1"
-                                    android:text="1" />
-                            </com.google.android.material.textfield.TextInputLayout>
+                                    android:layout_marginTop="8dp"
+                                    android:hint="Enter Scene ID (1-240)"
+                                    app:layout_constraintEnd_toEndOf="parent"
+                                    app:layout_constraintStart_toStartOf="parent"
+                                    app:layout_constraintTop_toBottomOf="@id/scene_toolbar">
 
-                            <com.google.android.material.textfield.TextInputLayout
-                                android:id="@+id/layout_scene_state"
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_marginTop="12dp"
-                                android:hint="Enter State (0-3)"
-                                app:layout_constraintEnd_toEndOf="parent"
-                                app:layout_constraintStart_toStartOf="parent"
-                                app:layout_constraintTop_toBottomOf="@id/layout_device">
+                                    <com.google.android.material.textfield.TextInputEditText
+                                        android:id="@+id/et_scene_id"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:inputType="number"
+                                        android:maxLength="3"
+                                        android:text="1" />
+                                </com.google.android.material.textfield.TextInputLayout>
 
-                                <com.google.android.material.textfield.TextInputEditText
-                                    android:id="@+id/et_scene_state"
-                                    android:layout_width="match_parent"
+                                <!-- Type Field (HIDDEN) -->
+                                <com.google.android.material.textfield.TextInputLayout
+                                    android:id="@+id/layout_type"
+                                    android:layout_width="0dp"
+                                    android:visibility="gone"
                                     android:layout_height="wrap_content"
-                                    android:inputType="number"
-                                    android:maxLength="1"
-                                    android:text="0" />
-                            </com.google.android.material.textfield.TextInputLayout>
+                                    android:layout_marginTop="12dp"
+                                    android:hint="Enter Type (1-39)"
+                                    app:layout_constraintEnd_toEndOf="parent"
+                                    app:layout_constraintStart_toStartOf="parent"
+                                    app:layout_constraintTop_toBottomOf="@id/layout_scene_id">
 
-                            <com.google.android.material.button.MaterialButton
-                                android:id="@+id/btn_send"
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_marginTop="16dp"
-                                android:text="SEND COMMAND"
-                                app:layout_constraintEnd_toEndOf="parent"
-                                app:layout_constraintStart_toStartOf="parent"
-                                app:layout_constraintTop_toBottomOf="@id/layout_scene_state" />
+                                    <com.google.android.material.textfield.TextInputEditText
+                                        android:id="@+id/et_type"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:inputType="number"
+                                        android:maxLength="2"
+                                        android:text="1" />
+                                </com.google.android.material.textfield.TextInputLayout>
 
-                        </androidx.constraintlayout.widget.ConstraintLayout>
-                    </com.google.android.material.card.MaterialCardView>
+                                <!-- Press type selector buttons (HIDDEN) -->
+                                <LinearLayout
+                                    android:id="@+id/press_type_container"
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="12dp"
+                                    android:orientation="horizontal"
+                                    android:visibility="gone"
+                                    android:gravity="center"
+                                    app:layout_constraintEnd_toEndOf="parent"
+                                    app:layout_constraintStart_toStartOf="parent"
+                                    app:layout_constraintTop_toBottomOf="@id/layout_type">
+
+                                    <com.google.android.material.button.MaterialButton
+                                        android:id="@+id/btn_press_single"
+                                        android:layout_width="0dp"
+                                        android:layout_height="wrap_content"
+                                        android:layout_weight="1"
+                                        android:layout_marginEnd="4dp"
+                                        android:text="Single"
+                                        style="@style/Widget.MaterialComponents.Button.OutlinedButton" />
+
+                                    <com.google.android.material.button.MaterialButton
+                                        android:id="@+id/btn_press_double"
+                                        android:layout_width="0dp"
+                                        android:layout_height="wrap_content"
+                                        android:layout_weight="1"
+                                        android:layout_marginStart="4dp"
+                                        android:layout_marginEnd="4dp"
+                                        android:text="Double"
+                                        style="@style/Widget.MaterialComponents.Button.OutlinedButton" />
+
+                                    <com.google.android.material.button.MaterialButton
+                                        android:id="@+id/btn_press_long"
+                                        android:layout_width="0dp"
+                                        android:layout_height="wrap_content"
+                                        android:layout_weight="1"
+                                        android:layout_marginStart="4dp"
+                                        android:text="Long"
+                                        style="@style/Widget.MaterialComponents.Button.OutlinedButton" />
+                                </LinearLayout>
+
+                                <!-- Press type display (HIDDEN) -->
+                                <com.google.android.material.textfield.TextInputLayout
+                                    android:id="@+id/layout_press"
+                                    android:layout_width="0dp"
+                                    android:visibility="gone"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="12dp"
+                                    android:hint="Selected Press Type"
+                                    app:layout_constraintEnd_toEndOf="parent"
+                                    app:layout_constraintStart_toStartOf="parent"
+                                    app:layout_constraintTop_toBottomOf="@+id/press_type_container">
+
+                                    <com.google.android.material.textfield.TextInputEditText
+                                        android:id="@+id/et_press"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:cursorVisible="false"
+                                        android:focusable="false"
+                                        android:focusableInTouchMode="false"
+                                        android:inputType="text"
+                                        android:text="Single" />
+                                </com.google.android.material.textfield.TextInputLayout>
+
+                                <!-- Mode Field (HIDDEN) -->
+                                <com.google.android.material.textfield.TextInputLayout
+                                    android:id="@+id/layout_mode"
+                                    android:layout_width="0dp"
+                                    android:visibility="gone"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="12dp"
+                                    android:hint="Enter Mode (1-8)"
+                                    app:layout_constraintEnd_toEndOf="parent"
+                                    app:layout_constraintStart_toStartOf="parent"
+                                    app:layout_constraintTop_toBottomOf="@id/layout_press">
+
+                                    <com.google.android.material.textfield.TextInputEditText
+                                        android:id="@+id/et_mode"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:inputType="number"
+                                        android:maxLength="1"
+                                        android:text="1" />
+                                </com.google.android.material.textfield.TextInputLayout>
+
+                                <!-- Device Field (HIDDEN) -->
+                                <com.google.android.material.textfield.TextInputLayout
+                                    android:id="@+id/layout_device"
+                                    android:layout_width="0dp"
+                                    android:visibility="gone"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="12dp"
+                                    android:hint="Enter Device (1-8)"
+                                    app:layout_constraintEnd_toEndOf="parent"
+                                    app:layout_constraintStart_toStartOf="parent"
+                                    app:layout_constraintTop_toBottomOf="@id/layout_mode">
+
+                                    <com.google.android.material.textfield.TextInputEditText
+                                        android:id="@+id/et_device"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:inputType="number"
+                                        android:maxLength="1"
+                                        android:text="1" />
+                                </com.google.android.material.textfield.TextInputLayout>
+
+                                <!-- Scene State Field (Visible) -->
+                                <com.google.android.material.textfield.TextInputLayout
+                                    android:id="@+id/layout_scene_state"
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="12dp"
+                                    android:hint="Enter State (0-3)"
+                                    app:layout_constraintEnd_toEndOf="parent"
+                                    app:layout_constraintStart_toStartOf="parent"
+                                    app:layout_constraintTop_toBottomOf="@id/layout_device">
+
+                                    <com.google.android.material.textfield.TextInputEditText
+                                        android:id="@+id/et_scene_state"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:inputType="number"
+                                        android:maxLength="1"
+                                        android:text="0" />
+                                </com.google.android.material.textfield.TextInputLayout>
+
+                                <!-- Send Button (Visible) -->
+                                <com.google.android.material.button.MaterialButton
+                                    android:id="@+id/btn_send"
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="16dp"
+                                    android:text="SEND COMMAND"
+                                    app:layout_constraintEnd_toEndOf="parent"
+                                    app:layout_constraintStart_toStartOf="parent"
+                                    app:layout_constraintTop_toBottomOf="@id/layout_scene_state" />
+
+                            </androidx.constraintlayout.widget.ConstraintLayout>
+                        </com.google.android.material.card.MaterialCardView>
+                    </LinearLayout>
+
 
 
 

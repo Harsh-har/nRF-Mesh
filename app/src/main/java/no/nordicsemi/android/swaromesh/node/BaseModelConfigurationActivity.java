@@ -9,21 +9,19 @@ import static no.nordicsemi.android.swaromesh.utils.Utils.MESSAGE_TIME_OUT;
 import static no.nordicsemi.android.swaromesh.utils.Utils.RESULT_KEY;
 import android.content.Intent;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Looper;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
 import android.view.View;
 import android.view.inputmethod.EditorInfo;
 import android.widget.Button;
+import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.coordinatorlayout.widget.CoordinatorLayout;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.ItemTouchHelper;
@@ -39,7 +37,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
-
 import no.nordicsemi.android.swaromesh.ApplicationKey;
 import no.nordicsemi.android.swaromesh.Group;
 import no.nordicsemi.android.swaromesh.MeshNetwork;
@@ -85,13 +82,15 @@ import no.nordicsemi.android.swaromesh.widgets.ItemTouchHelperAdapter;
 import no.nordicsemi.android.swaromesh.widgets.RemovableItemTouchHelperCallback;
 import no.nordicsemi.android.swaromesh.widgets.RemovableViewHolder;
 
-
-
 public abstract class BaseModelConfigurationActivity extends BaseActivity implements
         GroupCallbacks,
         ItemTouchHelperAdapter,
         DialogFragmentDisconnected.DialogFragmentDisconnectedListener,
         SwipeRefreshLayout.OnRefreshListener {
+
+    // Model ID Constants
+    private static final int GENERIC_ONOFF_SERVER = 0x1000;
+    private static final int GENERIC_ONOFF_CLIENT = 0x1001;
 
     private static final String DIALOG_FRAGMENT_CONFIGURATION_STATUS = "DIALOG_FRAGMENT_CONFIGURATION_STATUS";
     private static final String PROGRESS_BAR_STATE = "PROGRESS_BAR_STATE";
@@ -114,6 +113,10 @@ public abstract class BaseModelConfigurationActivity extends BaseActivity implem
     private final AtomicInteger sceneTidCounter = new AtomicInteger(0);
 
     protected ActivityModelConfigurationBinding binding;
+
+    // Command containers
+    private LinearLayout mContainerShortLongCommands;
+    private LinearLayout mContainerSceneCommands;
 
     CoordinatorLayout mContainer;
     View mContainerAppKeyBinding;
@@ -189,6 +192,11 @@ public abstract class BaseModelConfigurationActivity extends BaseActivity implem
         super.onCreate(savedInstanceState);
         binding = ActivityModelConfigurationBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
+
+        // Initialize command containers
+        mContainerShortLongCommands = findViewById(R.id.container_short_long_commands);
+        mContainerSceneCommands = findViewById(R.id.container_scene_commands);
+
         mContainer = binding.container;
         mContainerAppKeyBinding = binding.appKeyCard;
         mActionBindAppKey = binding.actionBindAppKey;
@@ -204,7 +212,6 @@ public abstract class BaseModelConfigurationActivity extends BaseActivity implem
         mSubscribeHint = binding.subscribeHint;
         mProgressbar = binding.configurationProgressBar;
         mSwipe = binding.swipeRefresh;
-
 
         // Node controls references
         mCommandEditText = binding.etCommand;
@@ -238,6 +245,7 @@ public abstract class BaseModelConfigurationActivity extends BaseActivity implem
 
         mViewModel = new ViewModelProvider(this).get(ModelConfigurationViewModel.class);
         initialize();
+
         final MeshModel meshModel = mViewModel.getSelectedModel().getValue();
         if (meshModel != null) {
             setSupportActionBar(binding.toolbar);
@@ -247,7 +255,8 @@ public abstract class BaseModelConfigurationActivity extends BaseActivity implem
             }
 
             final int modelId = meshModel.getModelId();
-            getSupportActionBar().setSubtitle(getString(R.string.model_id, CompositionDataParser.formatModelIdentifier(modelId, true)));
+            getSupportActionBar().setSubtitle(getString(R.string.model_id,
+                    CompositionDataParser.formatModelIdentifier(modelId, true)));
 
             recyclerViewSubscriptions = findViewById(R.id.recycler_view_subscriptions);
             recyclerViewSubscriptions.setLayoutManager(new LinearLayoutManager(this));
@@ -312,13 +321,63 @@ public abstract class BaseModelConfigurationActivity extends BaseActivity implem
                 }
             });
         }
-        // ✅ AUTO BIND TRIGGER USING OBSERVERS (IMPORTANT)
+
+        // ✅ AUTO BIND TRIGGER USING OBSERVERS
         mViewModel.getSelectedMeshNode().observe(this, node -> tryAutoBind());
         mViewModel.getSelectedElement().observe(this, element -> tryAutoBind());
-        mViewModel.getSelectedModel().observe(this, model -> tryAutoBind());
-        tryAutoBind();
 
+        // ✅ OBSERVE MODEL CHANGES AND UPDATE UI
+        mViewModel.getSelectedModel().observe(this, model -> {
+            tryAutoBind();
+            updateCommandCardsBasedOnModel(model);
+
+            // Update toolbar
+            if (model != null && getSupportActionBar() != null) {
+                getSupportActionBar().setTitle(model.getModelName());
+                getSupportActionBar().setSubtitle(getString(R.string.model_id,
+                        CompositionDataParser.formatModelIdentifier(model.getModelId(), true)));
+            }
+        });
+
+        // Initial UI update
+        MeshModel initialModel = mViewModel.getSelectedModel().getValue();
+        if (initialModel != null) {
+            updateCommandCardsBasedOnModel(initialModel);
+        }
     }
+
+    /**
+     * Updates which command cards are visible based on the model type
+     */
+    private void updateCommandCardsBasedOnModel(MeshModel model) {
+        if (model == null) {
+            mContainerShortLongCommands.setVisibility(View.GONE);
+            mContainerSceneCommands.setVisibility(View.GONE);
+            return;
+        }
+
+        int modelId = model.getModelId();
+
+        // Generic OnOff Client (0x1001) -> Show Scene commands only
+        if (modelId == GENERIC_ONOFF_CLIENT) {
+            mContainerShortLongCommands.setVisibility(View.GONE);
+            mContainerSceneCommands.setVisibility(View.VISIBLE);
+            Log.d("MODEL_UI", "Showing Scene commands for Generic OnOff Client");
+        }
+        // Generic OnOff Server (0x1000) -> Show Short/Long commands only
+        else if (modelId == GENERIC_ONOFF_SERVER) {
+            mContainerShortLongCommands.setVisibility(View.VISIBLE);
+            mContainerSceneCommands.setVisibility(View.GONE);
+            Log.d("MODEL_UI", "Showing Short/Long commands for Generic OnOff Server");
+        }
+        // For other models, hide both
+        else {
+            mContainerShortLongCommands.setVisibility(View.GONE);
+            mContainerSceneCommands.setVisibility(View.GONE);
+            Log.d("MODEL_UI", "No commands available for model ID: " + modelId);
+        }
+    }
+
     private void initializeSceneControls() {
         // Set default values
         mSceneIdEditText.setText("1");
@@ -347,6 +406,7 @@ public abstract class BaseModelConfigurationActivity extends BaseActivity implem
         // Add validation listeners
         addSceneValidationListeners();
     }
+
     private void addSceneValidationListeners() {
         // Scene ID validation (1-240)
         mSceneIdEditText.addTextChangedListener(new TextWatcher() {
@@ -1089,7 +1149,6 @@ public abstract class BaseModelConfigurationActivity extends BaseActivity implem
         }
     }
 
-
     protected void sendUnacknowledgedMessage(final int address, @NonNull final MeshMessage meshMessage) {
         try {
             if (!checkConnectivity(mContainer))
@@ -1120,7 +1179,6 @@ public abstract class BaseModelConfigurationActivity extends BaseActivity implem
             fragmentAppKeyBindStatus.show(getSupportFragmentManager(), DIALOG_FRAGMENT_CONFIGURATION_STATUS);
         }
     }
-
 
     /**
      * Gets the next TID for GenericOnOff model
@@ -1297,7 +1355,7 @@ public abstract class BaseModelConfigurationActivity extends BaseActivity implem
             final int[] brightness = new int[length];
             for (int i = 0; i < length; i++) {
                 final String valueStr =
-                        mLongDataEditTexts.get(i).getText().toString().trim();
+                                 mLongDataEditTexts.get(i).getText().toString().trim();
 
                 if (valueStr.isEmpty()) {
                     mViewModel.displaySnackBar(this, mContainer,
@@ -1588,6 +1646,4 @@ public abstract class BaseModelConfigurationActivity extends BaseActivity implem
                 params[0] & 0xFF, params[1] & 0xFF, params[2] & 0xFF, params[3] & 0xFF));
         Log.d("SCENE_CMD", "====================================");
     }
-
 }
-
