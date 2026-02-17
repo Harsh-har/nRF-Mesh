@@ -38,6 +38,9 @@ public class ApplicationMessageOpCodes {
     // For Sence Command
     public static final int GENERIC_BUTTON_OPCODE_STATUS = 0x820E;
     public static final int GENERIC_BUTTON_OPCODE_STATUS_ACK = 0x8213; // ACK
+
+    // For Encoder Status
+    public static final int GENERIC_ENCODER_OPCODE_STATUS = 0x820D;
     /**
      * Opcode for the "Generic OnOff Set" message.
      */

@@ -933,9 +933,278 @@
                         </com.google.android.material.card.MaterialCardView>
                     </LinearLayout>
 
+                    <!-- Stature Command Controls Container -->
+                    <LinearLayout
+                        android:id="@+id/container_stature_commands"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:visibility="gone">
 
+                        <!-- Stature Command Controls Card -->
+                        <com.google.android.material.card.MaterialCardView
+                            android:id="@+id/stature_command_controls_card"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginBottom="@dimen/activity_vertical_margin"
+                            app:cardElevation="1dp">
 
+                            <androidx.constraintlayout.widget.ConstraintLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:padding="8dp">
 
+                                <com.google.android.material.appbar.MaterialToolbar
+                                    android:id="@+id/stature_toolbar"
+                                    android:layout_width="0dp"
+                                    android:layout_height="?attr/actionBarSize"
+                                    android:layout_marginBottom="8dp"
+                                    app:layout_constraintEnd_toEndOf="parent"
+                                    app:layout_constraintStart_toStartOf="parent"
+                                    app:layout_constraintTop_toTopOf="parent"
+                                    app:title="Stature Command Controls"
+                                    app:titleTextAppearance="@style/Toolbar.TitleText" />
+
+                                <!-- Device Category Field -->
+                                <com.google.android.material.textfield.TextInputLayout
+                                    android:id="@+id/layout_stature_device_category"
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="8dp"
+                                    android:hint="Enter Device Category (0-63)"
+                                    app:layout_constraintEnd_toEndOf="parent"
+                                    app:layout_constraintStart_toStartOf="parent"
+                                    app:layout_constraintTop_toBottomOf="@id/stature_toolbar">
+
+                                    <com.google.android.material.textfield.TextInputEditText
+                                        android:id="@+id/et_stature_device_category"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:inputType="number"
+                                        android:maxLength="2"
+                                        android:text="0" />
+                                </com.google.android.material.textfield.TextInputLayout>
+
+                                <!-- Step Value Field -->
+                                <com.google.android.material.textfield.TextInputLayout
+                                    android:id="@+id/layout_stature_step"
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="12dp"
+                                    android:hint="Enter Step Value (0-255)"
+                                    app:layout_constraintEnd_toEndOf="parent"
+                                    app:layout_constraintStart_toStartOf="parent"
+                                    app:layout_constraintTop_toBottomOf="@id/layout_stature_device_category">
+
+                                    <com.google.android.material.textfield.TextInputEditText
+                                        android:id="@+id/et_stature_step"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:inputType="number"
+                                        android:maxLength="3"
+                                        android:text="10" />
+                                </com.google.android.material.textfield.TextInputLayout>
+
+                                <!-- Flag Display -->
+                                <TextView
+                                    android:id="@+id/tv_stature_flags"
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="12dp"
+                                    android:padding="8dp"
+                                    android:text="Flags: -- --"
+                                    android:textColor="?android:attr/textColorSecondary"
+                                    android:textSize="12sp"
+                                    android:background="@android:drawable/editbox_background"
+                                    app:layout_constraintEnd_toEndOf="parent"
+                                    app:layout_constraintStart_toStartOf="parent"
+                                    app:layout_constraintTop_toBottomOf="@id/layout_stature_step" />
+
+                                <!-- Mode Selection Buttons -->
+                                <TextView
+                                    android:id="@+id/tv_mode_selection"
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="16dp"
+                                    android:text="Select Mode:"
+                                    android:textStyle="bold"
+                                    android:textSize="14sp"
+                                    app:layout_constraintEnd_toEndOf="parent"
+                                    app:layout_constraintStart_toStartOf="parent"
+                                    app:layout_constraintTop_toBottomOf="@id/tv_stature_flags" />
+
+                                <LinearLayout
+                                    android:id="@+id/stature_mode_container"
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="8dp"
+                                    android:orientation="horizontal"
+                                    android:gravity="center"
+                                    app:layout_constraintEnd_toEndOf="parent"
+                                    app:layout_constraintStart_toStartOf="parent"
+                                    app:layout_constraintTop_toBottomOf="@id/tv_mode_selection">
+
+                                    <com.google.android.material.button.MaterialButton
+                                        android:id="@+id/btn_stature_increment"
+                                        android:layout_width="0dp"
+                                        android:layout_height="wrap_content"
+                                        android:layout_weight="1"
+                                        android:layout_marginEnd="4dp"
+                                        android:text="Increment"
+                                        style="@style/Widget.MaterialComponents.Button.OutlinedButton" />
+
+                                    <com.google.android.material.button.MaterialButton
+                                        android:id="@+id/btn_stature_decrement"
+                                        android:layout_width="0dp"
+                                        android:layout_height="wrap_content"
+                                        android:layout_weight="1"
+                                        android:layout_marginStart="4dp"
+                                        android:layout_marginEnd="4dp"
+                                        android:text="Decrement"
+                                        style="@style/Widget.MaterialComponents.Button.OutlinedButton" />
+
+                                    <com.google.android.material.button.MaterialButton
+                                        android:id="@+id/btn_stature_device_update"
+                                        android:layout_width="0dp"
+                                        android:layout_height="wrap_content"
+                                        android:layout_weight="1"
+                                        android:layout_marginStart="4dp"
+                                        android:text="Device Update"
+                                        style="@style/Widget.MaterialComponents.Button.OutlinedButton" />
+                                </LinearLayout>
+
+                                <!-- Divider -->
+                                <include
+                                    android:id="@+id/div_stature"
+                                    layout="@layout/layout_divider"
+                                    android:layout_width="0dp"
+                                    android:layout_height="1dp"
+                                    android:layout_marginTop="16dp"
+                                    app:layout_constraintEnd_toEndOf="parent"
+                                    app:layout_constraintStart_toStartOf="parent"
+                                    app:layout_constraintTop_toBottomOf="@id/stature_mode_container" />
+
+                                <!-- Send Button -->
+                                <com.google.android.material.button.MaterialButton
+                                    android:id="@+id/btn_stature_send"
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="16dp"
+                                    android:text="SEND STATURE COMMAND"
+                                    app:layout_constraintEnd_toEndOf="parent"
+                                    app:layout_constraintStart_toStartOf="parent"
+                                    app:layout_constraintTop_toBottomOf="@id/div_stature" />
+
+                            </androidx.constraintlayout.widget.ConstraintLayout>
+                        </com.google.android.material.card.MaterialCardView>
+                    </LinearLayout>
+
+                    <!-- Generic Encoder Status Card -->
+                    <com.google.android.material.card.MaterialCardView
+                        android:id="@+id/generic_encoder_card"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="@dimen/activity_vertical_margin"
+                        app:cardElevation="1dp">
+
+                        <androidx.constraintlayout.widget.ConstraintLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:padding="8dp">
+
+                            <com.google.android.material.appbar.MaterialToolbar
+                                android:id="@+id/generic_encoder_tool_bar"
+                                android:layout_width="0dp"
+                                android:layout_height="?attr/actionBarSize"
+                                app:layout_constraintEnd_toEndOf="parent"
+                                app:layout_constraintStart_toStartOf="parent"
+                                app:layout_constraintTop_toTopOf="parent"
+                                app:logo="@drawable/ic_lightbulb_outline_black_24dp"
+                                app:title=" Generic Encoder Status"
+                                app:titleTextAppearance="@style/Toolbar.TitleText" />
+
+                            <!-- First Input - Device/Category -->
+                            <com.google.android.material.textfield.TextInputLayout
+                                android:id="@+id/layout_device_category"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:hint="Select Device/Category"
+                                android:layout_marginTop="16dp"
+
+                                app:layout_constraintEnd_toEndOf="parent"
+                                app:layout_constraintStart_toStartOf="parent"
+                                app:layout_constraintTop_toBottomOf="@id/generic_encoder_tool_bar">
+
+                                <com.google.android.material.textfield.TextInputEditText
+                                    android:id="@+id/et_device_category"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:imeOptions="actionNext"
+                                    android:inputType="number" />
+                            </com.google.android.material.textfield.TextInputLayout>
+
+                            <!-- Second Input - Device/Category (second field) -->
+                            <com.google.android.material.textfield.TextInputLayout
+                                android:id="@+id/layout_device_category_2"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:hint="Enter Device/Category Id"
+                                android:layout_marginTop="16dp"
+                                app:layout_constraintEnd_toEndOf="parent"
+                                app:layout_constraintStart_toStartOf="parent"
+                                app:layout_constraintTop_toBottomOf="@id/layout_device_category">
+
+                                <com.google.android.material.textfield.TextInputEditText
+                                    android:id="@+id/et_device_category_2"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:imeOptions="actionNext"
+                                    android:inputType="number" />
+                            </com.google.android.material.textfield.TextInputLayout>
+
+                            <!-- Third Input - Values -->
+                            <com.google.android.material.textfield.TextInputLayout
+                                android:id="@+id/layout_values"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:hint="Enter Values"
+                                android:layout_marginTop="16dp"
+                                app:layout_constraintEnd_toEndOf="parent"
+                                app:layout_constraintStart_toStartOf="parent"
+                                app:layout_constraintTop_toBottomOf="@id/layout_device_category_2">
+
+                                <com.google.android.material.textfield.TextInputEditText
+                                    android:id="@+id/et_values"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:imeOptions="actionDone"
+                                    android:inputType="number" />
+                            </com.google.android.material.textfield.TextInputLayout>
+
+                            <!-- Divider -->
+                            <include
+                                android:id="@+id/div_generic_encoder"
+                                layout="@layout/layout_divider"
+                                android:layout_width="0dp"
+                                android:layout_height="1dp"
+                                android:layout_marginTop="16dp"
+                                app:layout_constraintEnd_toEndOf="parent"
+                                app:layout_constraintStart_toStartOf="parent"
+                                app:layout_constraintTop_toBottomOf="@id/layout_values" />
+
+                            <!-- Send Button -->
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/action_send_encoder"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="16dp"
+                                android:text="SEND"
+                                app:layout_constraintEnd_toEndOf="parent"
+                                app:layout_constraintStart_toStartOf="parent"
+                                app:layout_constraintTop_toBottomOf="@id/div_generic_encoder" />
+
+                        </androidx.constraintlayout.widget.ConstraintLayout>
+                    </com.google.android.material.card.MaterialCardView>
 
                     <androidx.constraintlayout.widget.ConstraintLayout
                         android:id="@+id/node_controls_container"

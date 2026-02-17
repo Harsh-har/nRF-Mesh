@@ -60,6 +60,7 @@ import no.nordicsemi.android.swaromesh.transport.Element;
 import no.nordicsemi.android.swaromesh.transport.GenericLightSet;
 import no.nordicsemi.android.swaromesh.transport.GenericOnOffSet;
 import no.nordicsemi.android.swaromesh.transport.GenericSceneSet;
+import no.nordicsemi.android.swaromesh.transport.GenericStatureSet;
 import no.nordicsemi.android.swaromesh.transport.MeshMessage;
 import no.nordicsemi.android.swaromesh.transport.MeshModel;
 import no.nordicsemi.android.swaromesh.transport.ProvisionedMeshNode;
@@ -165,6 +166,12 @@ public abstract class BaseModelConfigurationActivity extends BaseActivity implem
     protected Button mSceneSendButton;
     protected Button mSetNetworkTransmitStateButton;
 
+    // Stature Command Controls
+    protected TextInputEditText mDeviceCategoryEditText;
+    protected TextInputEditText mDeviceCategory2EditText;
+    protected TextInputEditText mValuesEditText;
+    protected Button mSendEncoderButton;
+    private LinearLayout mContainerStatureCommands;
     private RecyclerView recyclerViewBoundKeys, recyclerViewSubscriptions;
 
     private final ActivityResultLauncher<Intent> appKeySelector = registerForActivityResult(
@@ -196,6 +203,7 @@ public abstract class BaseModelConfigurationActivity extends BaseActivity implem
         // Initialize command containers
         mContainerShortLongCommands = findViewById(R.id.container_short_long_commands);
         mContainerSceneCommands = findViewById(R.id.container_scene_commands);
+        mContainerStatureCommands = findViewById(R.id.container_stature_commands);
 
         mContainer = binding.container;
         mContainerAppKeyBinding = binding.appKeyCard;
@@ -236,6 +244,15 @@ public abstract class BaseModelConfigurationActivity extends BaseActivity implem
         mBtnPressDouble = binding.btnPressDouble;
         mBtnPressLong = binding.btnPressLong;
         mSceneSendButton = binding.btnSend;
+
+        // Stature Command Controls references
+        mDeviceCategoryEditText  = binding.etDeviceCategory;
+        mDeviceCategory2EditText = binding.etDeviceCategory2;
+        mValuesEditText          = binding.etValues;
+        mSendEncoderButton       = binding.actionSendEncoder;
+
+// Stature send button
+        mSendEncoderButton.setOnClickListener(v -> sendStatureCommand());
 
         // Initialize long data fields with brightness values
         initializeLongDataFields();
@@ -353,28 +370,31 @@ public abstract class BaseModelConfigurationActivity extends BaseActivity implem
         if (model == null) {
             mContainerShortLongCommands.setVisibility(View.GONE);
             mContainerSceneCommands.setVisibility(View.GONE);
+            mContainerStatureCommands.setVisibility(View.GONE);
             return;
         }
 
         int modelId = model.getModelId();
 
-        // Generic OnOff Client (0x1001) -> Show Scene commands only
         if (modelId == GENERIC_ONOFF_CLIENT) {
             mContainerShortLongCommands.setVisibility(View.GONE);
             mContainerSceneCommands.setVisibility(View.VISIBLE);
-            Log.d("MODEL_UI", "Showing Scene commands for Generic OnOff Client");
-        }
-        // Generic OnOff Server (0x1000) -> Show Short/Long commands only
-        else if (modelId == GENERIC_ONOFF_SERVER) {
+            mContainerStatureCommands.setVisibility(View.GONE);
+
+        } else if (modelId == GENERIC_ONOFF_SERVER) {
             mContainerShortLongCommands.setVisibility(View.VISIBLE);
             mContainerSceneCommands.setVisibility(View.GONE);
-            Log.d("MODEL_UI", "Showing Short/Long commands for Generic OnOff Server");
-        }
-        // For other models, hide both
-        else {
+            mContainerStatureCommands.setVisibility(View.GONE);
+
+        } else if (modelId == GENERIC_ONOFF_CLIENT) {
             mContainerShortLongCommands.setVisibility(View.GONE);
             mContainerSceneCommands.setVisibility(View.GONE);
-            Log.d("MODEL_UI", "No commands available for model ID: " + modelId);
+            mContainerStatureCommands.setVisibility(View.VISIBLE);
+
+        } else {
+            mContainerShortLongCommands.setVisibility(View.GONE);
+            mContainerSceneCommands.setVisibility(View.GONE);
+            mContainerStatureCommands.setVisibility(View.GONE);
         }
     }
 
@@ -1526,6 +1546,128 @@ public abstract class BaseModelConfigurationActivity extends BaseActivity implem
                     "Validation error: " + e.getMessage(), Snackbar.LENGTH_SHORT);
         } catch (Exception e) {
             Log.e("SCENE_CMD", "Send failed", e);
+            mViewModel.displaySnackBar(this, mContainer,
+                    "Failed: " + e.getMessage(), Snackbar.LENGTH_SHORT);
+        }
+    }
+
+
+    private void sendStatureCommand() {
+        final ProvisionedMeshNode node  = mViewModel.getSelectedMeshNode().getValue();
+        final Element element           = mViewModel.getSelectedElement().getValue();
+        final MeshModel model           = mViewModel.getSelectedModel().getValue();
+
+        if (node == null || element == null || model == null) {
+            mViewModel.displaySnackBar(this, mContainer,
+                    "Node / Element / Model not selected", Snackbar.LENGTH_SHORT);
+            return;
+        }
+
+        try {
+            /* ---------- CONTROL BYTE (Byte 0) ----------
+             * User enters packed int 0-255.
+             * Internally split into:
+             *   bit 7 -> isIncrement
+             *   bit 6 -> isDeviceUpdate
+             *   bits 5-0 -> deviceCategory (0-63)
+             */
+            final String controlStr = mDeviceCategoryEditText.getText().toString().trim();
+            if (controlStr.isEmpty()) {
+                mViewModel.displaySnackBar(this, mContainer,
+                        "Please enter Control Byte (0-255)", Snackbar.LENGTH_SHORT);
+                return;
+            }
+            final int controlByte = Integer.parseInt(controlStr);
+            if (controlByte < 0 || controlByte > 255) {
+                mViewModel.displaySnackBar(this, mContainer,
+                        "Control Byte must be 0-255", Snackbar.LENGTH_SHORT);
+                return;
+            }
+
+            /* ---------- DEVICE CATEGORY (Byte 0 lower 6 bits) ---------- */
+            final String categoryStr = mDeviceCategory2EditText.getText().toString().trim();
+            if (categoryStr.isEmpty()) {
+                mViewModel.displaySnackBar(this, mContainer,
+                        "Please enter Device Category (0-63)", Snackbar.LENGTH_SHORT);
+                return;
+            }
+            final int deviceCategory = Integer.parseInt(categoryStr);
+            if (deviceCategory < 0 || deviceCategory > 63) {
+                mViewModel.displaySnackBar(this, mContainer,
+                        "Device Category must be 0-63", Snackbar.LENGTH_SHORT);
+                return;
+            }
+
+            /* ---------- STEP VALUE (Byte 1) ---------- */
+            final String stepStr = mValuesEditText.getText().toString().trim();
+            if (stepStr.isEmpty()) {
+                mViewModel.displaySnackBar(this, mContainer,
+                        "Please enter Step value (0-255)", Snackbar.LENGTH_SHORT);
+                return;
+            }
+            final int step = Integer.parseInt(stepStr);
+            if (step < 0 || step > 255) {
+                mViewModel.displaySnackBar(this, mContainer,
+                        "Step must be 0-255", Snackbar.LENGTH_SHORT);
+                return;
+            }
+
+            /* ---------- APP KEY ---------- */
+            final List<Integer> boundKeys = model.getBoundAppKeyIndexes();
+            if (boundKeys == null || boundKeys.isEmpty()) {
+                mViewModel.displaySnackBar(this, mContainer,
+                        "No AppKey bound to model", Snackbar.LENGTH_SHORT);
+                return;
+            }
+
+            final MeshNetwork network = mViewModel.getNetworkLiveData().getMeshNetwork();
+            final ApplicationKey appKey = network.getAppKey(boundKeys.get(0));
+            if (appKey == null) {
+                mViewModel.displaySnackBar(this, mContainer,
+                        "AppKey not found", Snackbar.LENGTH_SHORT);
+                return;
+            }
+
+            /* ---------- EXTRACT FLAGS FROM CONTROL BYTE ---------- */
+            final boolean isIncrement    = (controlByte & 0x80) != 0;
+            final boolean isDeviceUpdate = (controlByte & 0x40) != 0;
+
+            /* ---------- CREATE MESSAGE ---------- */
+            final GenericStatureSet message = new GenericStatureSet(
+                    appKey,
+                    isIncrement,
+                    isDeviceUpdate,
+                    deviceCategory,
+                    step
+            );
+
+            /* ---------- LOG ---------- */
+            Log.d("STATURE_CMD", "======= GenericStatureSet =======");
+            Log.d("STATURE_CMD", "Element Addr   : 0x" + String.format("%04X", element.getElementAddress()));
+            Log.d("STATURE_CMD", "Control Byte   : 0x" + String.format("%02X", controlByte));
+            Log.d("STATURE_CMD", "  isIncrement  : " + isIncrement);
+            Log.d("STATURE_CMD", "  isDevUpdate  : " + isDeviceUpdate);
+            Log.d("STATURE_CMD", "DeviceCategory : " + deviceCategory);
+            Log.d("STATURE_CMD", "Step           : " + step);
+            Log.d("STATURE_CMD", "Raw Bytes      : " + Arrays.toString(message.toByteArray()));
+            Log.d("STATURE_CMD", "=================================");
+
+            /* ---------- SEND ---------- */
+            sendUnacknowledgedMessage(element.getElementAddress(), message);
+
+            mViewModel.displaySnackBar(this, mContainer,
+                    String.format("Stature command sent → incr=%s cat=%d step=%d",
+                            isIncrement, deviceCategory, step),
+                    Snackbar.LENGTH_LONG);
+
+        } catch (NumberFormatException e) {
+            mViewModel.displaySnackBar(this, mContainer,
+                    "Invalid numeric input", Snackbar.LENGTH_SHORT);
+        } catch (IllegalArgumentException e) {
+            mViewModel.displaySnackBar(this, mContainer,
+                    "Validation error: " + e.getMessage(), Snackbar.LENGTH_SHORT);
+        } catch (Exception e) {
+            Log.e("STATURE_CMD", "Send failed", e);
             mViewModel.displaySnackBar(this, mContainer,
                     "Failed: " + e.getMessage(), Snackbar.LENGTH_SHORT);
         }
