@@ -1,210 +1,183 @@
 package no.nordicsemi.android.swaromesh.transport;
 
 import android.util.Log;
+
 import androidx.annotation.NonNull;
+
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+
 import no.nordicsemi.android.swaromesh.ApplicationKey;
 import no.nordicsemi.android.swaromesh.opcodes.ApplicationMessageOpCodes;
 import no.nordicsemi.android.swaromesh.utils.SecureUtils;
 
 /**
- * GenericStatureSet — 2-byte mesh message (NO TID).
+ * GenericStatureSet — 2 Byte Mesh Message
  *
- * ┌─────────────────────────────────────────────┐
- * │  BYTE 0 (Control)                           │
- * │  bit 7 : isIncrement  (1=incr, 0=decr)      │
- * │  bit 6 : isDeviceUpdate (1=device update)   │
- * │  bits 5-0 : deviceCategory (0–63)           │
- * ├─────────────────────────────────────────────┤
- * │  BYTE 1 : step value (0–255)                │
- * └─────────────────────────────────────────────┘
+ * BYTE 0 (Control)
+ * bit 7 : Increment / Decrement (1 = Inc, 0 = Dec)
+ * bit 6 : Update Device/Category
+ * bits5-0 : Device/Category ID (0–63)
+ *
+ * BYTE 1
+ * Value / Step (0–255)
  */
 public class GenericStatureSet extends ApplicationMessage {
 
     private static final String TAG = "GenericStatureSet";
 
-    private static final int OP_CODE      = ApplicationMessageOpCodes.GENERIC_ENCODER_OPCODE_STATUS;
+    private static final int OP_CODE = ApplicationMessageOpCodes.GENERIC_ENCODER_OPCODE_STATUS;
     private static final int MESSAGE_SIZE = 2;
 
-    // Bit masks for Byte 0
+    // Bit masks
     private static final int MASK_INCREMENT     = 0x80; // bit 7
-    private static final int MASK_DEVICE_UPDATE = 0x40; // bit 6
-    private static final int MASK_CATEGORY      = 0x3F; // bits 5-0
+    private static final int MASK_UPDATE        = 0x40; // bit 6
+    private static final int MASK_CATEGORY      = 0x3F; // bits 0–5
 
-    // Validation limits
-    private static final int MAX_CATEGORY = 63;  // 6 bits
-    private static final int MAX_STEP     = 255; // 8 bits
+    private static final int MAX_CATEGORY = 63;
+    private static final int MAX_VALUE    = 255;
 
     private final boolean isIncrement;
-    private final boolean isDeviceUpdate;
-    private final int deviceCategory;
-    private final int step;
+    private final boolean isUpdate;
+    private final int category;
+    private final int value;
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // Constructors
-    // ─────────────────────────────────────────────────────────────────────────
-
-    /**
-     * Main constructor — pass each field individually.
-     *
-     * @param appKey         Bound application key
-     * @param isIncrement    true = increment, false = decrement
-     * @param isDeviceUpdate true = device/category update operation
-     * @param deviceCategory Device category (0–63)
-     * @param step           Step value (0–255)
-     */
+    // ─────────────────────────────────────────────
+    // Constructor (User Inputs 4 values)
+    // ─────────────────────────────────────────────
     public GenericStatureSet(@NonNull ApplicationKey appKey,
                              boolean isIncrement,
-                             boolean isDeviceUpdate,
-                             int deviceCategory,
-                             int step) {
+                             boolean isUpdate,
+                             int category,
+                             int value) {
+
         super(appKey);
 
-        validate(deviceCategory, step);
+        validate(category, value);
 
-        this.isIncrement    = isIncrement;
-        this.isDeviceUpdate = isDeviceUpdate;
-        this.deviceCategory = deviceCategory;
-        this.step           = step;
+        this.isIncrement = isIncrement;
+        this.isUpdate    = isUpdate;
+        this.category    = category;
+        this.value       = value;
 
         assembleMessageParameters();
     }
 
-    /**
-     * Packed constructor — pass Byte 0 as a single int (0–255).
-     * Bits are auto-extracted: bit7=increment, bit6=deviceUpdate, bits5-0=category.
-     *
-     * @param appKey      Bound application key
-     * @param controlByte Packed first byte (0–255)
-     * @param step        Step value (0–255)
-     */
+    // ─────────────────────────────────────────────
+    // Constructor (Packed Control Byte)
+    // ─────────────────────────────────────────────
     public GenericStatureSet(@NonNull ApplicationKey appKey,
                              int controlByte,
-                             int step) {
+                             int value) {
+
         super(appKey);
 
-        this.isIncrement    = (controlByte & MASK_INCREMENT)     != 0;
-        this.isDeviceUpdate = (controlByte & MASK_DEVICE_UPDATE) != 0;
-        this.deviceCategory =  controlByte & MASK_CATEGORY;
-        this.step           = step;
+        this.isIncrement = (controlByte & MASK_INCREMENT) != 0;
+        this.isUpdate    = (controlByte & MASK_UPDATE) != 0;
+        this.category    = controlByte & MASK_CATEGORY;
+        this.value       = value;
 
-        validate(deviceCategory, step);
+        validate(this.category, this.value);
         assembleMessageParameters();
     }
-
-    // ─────────────────────────────────────────────────────────────────────────
-    // Core Methods
-    // ─────────────────────────────────────────────────────────────────────────
 
     @Override
     public int getOpCode() {
         return OP_CODE;
     }
 
+    // ─────────────────────────────────────────────
+    // Assemble 2-Byte Payload
+    // ─────────────────────────────────────────────
     @Override
     protected void assembleMessageParameters() {
+
         mAid = SecureUtils.calculateK4(mAppKey.getKey());
 
-        // Build Byte 0: combine flags + category
         int controlByte = 0;
-        if (isIncrement)    controlByte |= MASK_INCREMENT;
-        if (isDeviceUpdate) controlByte |= MASK_DEVICE_UPDATE;
-        controlByte |= (deviceCategory & MASK_CATEGORY);
 
-        // Pack into 2-byte buffer
+        if (isIncrement) controlByte |= MASK_INCREMENT;
+        if (isUpdate)    controlByte |= MASK_UPDATE;
+
+        controlByte |= (category & MASK_CATEGORY);
+
         mParameters = ByteBuffer.allocate(MESSAGE_SIZE)
                 .order(ByteOrder.BIG_ENDIAN)
                 .put((byte) controlByte)
-                .put((byte) step)
+                .put((byte) value)
                 .array();
 
-        Log.d(TAG, toString());
+        logPayload(controlByte);
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
+    // ─────────────────────────────────────────────
     // Validation
-    // ─────────────────────────────────────────────────────────────────────────
+    // ─────────────────────────────────────────────
+    private void validate(int category, int value) {
 
-    private void validate(int deviceCategory, int step) {
-        if (deviceCategory < 0 || deviceCategory > MAX_CATEGORY) {
+        if (category < 0 || category > MAX_CATEGORY) {
             throw new IllegalArgumentException(
-                    "deviceCategory must be 0–" + MAX_CATEGORY + " (got " + deviceCategory + ")");
+                    "Category must be 0–63 (got " + category + ")");
         }
-        if (step < 0 || step > MAX_STEP) {
+
+        if (value < 0 || value > MAX_VALUE) {
             throw new IllegalArgumentException(
-                    "step must be 0–" + MAX_STEP + " (got " + step + ")");
+                    "Value must be 0–255 (got " + value + ")");
         }
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // Factory Methods (convenience shortcuts)
-    // ─────────────────────────────────────────────────────────────────────────
+    // ─────────────────────────────────────────────
+    // Logging
+    // ─────────────────────────────────────────────
+    private void logPayload(int controlByte) {
 
-    /** Create an INCREMENT message */
-    public static GenericStatureSet createIncrement(@NonNull ApplicationKey appKey,
-                                                    int deviceCategory, int step) {
-        return new GenericStatureSet(appKey, true, false, deviceCategory, step);
+        Log.d(TAG, "══════════════════════════════════════");
+        Log.d(TAG, "GenericStatureSet Payload (2 Bytes)");
+        Log.d(TAG, "BYTE0 Control : " + toBinary8(controlByte)
+                + " 0x" + String.format("%02X", controlByte));
+        Log.d(TAG, "  bit7 Increment : " + isIncrement);
+        Log.d(TAG, "  bit6 Update    : " + isUpdate);
+        Log.d(TAG, "  bits5-0 Cat    : " + category);
+        Log.d(TAG, "BYTE1 Value   : " + value
+                + " 0x" + String.format("%02X", value));
+        Log.d(TAG, "══════════════════════════════════════");
     }
 
-    /** Create a DECREMENT message */
-    public static GenericStatureSet createDecrement(@NonNull ApplicationKey appKey,
-                                                    int deviceCategory, int step) {
-        return new GenericStatureSet(appKey, false, false, deviceCategory, step);
+    // ─────────────────────────────────────────────
+    // Helpers
+    // ─────────────────────────────────────────────
+    private static String toBinary8(int v) {
+        return String.format("%8s",
+                Integer.toBinaryString(v & 0xFF)).replace(' ', '0');
     }
 
-    /** Create a DEVICE UPDATE message */
-    public static GenericStatureSet createDeviceUpdate(@NonNull ApplicationKey appKey,
-                                                       boolean isIncrement,
-                                                       int deviceCategory, int step) {
-        return new GenericStatureSet(appKey, isIncrement, true, deviceCategory, step);
-    }
-
-    /** Create from raw 2-byte array */
-    public static GenericStatureSet fromByteArray(@NonNull ApplicationKey appKey,
-                                                  @NonNull byte[] data) {
-        if (data.length != MESSAGE_SIZE) {
-            throw new IllegalArgumentException(
-                    "Expected " + MESSAGE_SIZE + " bytes, got " + data.length);
-        }
-        return new GenericStatureSet(appKey, data[0] & 0xFF, data[1] & 0xFF);
-    }
-
-    // ─────────────────────────────────────────────────────────────────────────
+    // ─────────────────────────────────────────────
     // Getters
-    // ─────────────────────────────────────────────────────────────────────────
+    // ─────────────────────────────────────────────
+    public boolean isIncrement() { return isIncrement; }
+    public boolean isUpdate()    { return isUpdate; }
+    public int getCategory()     { return category; }
+    public int getValue()        { return value; }
 
-    public boolean isIncrement()    { return isIncrement;    }
-    public boolean isDeviceUpdate() { return isDeviceUpdate; }
-    public int getDeviceCategory()  { return deviceCategory; }
-    public int getStep()            { return step;           }
-
-    /** Returns the packed control byte (Byte 0) */
     public int getControlByte() {
         int b = 0;
-        if (isIncrement)    b |= MASK_INCREMENT;
-        if (isDeviceUpdate) b |= MASK_DEVICE_UPDATE;
-        b |= (deviceCategory & MASK_CATEGORY);
+        if (isIncrement) b |= MASK_INCREMENT;
+        if (isUpdate)    b |= MASK_UPDATE;
+        b |= (category & MASK_CATEGORY);
         return b;
     }
 
-    /** Returns raw message bytes */
     public byte[] toByteArray() {
-        return mParameters != null ? mParameters.clone() : null;
+        return mParameters.clone();
     }
-
-    // ─────────────────────────────────────────────────────────────────────────
-    // toString
-    // ─────────────────────────────────────────────────────────────────────────
 
     @Override
     public String toString() {
-        return String.format(
-                "GenericStatureSet { op=%s, incr=%b, update=%b, cat=%d, step=%d, bytes=[%02X %02X] }",
-                isIncrement ? "INCREMENT" : "DECREMENT",
-                isIncrement, isDeviceUpdate,
-                deviceCategory, step,
-                getControlByte(), step
-        );
+        return "GenericStatureSet{" +
+                "inc=" + isIncrement +
+                ", update=" + isUpdate +
+                ", category=" + category +
+                ", value=" + value +
+                '}';
     }
 }
