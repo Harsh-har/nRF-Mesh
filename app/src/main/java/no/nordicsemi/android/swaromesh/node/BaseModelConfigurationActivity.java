@@ -109,7 +109,7 @@ public abstract class BaseModelConfigurationActivity extends BaseActivity implem
     // ✅ FIXED:  separate model IDs (was duplicate GENERIC_ONOFF_CLIENT before)
     // ─────────────────────────────────────────────────────────────────────────
     private static final int GENERIC_ONOFF_SERVER = 0x1000; // → Short + Long commands
-    private static final int GENERIC_ONOFF_CLIENT = 0x1001; // → Scene commands
+    private static final int GENERIC_ONOFF_CLIENT = 0x1001; // → Scene + Stature commands
 
     private static final String DIALOG_FRAGMENT_CONFIGURATION_STATUS = "DIALOG_FRAGMENT_CONFIGURATION_STATUS";
     private static final String PROGRESS_BAR_STATE = "PROGRESS_BAR_STATE";
@@ -135,6 +135,7 @@ public abstract class BaseModelConfigurationActivity extends BaseActivity implem
     // Command containers
     private LinearLayout mContainerShortLongCommands;
     private LinearLayout mContainerSceneCommands;
+    private View mGenericStatureCard;  // Added for Generic Stature card
 
     CoordinatorLayout mContainer;
     View    mContainerAppKeyBinding;
@@ -226,6 +227,7 @@ public abstract class BaseModelConfigurationActivity extends BaseActivity implem
         // Containers
         mContainerShortLongCommands = findViewById(R.id.container_short_long_commands);
         mContainerSceneCommands     = findViewById(R.id.container_scene_commands);
+        mGenericStatureCard          = findViewById(R.id.generic_stature_card);  // Initialize Stature card
 
         // Base views
         mContainer              = binding.container;
@@ -371,13 +373,14 @@ public abstract class BaseModelConfigurationActivity extends BaseActivity implem
     }
 
     // ─────────────────────────────────────────────────────────────────────────
-    // ✅ FIXED updateCommandCardsBasedOnModel — 3 correct model IDs
+    // ✅ UPDATED: updateCommandCardsBasedOnModel — Shows Stature card only for Client model
     // ─────────────────────────────────────────────────────────────────────────
     private void updateCommandCardsBasedOnModel(MeshModel model) {
         if (model == null) {
             Log.w(TAG_MODEL, "model=null → all cards GONE");
             mContainerShortLongCommands.setVisibility(View.GONE);
             mContainerSceneCommands.setVisibility(View.GONE);
+            mGenericStatureCard.setVisibility(View.GONE);  // Hide stature card
             return;
         }
 
@@ -386,24 +389,29 @@ public abstract class BaseModelConfigurationActivity extends BaseActivity implem
         Log.d(TAG_MODEL, String.format("Model: %s  ID=0x%04X (%d)",
                 model.getModelName(), modelId, modelId));
 
-        if (modelId == GENERIC_ONOFF_CLIENT) {
-            // 0x1001 → Scene
-            Log.d(TAG_MODEL, "→ SCENE card VISIBLE (0x1001)");
-            mContainerShortLongCommands.setVisibility(View.GONE);
-            mContainerSceneCommands.setVisibility(View.VISIBLE);
+        // Define which models get which cards
+        boolean showShortLong = (modelId == GENERIC_ONOFF_SERVER);
+        boolean showScene = (modelId == GENERIC_ONOFF_CLIENT);
+        boolean showStature = (modelId == GENERIC_ONOFF_CLIENT); // Only client model gets stature
 
-        } else if (modelId == GENERIC_ONOFF_SERVER) {
-            // 0x1000 → Short+Long
-            Log.d(TAG_MODEL, "→ SHORT+LONG card VISIBLE (0x1000)");
-            mContainerShortLongCommands.setVisibility(View.VISIBLE);
-            mContainerSceneCommands.setVisibility(View.GONE);
-        } else {
-            Log.w(TAG_MODEL, String.format("→ Unknown 0x%04X → all GONE", modelId));
-            mContainerShortLongCommands.setVisibility(View.GONE);
-            mContainerSceneCommands.setVisibility(View.GONE);
-        }
+        // Apply visibility
+        mContainerShortLongCommands.setVisibility(showShortLong ? View.VISIBLE : View.GONE);
+        mContainerSceneCommands.setVisibility(showScene ? View.VISIBLE : View.GONE);
+        mGenericStatureCard.setVisibility(showStature ? View.VISIBLE : View.GONE);
 
+        // Log what's being shown
+        Log.d(TAG_MODEL, "→ Card visibility:");
+        Log.d(TAG_MODEL, "   Short/Long: " + (showShortLong ? "VISIBLE" : "GONE"));
+        Log.d(TAG_MODEL, "   Scene: " + (showScene ? "VISIBLE" : "GONE"));
+        Log.d(TAG_MODEL, "   Stature: " + (showStature ? "VISIBLE" : "GONE"));
         Log.d(TAG_MODEL, "══════════════════════════════");
+    }
+
+    // Helper method to hide all cards
+    private void hideAllCommandCards() {
+        mContainerShortLongCommands.setVisibility(View.GONE);
+        mContainerSceneCommands.setVisibility(View.GONE);
+        mGenericStatureCard.setVisibility(View.GONE);
     }
 
     // Binary helpers
@@ -953,173 +961,169 @@ public abstract class BaseModelConfigurationActivity extends BaseActivity implem
         }
     }
 
-// ─────────────────────────────────────────────────────────────────────────
-// UPDATED: sendGenericStatureCommand - Correct bit shifting (1 bit, 1 bit, 6 bit)
-// ─────────────────────────────────────────────────────────────────────────
-// ─────────────────────────────────────────────────────────────────────────
-// UPDATED: sendGenericStatureCommand - Uses ELEMENT ADDRESS (not node address)
-// ─────────────────────────────────────────────────────────────────────────
-private void sendGenericStatureCommand() {
+    // ─────────────────────────────────────────────────────────────────────────
+    // UPDATED: sendGenericStatureCommand - Correct bit shifting (1 bit, 1 bit, 6 bit)
+    // ─────────────────────────────────────────────────────────────────────────
+    private void sendGenericStatureCommand() {
+        final ProvisionedMeshNode node    = mViewModel.getSelectedMeshNode().getValue();
+        final Element             element = mViewModel.getSelectedElement().getValue();
+        final MeshModel           model   = mViewModel.getSelectedModel().getValue();
 
-    final ProvisionedMeshNode node    = mViewModel.getSelectedMeshNode().getValue();
-    final Element             element = mViewModel.getSelectedElement().getValue();
-    final MeshModel           model   = mViewModel.getSelectedModel().getValue();
-
-    if (node == null || element == null || model == null) {
-        mViewModel.displaySnackBar(
-                this,
-                mContainer,
-                "Node / Element / Model not selected",
-                Snackbar.LENGTH_SHORT
-        );
-        return;
-    }
-
-    try {
-        // 1️⃣ Read and validate inputs from UI
-        int incDec = parseAndValidateInt(
-                mStatureIncDecEditText,
-                "Increment/Decrement (0=Dec, 1=Inc)", 0, 1);
-
-        int updateType = parseAndValidateInt(
-                mStatureUpdateEditText,
-                "Update Type (0=Category, 1=Device)", 0, 1);
-
-        int deviceCategory = parseAndValidateInt(
-                mStatureDeviceCategoryEditText,
-                "Device/Category ID", 0, 63); // 6 bits
-
-        int stepValue = parseAndValidateInt(
-                mStatureValueEditText,
-                "Value/Step", 0, 255); // 8 bits
-
-        boolean isIncrement = (incDec == 1);
-        boolean isUpdate    = (updateType == 1);
-
-        // 2️⃣ Get AppKey
-        List<Integer> keys = model.getBoundAppKeyIndexes();
-        if (keys == null || keys.isEmpty()) {
+        if (node == null || element == null || model == null) {
             mViewModel.displaySnackBar(
                     this,
                     mContainer,
-                    "No AppKey bound - bind an app key first",
-                    Snackbar.LENGTH_LONG
-            );
-            return;
-        }
-
-        ApplicationKey appKey = mViewModel
-                .getNetworkLiveData()
-                .getMeshNetwork()
-                .getAppKey(keys.get(0));
-
-        if (appKey == null) {
-            mViewModel.displaySnackBar(
-                    this,
-                    mContainer,
-                    "AppKey not found in network",
+                    "Node / Element / Model not selected",
                     Snackbar.LENGTH_SHORT
             );
             return;
         }
 
-        // 3️⃣ Create Generic Stature message
-        GenericStatureSet msg = new GenericStatureSet(
-                appKey,
-                isIncrement,
-                isUpdate,
-                deviceCategory,
-                stepValue
-        );
+        try {
+            // 1️⃣ Read and validate inputs from UI
+            int incDec = parseAndValidateInt(
+                    mStatureIncDecEditText,
+                    "Increment/Decrement (0=Dec, 1=Inc)", 0, 1);
 
-        // 4️⃣ Build control byte (for logging)
-        int controlByte = 0;
+            int updateType = parseAndValidateInt(
+                    mStatureUpdateEditText,
+                    "Update Type (0=Category, 1=Device)", 0, 1);
 
-        if (isIncrement) {
-            controlByte |= (1 << 7); // Bit 7
+            int deviceCategory = parseAndValidateInt(
+                    mStatureDeviceCategoryEditText,
+                    "Device/Category ID", 0, 63); // 6 bits
+
+            int stepValue = parseAndValidateInt(
+                    mStatureValueEditText,
+                    "Value/Step", 0, 255); // 8 bits
+
+            boolean isIncrement = (incDec == 1);
+            boolean isUpdate    = (updateType == 1);
+
+            // 2️⃣ Get AppKey
+            List<Integer> keys = model.getBoundAppKeyIndexes();
+            if (keys == null || keys.isEmpty()) {
+                mViewModel.displaySnackBar(
+                        this,
+                        mContainer,
+                        "No AppKey bound - bind an app key first",
+                        Snackbar.LENGTH_LONG
+                );
+                return;
+            }
+
+            ApplicationKey appKey = mViewModel
+                    .getNetworkLiveData()
+                    .getMeshNetwork()
+                    .getAppKey(keys.get(0));
+
+            if (appKey == null) {
+                mViewModel.displaySnackBar(
+                        this,
+                        mContainer,
+                        "AppKey not found in network",
+                        Snackbar.LENGTH_SHORT
+                );
+                return;
+            }
+
+            // 3️⃣ Create Generic Stature message
+            GenericStatureSet msg = new GenericStatureSet(
+                    appKey,
+                    isIncrement,
+                    isUpdate,
+                    deviceCategory,
+                    stepValue
+            );
+
+            // 4️⃣ Build control byte (for logging)
+            int controlByte = 0;
+
+            if (isIncrement) {
+                controlByte |= (1 << 7); // Bit 7
+            }
+
+            if (isUpdate) {
+                controlByte |= (1 << 6); // Bit 6
+            }
+
+            controlByte |= (deviceCategory & 0x3F); // Bits 0–5
+
+            // 5️⃣ LOGGING (ELEMENT ADDRESS)
+            int dst = element.getElementAddress();
+
+            Log.d(TAG_STATURE, "══════════════════════════════════════");
+            Log.d(TAG_STATURE, "🔷 GENERIC STATURE SET COMMAND");
+            Log.d(TAG_STATURE, "══════════════════════════════════════");
+            Log.d(TAG_STATURE, String.format(
+                    "📌 Destination (Element): 0x%04X (%d)", dst, dst));
+            Log.d(TAG_STATURE, String.format(
+                    "📌 Model: %s (0x%04X)",
+                    model.getModelName(), model.getModelId()));
+            Log.d(TAG_STATURE, "══════════════════════════════════════");
+
+            Log.d(TAG_STATURE, "📊 INPUT VALUES:");
+            Log.d(TAG_STATURE, String.format(
+                    "   • Increment/Decrement : %s (%d)",
+                    isIncrement ? "INCREMENT (1)" : "DECREMENT (0)", incDec));
+            Log.d(TAG_STATURE, String.format(
+                    "   • Update Type         : %s (%d)",
+                    isUpdate ? "DEVICE (1)" : "CATEGORY (0)", updateType));
+            Log.d(TAG_STATURE, String.format(
+                    "   • Device/Category ID  : %d (0x%02X)",
+                    deviceCategory, deviceCategory));
+            Log.d(TAG_STATURE, String.format(
+                    "   • Value/Step          : %d (0x%02X)",
+                    stepValue, stepValue));
+
+            Log.d(TAG_STATURE, "══════════════════════════════════════");
+            Log.d(TAG_STATURE, "📦 MESSAGE PAYLOAD:");
+            Log.d(TAG_STATURE, String.format(
+                    "   BYTE 0 (Control) : %s (0x%02X)",
+                    toBin8(controlByte), controlByte));
+            Log.d(TAG_STATURE, String.format(
+                    "   BYTE 1 (Value)   : %s (0x%02X)",
+                    toBin8(stepValue), stepValue));
+            Log.d(TAG_STATURE, String.format(
+                    "   📦 Full Payload  : [0x%02X, 0x%02X]",
+                    controlByte, stepValue));
+            Log.d(TAG_STATURE, "══════════════════════════════════════");
+
+            // 6️⃣ User feedback
+            mViewModel.displaySnackBar(
+                    this,
+                    mContainer,
+                    String.format(
+                            "Sending to element 0x%04X → %s %s #%d by %d",
+                            dst,
+                            isIncrement ? "INC" : "DEC",
+                            isUpdate ? "DEVICE" : "CATEGORY",
+                            deviceCategory,
+                            stepValue),
+                    Snackbar.LENGTH_LONG
+            );
+
+            // 7️⃣ SEND MESSAGE → ELEMENT ADDRESS ✅
+            sendAcknowledgedMessage(dst, msg);
+
+        } catch (IllegalArgumentException e) {
+            Log.e(TAG_STATURE, "Validation error", e);
+            mViewModel.displaySnackBar(
+                    this,
+                    mContainer,
+                    "Error: " + e.getMessage(),
+                    Snackbar.LENGTH_LONG
+            );
+        } catch (Exception e) {
+            Log.e(TAG_STATURE, "Failed to send Generic Stature command", e);
+            mViewModel.displaySnackBar(
+                    this,
+                    mContainer,
+                    "Failed to send: " + e.getMessage(),
+                    Snackbar.LENGTH_SHORT
+            );
         }
-
-        if (isUpdate) {
-            controlByte |= (1 << 6); // Bit 6
-        }
-
-        controlByte |= (deviceCategory & 0x3F); // Bits 0–5
-
-        // 5️⃣ LOGGING (ELEMENT ADDRESS)
-        int dst = element.getElementAddress();
-
-        Log.d(TAG_STATURE, "══════════════════════════════════════");
-        Log.d(TAG_STATURE, "🔷 GENERIC STATURE SET COMMAND");
-        Log.d(TAG_STATURE, "══════════════════════════════════════");
-        Log.d(TAG_STATURE, String.format(
-                "📌 Destination (Element): 0x%04X (%d)", dst, dst));
-        Log.d(TAG_STATURE, String.format(
-                "📌 Model: %s (0x%04X)",
-                model.getModelName(), model.getModelId()));
-        Log.d(TAG_STATURE, "══════════════════════════════════════");
-
-        Log.d(TAG_STATURE, "📊 INPUT VALUES:");
-        Log.d(TAG_STATURE, String.format(
-                "   • Increment/Decrement : %s (%d)",
-                isIncrement ? "INCREMENT (1)" : "DECREMENT (0)", incDec));
-        Log.d(TAG_STATURE, String.format(
-                "   • Update Type         : %s (%d)",
-                isUpdate ? "DEVICE (1)" : "CATEGORY (0)", updateType));
-        Log.d(TAG_STATURE, String.format(
-                "   • Device/Category ID  : %d (0x%02X)",
-                deviceCategory, deviceCategory));
-        Log.d(TAG_STATURE, String.format(
-                "   • Value/Step          : %d (0x%02X)",
-                stepValue, stepValue));
-
-        Log.d(TAG_STATURE, "══════════════════════════════════════");
-        Log.d(TAG_STATURE, "📦 MESSAGE PAYLOAD:");
-        Log.d(TAG_STATURE, String.format(
-                "   BYTE 0 (Control) : %s (0x%02X)",
-                toBin8(controlByte), controlByte));
-        Log.d(TAG_STATURE, String.format(
-                "   BYTE 1 (Value)   : %s (0x%02X)",
-                toBin8(stepValue), stepValue));
-        Log.d(TAG_STATURE, String.format(
-                "   📦 Full Payload  : [0x%02X, 0x%02X]",
-                controlByte, stepValue));
-        Log.d(TAG_STATURE, "══════════════════════════════════════");
-
-        // 6️⃣ User feedback
-        mViewModel.displaySnackBar(
-                this,
-                mContainer,
-                String.format(
-                        "Sending to element 0x%04X → %s %s #%d by %d",
-                        dst,
-                        isIncrement ? "INC" : "DEC",
-                        isUpdate ? "DEVICE" : "CATEGORY",
-                        deviceCategory,
-                        stepValue),
-                Snackbar.LENGTH_LONG
-        );
-
-        // 7️⃣ SEND MESSAGE → ELEMENT ADDRESS ✅
-        sendAcknowledgedMessage(dst, msg);
-
-    } catch (IllegalArgumentException e) {
-        Log.e(TAG_STATURE, "Validation error", e);
-        mViewModel.displaySnackBar(
-                this,
-                mContainer,
-                "Error: " + e.getMessage(),
-                Snackbar.LENGTH_LONG
-        );
-    } catch (Exception e) {
-        Log.e(TAG_STATURE, "Failed to send Generic Stature command", e);
-        mViewModel.displaySnackBar(
-                this,
-                mContainer,
-                "Failed to send: " + e.getMessage(),
-                Snackbar.LENGTH_SHORT
-        );
     }
-}
 
     // ─────────────────────────────────────────────────────────────────────────
     // Helpers
