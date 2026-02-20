@@ -43,7 +43,8 @@ public class Utils {
 
     // ✅ NEW FLAG: Indicates the node was just provisioned
 
-
+    public static final String EXTRA_AUTO_CONNECT_AFTER_PROVISIONING =
+            "no.nordicsemi.android.swaromesh.EXTRA_AUTO_CONNECT_AFTER_PROVISIONING";
     public static final String EXTRA_NEWLY_PROVISIONED_NODE = "no.nordicsemi.android.swaromesh.EXTRA_NEWLY_PROVISIONED_NODE";
     public static final String COMPOSITION_DATA_COMPLETED = "COMPOSITION_DATA_COMPLETED";
     public static final String DEFAULT_GET_COMPLETED = "DEFAULT_GET_COMPLETED";

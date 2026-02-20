@@ -22,15 +22,6 @@ import com.google.android.material.snackbar.Snackbar;
 import java.util.Locale;
 
 import dagger.hilt.android.AndroidEntryPoint;
-
-import no.nordicsemi.android.swaromesh.provisionerstates.ProvisioningCapabilities;
-import no.nordicsemi.android.swaromesh.provisionerstates.ProvisioningFailedState;
-import no.nordicsemi.android.swaromesh.provisionerstates.UnprovisionedMeshNode;
-import no.nordicsemi.android.swaromesh.utils.AuthenticationOOBMethods;
-import no.nordicsemi.android.swaromesh.utils.InputOOBAction;
-import no.nordicsemi.android.swaromesh.utils.MeshParserUtils;
-import no.nordicsemi.android.swaromesh.utils.OutputOOBAction;
-import no.nordicsemi.android.swaromesh.utils.StaticOOBType;
 import no.nordicsemi.android.swaromesh.adapter.ExtendedBluetoothDevice;
 import no.nordicsemi.android.swaromesh.adapter.ProvisioningProgressAdapter;
 import no.nordicsemi.android.swaromesh.databinding.ActivityMeshProvisionerBinding;
@@ -41,7 +32,15 @@ import no.nordicsemi.android.swaromesh.dialog.DialogFragmentSelectOOBType;
 import no.nordicsemi.android.swaromesh.dialog.DialogFragmentUnicastAddress;
 import no.nordicsemi.android.swaromesh.keys.AppKeysActivity;
 import no.nordicsemi.android.swaromesh.node.dialog.DialogFragmentNodeName;
+import no.nordicsemi.android.swaromesh.provisionerstates.ProvisioningCapabilities;
+import no.nordicsemi.android.swaromesh.provisionerstates.ProvisioningFailedState;
+import no.nordicsemi.android.swaromesh.provisionerstates.UnprovisionedMeshNode;
+import no.nordicsemi.android.swaromesh.utils.AuthenticationOOBMethods;
+import no.nordicsemi.android.swaromesh.utils.InputOOBAction;
+import no.nordicsemi.android.swaromesh.utils.MeshParserUtils;
+import no.nordicsemi.android.swaromesh.utils.OutputOOBAction;
 import no.nordicsemi.android.swaromesh.utils.ProvisionerStates;
+import no.nordicsemi.android.swaromesh.utils.StaticOOBType;
 import no.nordicsemi.android.swaromesh.utils.Utils;
 import no.nordicsemi.android.swaromesh.viewmodels.ProvisionerProgress;
 import no.nordicsemi.android.swaromesh.viewmodels.ProvisioningViewModel;
@@ -404,11 +403,18 @@ public class ProvisioningActivity extends AppCompatActivity implements
 
     private void setResultIntent() {
         final Intent returnIntent = new Intent();
+
+        // Add device info for auto-connect
+        returnIntent.putExtra(Utils.EXTRA_DEVICE, mDevice);
+        returnIntent.putExtra(Utils.EXTRA_TARGET_PROXY_MAC, mDevice.getAddress());
+        returnIntent.putExtra(Utils.EXTRA_AUTO_CONNECT_AFTER_PROVISIONING, true);
+
         if (mViewModel.isProvisioningComplete()) {
             returnIntent.putExtra(Utils.PROVISIONING_COMPLETED, true);
-            setResult(Activity.RESULT_OK, returnIntent);
+            returnIntent.putExtra(Utils.EXTRA_NEWLY_PROVISIONED_NODE, true);
+
             final ProvisionerProgress progress = mViewModel.getProvisioningStatus().getProvisionerProgress();
-            if (progress.getState() == ProvisionerStates.PROVISIONER_UNASSIGNED) {
+            if (progress != null && progress.getState() == ProvisionerStates.PROVISIONER_UNASSIGNED) {
                 returnIntent.putExtra(Utils.PROVISIONER_UNASSIGNED, true);
             } else {
                 if (mViewModel.isCompositionDataStatusReceived()) {
@@ -422,6 +428,8 @@ public class ProvisioningActivity extends AppCompatActivity implements
                 }
             }
         }
+
+        setResult(Activity.RESULT_OK, returnIntent);
         finish();
     }
 
