@@ -1,9 +1,9 @@
-
-
 package no.nordicsemi.android.swaromesh;
+
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
+
 import androidx.activity.EdgeToEdge;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -29,9 +29,12 @@ public class MainActivity extends AppCompatActivity implements
     private SharedViewModel mViewModel;
 
     private NetworkFragment mNetworkFragment;
+    private DevicesFilterFragment mDevicesFilterFragment;
     private GroupsFragment mGroupsFragment;
     private ProxyFilterFragment mProxyFilterFragment;
     private Fragment mSettingsFragment;
+
+    private BottomNavigationView bottomNavigationView;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -45,30 +48,52 @@ public class MainActivity extends AppCompatActivity implements
         setContentView(binding.getRoot());
 
         setSupportActionBar(binding.toolbar);
-        if (getSupportActionBar() != null)
+        if (getSupportActionBar() != null) {
             getSupportActionBar().setTitle(R.string.app_name);
+        }
 
-        mNetworkFragment =
-                (NetworkFragment) getSupportFragmentManager().findFragmentById(R.id.fragment_network);
-        mGroupsFragment =
-                (GroupsFragment) getSupportFragmentManager().findFragmentById(R.id.fragment_groups);
-        mProxyFilterFragment =
-                (ProxyFilterFragment) getSupportFragmentManager().findFragmentById(R.id.fragment_proxy);
+        // Find fragments from XML
+        mNetworkFragment = (NetworkFragment)
+                getSupportFragmentManager().findFragmentById(R.id.fragment_network);
+
+        mDevicesFilterFragment = (DevicesFilterFragment)
+                getSupportFragmentManager().findFragmentById(R.id.fragment_device_filter);
+
+        mGroupsFragment = (GroupsFragment)
+                getSupportFragmentManager().findFragmentById(R.id.fragment_groups);
+
+        mProxyFilterFragment = (ProxyFilterFragment)
+                getSupportFragmentManager().findFragmentById(R.id.fragment_proxy);
+
         mSettingsFragment =
                 getSupportFragmentManager().findFragmentById(R.id.fragment_settings);
 
-        BottomNavigationView bottomNavigationView = findViewById(R.id.bottom_navigation_view);
+        bottomNavigationView = findViewById(R.id.bottom_navigation_view);
         bottomNavigationView.setOnItemSelectedListener(this);
         bottomNavigationView.setOnItemReselectedListener(this);
 
+        // 🔥 IMPORTANT: default fragment handling
         if (savedInstanceState == null) {
-            onNavigationItemSelected(bottomNavigationView.getMenu()
-                    .findItem(R.id.action_network));
+            bottomNavigationView.setSelectedItemId(R.id.action_network);
+            onNavigationItemSelected(
+                    bottomNavigationView.getMenu().findItem(R.id.action_network)
+            );
         } else {
-            bottomNavigationView.setSelectedItemId(
-                    savedInstanceState.getInt(CURRENT_FRAGMENT));
+            int selected = savedInstanceState.getInt(CURRENT_FRAGMENT, R.id.action_network);
+            bottomNavigationView.setSelectedItemId(selected);
+            onNavigationItemSelected(
+                    bottomNavigationView.getMenu().findItem(selected)
+            );
         }
     }
+
+    @Override
+    protected void onSaveInstanceState(@NonNull Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putInt(CURRENT_FRAGMENT, bottomNavigationView.getSelectedItemId());
+    }
+
+    // ───────────────────── MENU ─────────────────────
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -83,7 +108,7 @@ public class MainActivity extends AppCompatActivity implements
     }
 
     @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
+    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
         if (item.getItemId() == R.id.action_connect) {
             mViewModel.navigateToScannerActivity(this, false);
             return true;
@@ -94,25 +119,51 @@ public class MainActivity extends AppCompatActivity implements
         return super.onOptionsItemSelected(item);
     }
 
+    // ─────────────────── NAVIGATION ───────────────────
+
     @Override
     public boolean onNavigationItemSelected(@NonNull MenuItem item) {
+
         FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
 
         if (item.getItemId() == R.id.action_network) {
-            ft.show(mNetworkFragment).hide(mGroupsFragment)
-                    .hide(mProxyFilterFragment).hide(mSettingsFragment);
+            ft.show(mNetworkFragment)
+                    .hide(mDevicesFilterFragment)
+                    .hide(mGroupsFragment)
+                    .hide(mProxyFilterFragment)
+                    .hide(mSettingsFragment);
         }
+
+        else if (item.getItemId() == R.id.action_device_filter) {
+            ft.hide(mNetworkFragment)
+                    .show(mDevicesFilterFragment)
+                    .hide(mGroupsFragment)
+                    .hide(mProxyFilterFragment)
+                    .hide(mSettingsFragment);
+        }
+
         else if (item.getItemId() == R.id.action_groups) {
-            ft.hide(mNetworkFragment).show(mGroupsFragment)
-                    .hide(mProxyFilterFragment).hide(mSettingsFragment);
+            ft.hide(mNetworkFragment)
+                    .hide(mDevicesFilterFragment)
+                    .show(mGroupsFragment)
+                    .hide(mProxyFilterFragment)
+                    .hide(mSettingsFragment);
         }
-         else if (item.getItemId() == R.id.action_proxy) {
-            ft.hide(mNetworkFragment).hide(mGroupsFragment)
-                    .show(mProxyFilterFragment).hide(mSettingsFragment);
+
+        else if (item.getItemId() == R.id.action_proxy) {
+            ft.hide(mNetworkFragment)
+                    .hide(mDevicesFilterFragment)
+                    .hide(mGroupsFragment)
+                    .show(mProxyFilterFragment)
+                    .hide(mSettingsFragment);
         }
+
         else if (item.getItemId() == R.id.action_settings) {
-            ft.hide(mNetworkFragment).hide(mGroupsFragment)
-                    .hide(mProxyFilterFragment).show(mSettingsFragment);
+            ft.hide(mNetworkFragment)
+                    .hide(mDevicesFilterFragment)
+                    .hide(mGroupsFragment)
+                    .hide(mProxyFilterFragment)
+                    .show(mSettingsFragment);
         }
 
         ft.commit();
@@ -122,5 +173,6 @@ public class MainActivity extends AppCompatActivity implements
 
     @Override
     public void onNavigationItemReselected(@NonNull MenuItem item) {
+        // No-op
     }
 }

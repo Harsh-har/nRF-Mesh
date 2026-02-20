@@ -39,6 +39,9 @@
         android:theme="@style/AppTheme"
         tools:ignore="GoogleAppIndexingWarning">
         <activity
+            android:name=".DevicesFilterFragment"
+            android:exported="false" />
+        <activity
             android:name=".ble.ProxyScannerActivity"
             android:exported="false" />
         <activity

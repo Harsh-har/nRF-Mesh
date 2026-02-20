@@ -16,25 +16,30 @@ public class GenericLightSet extends ApplicationMessage {
     private static final String TAG = GenericLightSet.class.getSimpleName();
     private static final int OP_CODE = ApplicationMessageOpCodes.GENERIC_LIGHT_CONTROL_OPCODE;
 
-    private static final int MIN_LENGTH = 1;
-    private static final int MAX_LENGTH = 8;
+    // Length range from 0-255
+    private static final int MIN_LENGTH = 0;
+    private static final int MAX_LENGTH = 255;
+
+    // ✅ Always expect 8 brightness values
+    private static final int EXPECTED_BRIGHTNESS_COUNT = 8;
+
     private static final int MIN_VALUE = 0;
     private static final int MAX_VALUE = 255;
 
     private final int length;
     private final int command;
-    private final int[] brightness; // valid brightness only
+    private final int[] brightness; // Always 8 values
     private final int tid;
 
     /**
-     * Message Structure (VARIABLE LENGTH):
+     * Message Structure (VARIABLE LENGTH but brightness always 8 bytes):
      *
-     * Byte 0  : length
+     * Byte 0  : length (0-255) - indicates how many brightness values are actually used
      * Byte 1  : command
-     * Byte 2+ : brightness[length]
-     * Last    : tid
+     * Byte 2-9: brightness[8] (always 8 bytes)
+     * Byte 10 : tid
      *
-     * Total size = 1 + 1 + length + 1
+     * Total size = 1 + 1 + 8 + 1 = 11 bytes
      */
     public GenericLightSet(@NonNull final ApplicationKey appKey,
                            final int length,
@@ -48,7 +53,14 @@ public class GenericLightSet extends ApplicationMessage {
         this.length = length;
         this.command = command;
         this.tid = tid;
-        this.brightness = Arrays.copyOf(brightness, length);
+
+        // ✅ Always store all 8 brightness values
+        if (brightness.length >= EXPECTED_BRIGHTNESS_COUNT) {
+            this.brightness = Arrays.copyOf(brightness, EXPECTED_BRIGHTNESS_COUNT);
+        } else {
+            throw new IllegalArgumentException("Brightness array must have at least " +
+                    EXPECTED_BRIGHTNESS_COUNT + " values");
+        }
 
         assembleMessageParameters();
     }
@@ -58,27 +70,31 @@ public class GenericLightSet extends ApplicationMessage {
                           final int[] brightness,
                           final int tid) {
 
+        // Validate length range 0-255
         if (length < MIN_LENGTH || length > MAX_LENGTH) {
-            throw new IllegalArgumentException("Invalid length: " + length);
+            throw new IllegalArgumentException("Invalid length: " + length + " (must be 0–255)");
         }
 
         if (command < MIN_VALUE || command > MAX_VALUE) {
-            throw new IllegalArgumentException("Invalid command: " + command);
+            throw new IllegalArgumentException("Invalid command: " + command + " (must be 0–255)");
         }
 
-        if (brightness == null || brightness.length < length) {
-            throw new IllegalArgumentException("Brightness array too short");
+        // ✅ Validate that we have exactly 8 brightness values
+        if (brightness == null || brightness.length < EXPECTED_BRIGHTNESS_COUNT) {
+            throw new IllegalArgumentException("Brightness array must have " +
+                    EXPECTED_BRIGHTNESS_COUNT + " values");
         }
 
-        for (int i = 0; i < length; i++) {
+        // Validate all brightness values are in range 0-255
+        for (int i = 0; i < EXPECTED_BRIGHTNESS_COUNT; i++) {
             if (brightness[i] < MIN_VALUE || brightness[i] > MAX_VALUE) {
                 throw new IllegalArgumentException(
-                        "Invalid brightness[" + i + "] = " + brightness[i]);
+                        "Invalid brightness[" + i + "] = " + brightness[i] + " (must be 0–255)");
             }
         }
 
         if (tid < MIN_VALUE || tid > MAX_VALUE) {
-            throw new IllegalArgumentException("Invalid TID: " + tid);
+            throw new IllegalArgumentException("Invalid TID: " + tid + " (must be 0–255)");
         }
     }
 
@@ -96,7 +112,7 @@ public class GenericLightSet extends ApplicationMessage {
     }
 
     public int[] getBrightness() {
-        return Arrays.copyOf(brightness, length);
+        return Arrays.copyOf(brightness, EXPECTED_BRIGHTNESS_COUNT);
     }
 
     public int getTid() {
@@ -104,7 +120,8 @@ public class GenericLightSet extends ApplicationMessage {
     }
 
     public int getMessageSize() {
-        return 1 + 1 + length + 1;
+        // Size = length byte + command byte + 8 brightness bytes + tid byte
+        return 1 + 1 + EXPECTED_BRIGHTNESS_COUNT + 1;
     }
 
     @Override
@@ -119,7 +136,8 @@ public class GenericLightSet extends ApplicationMessage {
         buffer.put((byte) length);
         buffer.put((byte) command);
 
-        for (int i = 0; i < length; i++) {
+        // ✅ Always add all 8 brightness bytes
+        for (int i = 0; i < EXPECTED_BRIGHTNESS_COUNT; i++) {
             buffer.put((byte) brightness[i]);
         }
 
@@ -148,23 +166,22 @@ public class GenericLightSet extends ApplicationMessage {
     public static GenericLightSet fromByteArray(@NonNull ApplicationKey appKey,
                                                 @NonNull byte[] data) {
 
-        if (data.length < 4) {
-            throw new IllegalArgumentException("Invalid data length");
+        // ✅ Expect exactly 11 bytes (1 length + 1 command + 8 brightness + 1 tid)
+        if (data.length != 11) {
+            throw new IllegalArgumentException("Invalid data length: " + data.length +
+                    " (expected 11 bytes)");
         }
 
         int length = data[0] & 0xFF;
         int command = data[1] & 0xFF;
 
-        if (data.length != 1 + 1 + length + 1) {
-            throw new IllegalArgumentException("Length mismatch");
-        }
-
-        int[] brightness = new int[length];
-        for (int i = 0; i < length; i++) {
+        // Read all 8 brightness values
+        int[] brightness = new int[EXPECTED_BRIGHTNESS_COUNT];
+        for (int i = 0; i < EXPECTED_BRIGHTNESS_COUNT; i++) {
             brightness[i] = data[2 + i] & 0xFF;
         }
 
-        int tid = data[data.length - 1] & 0xFF;
+        int tid = data[10] & 0xFF; // Last byte (index 10)
 
         return new GenericLightSet(appKey, length, command, brightness, tid);
     }

@@ -117,8 +117,11 @@ public abstract class BaseModelConfigurationActivity extends BaseActivity implem
     private static final int DEFAULT_BRIGHTNESS_VALUE = 30;
     private static final int MIN_BRIGHTNESS = 0;
     private static final int MAX_BRIGHTNESS = 255;
-    private static final int MIN_LENGTH = 1;
-    private static final int MAX_LENGTH = 8;
+
+    // ✅ UPDATED: Length range from 0-255 (was 1-8)
+    private static final int MIN_LENGTH = 0;
+    private static final int MAX_LENGTH = 255;
+
     private static final int MAX_TID = 255;
 
     private static final String PRESS_TYPE_SINGLE = "Single";
@@ -256,7 +259,8 @@ public abstract class BaseModelConfigurationActivity extends BaseActivity implem
         mLongReadButton      = binding.actionLongReadState;
         mLengthEditText      = binding.etElementAddress;
         mLongAddressEditText = binding.etLongCommand;
-        mLengthEditText.setText(String.valueOf(MAX_LENGTH));
+        // ✅ Set default length to 0
+        mLengthEditText.setText(String.valueOf(MIN_LENGTH));
 
         // Scene command
         mSceneIdEditText    = binding.etSceneId;
@@ -491,40 +495,56 @@ public abstract class BaseModelConfigurationActivity extends BaseActivity implem
     }
 
     // ─────────────────────────────────────────────────────────────────────────
-    // Long Data Fields
+    // ✅ UPDATED: Long Data Fields - Always show all 8 fields
     // ─────────────────────────────────────────────────────────────────────────
     private void initializeLongDataFields() {
-        mLongDataFields.add(binding.layoutLongData1); mLongDataFields.add(binding.layoutLongData2);
-        mLongDataFields.add(binding.layoutLongData3); mLongDataFields.add(binding.layoutLongData4);
-        mLongDataFields.add(binding.layoutLongData5); mLongDataFields.add(binding.layoutLongData6);
-        mLongDataFields.add(binding.layoutLongData7); mLongDataFields.add(binding.layoutLongData8);
+        mLongDataFields.add(binding.layoutLongData1);
+        mLongDataFields.add(binding.layoutLongData2);
+        mLongDataFields.add(binding.layoutLongData3);
+        mLongDataFields.add(binding.layoutLongData4);
+        mLongDataFields.add(binding.layoutLongData5);
+        mLongDataFields.add(binding.layoutLongData6);
+        mLongDataFields.add(binding.layoutLongData7);
+        mLongDataFields.add(binding.layoutLongData8);
 
-        mLongDataEditTexts.add(binding.etLongData1); mLongDataEditTexts.add(binding.etLongData2);
-        mLongDataEditTexts.add(binding.etLongData3); mLongDataEditTexts.add(binding.etLongData4);
-        mLongDataEditTexts.add(binding.etLongData5); mLongDataEditTexts.add(binding.etLongData6);
-        mLongDataEditTexts.add(binding.etLongData7); mLongDataEditTexts.add(binding.etLongData8);
+        mLongDataEditTexts.add(binding.etLongData1);
+        mLongDataEditTexts.add(binding.etLongData2);
+        mLongDataEditTexts.add(binding.etLongData3);
+        mLongDataEditTexts.add(binding.etLongData4);
+        mLongDataEditTexts.add(binding.etLongData5);
+        mLongDataEditTexts.add(binding.etLongData6);
+        mLongDataEditTexts.add(binding.etLongData7);
+        mLongDataEditTexts.add(binding.etLongData8);
 
-        for (int i = 0; i < MAX_LENGTH; i++) {
+        // ✅ Always show all 8 brightness fields
+        for (int i = 0; i < 8; i++) {
             mLongDataEditTexts.get(i).setText(String.valueOf(DEFAULT_BRIGHTNESS_VALUE));
             final int idx = i;
             mLongDataEditTexts.get(i).addTextChangedListener(
                     new SimpleTextWatcher(() -> validateBrightnessField(idx)));
-            mLongDataEditTexts.get(i).setImeOptions(EditorInfo.IME_ACTION_NEXT);
+
+            // Set IME options
+            if (i < 7) {
+                mLongDataEditTexts.get(i).setImeOptions(EditorInfo.IME_ACTION_NEXT);
+            } else {
+                mLongDataEditTexts.get(i).setImeOptions(EditorInfo.IME_ACTION_DONE);
+            }
+
+            // ✅ Always visible
             mLongDataFields.get(i).setVisibility(View.VISIBLE);
         }
-        mLongDataEditTexts.get(MAX_LENGTH - 1).setImeOptions(EditorInfo.IME_ACTION_DONE);
     }
 
     private void validateBrightnessField(int idx) {
         try {
             String t = mLongDataEditTexts.get(idx).getText().toString().trim();
-            String lt = mLengthEditText.getText().toString().trim();
-            if (!lt.isEmpty() && idx >= Integer.parseInt(lt)) { mLongDataFields.get(idx).setError(null); return; }
             if (!t.isEmpty()) {
                 int b = Integer.parseInt(t);
                 mLongDataFields.get(idx).setError((b < 0 || b > 255) ? "Brightness must be 0–255" : null);
             }
-        } catch (NumberFormatException e) { mLongDataFields.get(idx).setError("Invalid value"); }
+        } catch (NumberFormatException e) {
+            mLongDataFields.get(idx).setError("Invalid value");
+        }
     }
 
     private void readLongCommand() {
@@ -841,8 +861,11 @@ public abstract class BaseModelConfigurationActivity extends BaseActivity implem
     }
 
     // ─────────────────────────────────────────────────────────────────────────
-    // sendLongBrightnessCommand
+    // ✅ UPDATED: sendLongBrightnessCommand - Always use all 8 fields visible
     // ─────────────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────
+// ✅ UPDATED: sendLongBrightnessCommand - Always send 8 brightness values
+// ─────────────────────────────────────────────────────────────────────────
     private void sendLongBrightnessCommand() {
         final ProvisionedMeshNode node    = mViewModel.getSelectedMeshNode().getValue();
         final Element             element = mViewModel.getSelectedElement().getValue();
@@ -854,14 +877,17 @@ public abstract class BaseModelConfigurationActivity extends BaseActivity implem
         try {
             String ls = mLengthEditText.getText().toString().trim();
             if (ls.isEmpty()) {
-                mViewModel.displaySnackBar(this, mContainer, "Enter length (1–8)", Snackbar.LENGTH_SHORT);
+                mViewModel.displaySnackBar(this, mContainer, "Enter length (0–255)", Snackbar.LENGTH_SHORT);
                 return;
             }
             int length = Integer.parseInt(ls);
+
+            // ✅ Length validation 0-255
             if (length < MIN_LENGTH || length > MAX_LENGTH) {
-                mViewModel.displaySnackBar(this, mContainer, "Length 1–8", Snackbar.LENGTH_SHORT);
+                mViewModel.displaySnackBar(this, mContainer, "Length must be 0–255", Snackbar.LENGTH_SHORT);
                 return;
             }
+
             String cs = mLongAddressEditText.getText().toString().trim();
             if (cs.isEmpty()) {
                 mViewModel.displaySnackBar(this, mContainer, "Enter command", Snackbar.LENGTH_SHORT);
@@ -872,19 +898,27 @@ public abstract class BaseModelConfigurationActivity extends BaseActivity implem
                 mViewModel.displaySnackBar(this, mContainer, "Command 0–255", Snackbar.LENGTH_SHORT);
                 return;
             }
-            int[] brightness = new int[length];
-            for (int i = 0; i < length; i++) {
+
+            // ✅ ALWAYS USE 8 BRIGHTNESS VALUES (hardcoded to 8)
+            int[] brightness = new int[8]; // Always 8 values
+
+            // Read values from all 8 UI fields
+            for (int i = 0; i < 8; i++) {
                 String vs = mLongDataEditTexts.get(i).getText().toString().trim();
                 if (vs.isEmpty()) {
-                    mViewModel.displaySnackBar(this, mContainer, "Enter brightness " + (i+1), Snackbar.LENGTH_SHORT);
+                    mViewModel.displaySnackBar(this, mContainer,
+                            "Enter brightness for field " + (i+1), Snackbar.LENGTH_SHORT);
                     return;
                 }
                 brightness[i] = Integer.parseInt(vs);
+
                 if (brightness[i] < 0 || brightness[i] > 255) {
-                    mViewModel.displaySnackBar(this, mContainer, "Brightness " + (i+1) + " must be 0–255", Snackbar.LENGTH_SHORT);
+                    mViewModel.displaySnackBar(this, mContainer,
+                            "Brightness for field " + (i+1) + " must be 0–255", Snackbar.LENGTH_SHORT);
                     return;
                 }
             }
+
             List<Integer> bk = model.getBoundAppKeyIndexes();
             if (bk.isEmpty()) {
                 mViewModel.displaySnackBar(this, mContainer, "No AppKey bound", Snackbar.LENGTH_SHORT);
@@ -895,19 +929,28 @@ public abstract class BaseModelConfigurationActivity extends BaseActivity implem
                 mViewModel.displaySnackBar(this, mContainer, "AppKey not found", Snackbar.LENGTH_SHORT);
                 return;
             }
+
             int tid = getNextGenericLightTid();
+
+            // ✅ Send ALL 8 brightness values regardless of length
+            // The length parameter tells how many of these values are actually used
             GenericLightSet msg = new GenericLightSet(appKey, length, command, brightness, tid);
-            Log.d(TAG_LIGHT, String.format("══ GenericLightSet len=%d cmd=0x%02X bri=%s tid=%d ══",
+
+            // Log message with clear information
+            Log.d(TAG_LIGHT, String.format("══ GenericLightSet len=%d cmd=0x%02X ALL_8_VALUES=%s tid=%d ══",
                     length, command, Arrays.toString(brightness), tid));
+
             mViewModel.displaySnackBar(this, mContainer,
-                    String.format("Sending LEN=%d CMD=0x%02X TID=%d", length, command, tid), Snackbar.LENGTH_LONG);
+                    String.format("Sending LEN=%d CMD=0x%02X with all 8 brightness values TID=%d",
+                            length, command, tid), Snackbar.LENGTH_LONG);
+
             sendAcknowledgedMessage(node.getUnicastAddress(), msg);
+
         } catch (Exception e) {
             Log.e(TAG_LIGHT, "Error", e);
-            mViewModel.displaySnackBar(this, mContainer, "Failed", Snackbar.LENGTH_SHORT);
+            mViewModel.displaySnackBar(this, mContainer, "Failed: " + e.getMessage(), Snackbar.LENGTH_SHORT);
         }
     }
-
     // ─────────────────────────────────────────────────────────────────────────
     // sendSceneCommand
     // ─────────────────────────────────────────────────────────────────────────
@@ -962,7 +1005,7 @@ public abstract class BaseModelConfigurationActivity extends BaseActivity implem
     }
 
     // ─────────────────────────────────────────────────────────────────────────
-    // UPDATED: sendGenericStatureCommand - Correct bit shifting (1 bit, 1 bit, 6 bit)
+    // sendGenericStatureCommand - Correct bit shifting (1 bit, 1 bit, 6 bit)
     // ─────────────────────────────────────────────────────────────────────────
     private void sendGenericStatureCommand() {
         final ProvisionedMeshNode node    = mViewModel.getSelectedMeshNode().getValue();

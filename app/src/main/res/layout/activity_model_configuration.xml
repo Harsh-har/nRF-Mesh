@@ -425,7 +425,7 @@
                                         android:layout_width="match_parent"
                                         android:layout_height="wrap_content"
                                         android:imeOptions="actionDone"
-                                        android:inputType="text" />
+                                        android:inputType="number" />
                                 </com.google.android.material.textfield.TextInputLayout>
 
                                 <com.google.android.material.textfield.TextInputLayout
@@ -509,7 +509,7 @@
                                     android:id="@+id/layout_element_address"
                                     android:layout_width="0dp"
                                     android:layout_height="wrap_content"
-                                    android:hint="Enter Length (1-8)"
+                                    android:hint="Enter Length (0-255)"
                                     android:layout_marginTop="16dp"
                                     app:layout_constraintEnd_toEndOf="parent"
                                     app:layout_constraintStart_toStartOf="parent"
@@ -539,7 +539,7 @@
                                         android:layout_width="match_parent"
                                         android:layout_height="wrap_content"
                                         android:imeOptions="actionNext"
-                                        android:inputType="text" />
+                                        android:inputType="number" />
                                 </com.google.android.material.textfield.TextInputLayout>
 
                                 <LinearLayout

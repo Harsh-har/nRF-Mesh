@@ -4,9 +4,6 @@
     <string name="title_configuration_complete">Configuration Complete</string>
 
 
-
-
-
     <string name="app_name">Swaro Mesh</string>
     <string name="feature_name">Mesh</string>
     <string name="title_scanner">Scanner</string>
@@ -177,6 +174,8 @@
     <string name="hint_unicast_address">Unicast address</string>
     <string name="error_empty_unicast_address">Address cannot be empty!</string>
     <string name="network">Network</string>
+    <string name="device_filter">Device Filter</string>
+
     <string name="action_groups">Groups</string>
     <string name="action_proxy">Proxy Filter</string>
     <string name="action_settings">Settings</string>
@@ -679,4 +678,6 @@
     <string name="filter_enabled_message">Address filter is now active</string>
     <string name="filter_disabled_message">Address filter is now inactive</string>
     <string name="proxy_disconnected">● Disconnected</string>
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
 </resources>
