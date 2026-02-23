@@ -35,6 +35,7 @@ import no.nordicsemi.android.swaromesh.utils.Utils;
 import no.nordicsemi.android.swaromesh.viewmodels.ScannerLiveData;
 import no.nordicsemi.android.swaromesh.viewmodels.ScannerStateLiveData;
 import no.nordicsemi.android.swaromesh.viewmodels.ScannerViewModel;
+import no.nordicsemi.android.swaromesh.viewmodels.SharedViewModel;
 
 import java.util.UUID;
 
@@ -212,7 +213,16 @@ public class ScannerActivity extends AppCompatActivity implements DevicesAdapter
                     String.format("Looking for device: %s...", formatMacForDisplay(targetProxyMac))
             );
         }
+
+        SharedViewModel sharedViewModel =
+                new ViewModelProvider(this).get(SharedViewModel.class);
+
+        sharedViewModel.getDeviceNameFilter().observe(this, filterName -> {
+            mViewModel.getScannerRepository().setDeviceNameFilter(filterName);
+        });
     }
+
+
 
     @Override
     protected void onStart() {

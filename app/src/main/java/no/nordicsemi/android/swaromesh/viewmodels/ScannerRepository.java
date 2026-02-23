@@ -45,7 +45,10 @@ public class ScannerRepository {
 
     private UUID mFilterUuid;
 
-    // 🔥 NEW: Proxy scan callback
+    // 🔹 DEVICE NAME FILTER (NEW)
+    private String mDeviceNameFilter = "SW-RL03-016";
+
+    // 🔥 Proxy scan callback
     private ProxyScanCallback mProxyScanCallback;
 
     // ------------------------------------------------------------------------
@@ -88,7 +91,6 @@ public class ScannerRepository {
                     if (matched) {
                         updateScannerLiveData(result);
 
-                        // 🔥 AUTO PROXY CALLBACK
                         if (mProxyScanCallback != null) {
                             mProxyScanCallback.onProxyFound(result);
                         }
@@ -112,7 +114,152 @@ public class ScannerRepository {
     };
 
     // ------------------------------------------------------------------------
-    // Broadcast Receivers
+    // Constructor
+    // ------------------------------------------------------------------------
+    @Inject
+    public ScannerRepository(
+            @NonNull @ApplicationContext final Context context,
+            @NonNull final MeshManagerApi meshManagerApi) {
+
+        this.mContext = context;
+        this.mMeshManagerApi = meshManagerApi;
+
+        mScannerStateLiveData =
+                new ScannerStateLiveData(Utils.isBleEnabled(),
+                        Utils.isLocationEnabled(context));
+
+        mScannerLiveData = new ScannerLiveData();
+    }
+
+    // ------------------------------------------------------------------------
+    // PUBLIC API
+    // ------------------------------------------------------------------------
+    public ScannerStateLiveData getScannerState() {
+        return mScannerStateLiveData;
+    }
+
+    public ScannerLiveData getScannerResults() {
+        return mScannerLiveData;
+    }
+
+    // 🔹 SET DEVICE NAME FILTER (CALLED FROM VIEWMODEL)
+    public void setDeviceNameFilter(String name) {
+        mDeviceNameFilter = (name == null || name.isEmpty()) ? null : name;
+        mScannerLiveData.clear(); // refresh list
+    }
+
+    // ------------------------------------------------------------------------
+    // Scan control
+    // ------------------------------------------------------------------------
+    public void startScan(@NonNull final UUID filterUuid) {
+
+        mFilterUuid = filterUuid;
+
+        if (mScannerStateLiveData.isScanning()) return;
+
+        mScannerStateLiveData.scanningStarted();
+
+        final ScanSettings settings = new ScanSettings.Builder()
+                .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
+                .setReportDelay(0)
+                .setUseHardwareFilteringIfSupported(false)
+                .build();
+
+        final List<ScanFilter> filters = new ArrayList<>();
+        filters.add(new ScanFilter.Builder()
+                .setServiceUuid(new ParcelUuid(filterUuid))
+                .build());
+
+        BluetoothLeScannerCompat.getScanner()
+                .startScan(filters, settings, mScanCallbacks);
+    }
+
+    public void startProxyScan(@NonNull final ProxyScanCallback callback) {
+        mProxyScanCallback = callback;
+        startScan(BleMeshManager.MESH_PROXY_UUID);
+    }
+
+    public void stopScan() {
+        BluetoothLeScannerCompat.getScanner().stopScan(mScanCallbacks);
+        mScannerStateLiveData.scanningStopped();
+        mScannerLiveData.clear();
+        mProxyScanCallback = null;
+    }
+
+    // ------------------------------------------------------------------------
+    // HELPERS
+    // ------------------------------------------------------------------------
+    private void updateScannerLiveData(final ScanResult result) {
+
+        // 🔹 APPLY NAME FILTER HERE
+        if (mDeviceNameFilter != null) {
+            final String name = result.getDevice().getName();
+            if (name == null || !name.equals(mDeviceNameFilter)) {
+                return; // ❌ filtered out
+            }
+        }
+
+        final ScanRecord scanRecord = result.getScanRecord();
+        if (scanRecord != null && scanRecord.getBytes() != null) {
+
+            final byte[] beaconData =
+                    mMeshManagerApi.getMeshBeaconData(scanRecord.getBytes());
+
+            if (beaconData != null) {
+                mScannerLiveData.deviceDiscovered(
+                        result,
+                        mMeshManagerApi.getMeshBeacon(beaconData));
+            } else {
+                mScannerLiveData.deviceDiscovered(result);
+            }
+
+            mScannerStateLiveData.deviceFound();
+        }
+    }
+
+    private boolean checkIfNodeIdentityMatches(final byte[] serviceData) {
+        final MeshNetwork network = mMeshManagerApi.getMeshNetwork();
+        if (network != null) {
+            for (ProvisionedMeshNode node : network.getNodes()) {
+                if (mMeshManagerApi.nodeIdentityMatches(node, serviceData)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    // ------------------------------------------------------------------------
+    // BROADCAST RECEIVERS
+    // ------------------------------------------------------------------------
+    void registerBroadcastReceivers() {
+        mContext.registerReceiver(
+                mBluetoothStateBroadcastReceiver,
+                new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED));
+
+        if (Utils.isWithinMarshmallowAndR()) {
+            mContext.registerReceiver(
+                    mLocationProviderChangedReceiver,
+                    new IntentFilter(LocationManager.MODE_CHANGED_ACTION));
+        }
+    }
+
+    void unregisterBroadcastReceivers() {
+        mContext.unregisterReceiver(mBluetoothStateBroadcastReceiver);
+        if (Utils.isWithinMarshmallowAndR()) {
+            mContext.unregisterReceiver(mLocationProviderChangedReceiver);
+        }
+    }
+
+    // ------------------------------------------------------------------------
+    // CALLBACK
+    // ------------------------------------------------------------------------
+    public interface ProxyScanCallback {
+        void onProxyFound(@NonNull ScanResult result);
+    }
+
+    // ------------------------------------------------------------------------
+    // RECEIVERS
     // ------------------------------------------------------------------------
     private final BroadcastReceiver mLocationProviderChangedReceiver =
             new BroadcastReceiver() {
@@ -152,135 +299,4 @@ public class ScannerRepository {
                     }
                 }
             };
-
-    // ------------------------------------------------------------------------
-    // Constructor
-    // ------------------------------------------------------------------------
-    @Inject
-    public ScannerRepository(
-            @NonNull @ApplicationContext final Context context,
-            @NonNull final MeshManagerApi meshManagerApi) {
-
-        this.mContext = context;
-        this.mMeshManagerApi = meshManagerApi;
-
-        mScannerStateLiveData =
-                new ScannerStateLiveData(Utils.isBleEnabled(),
-                        Utils.isLocationEnabled(context));
-
-        mScannerLiveData = new ScannerLiveData();
-    }
-
-    // ------------------------------------------------------------------------
-    // Public getters
-    // ------------------------------------------------------------------------
-    public ScannerStateLiveData getScannerState() {
-        return mScannerStateLiveData;
-    }
-
-    public ScannerLiveData getScannerResults() {
-        return mScannerLiveData;
-    }
-
-    // ------------------------------------------------------------------------
-    // Scan control
-    // ------------------------------------------------------------------------
-    public void startScan(@NonNull final UUID filterUuid) {
-
-        mFilterUuid = filterUuid;
-
-        if (mScannerStateLiveData.isScanning()) return;
-
-        mScannerStateLiveData.scanningStarted();
-
-        final ScanSettings settings = new ScanSettings.Builder()
-                .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
-                .setReportDelay(0)
-                .setUseHardwareFilteringIfSupported(false)
-                .build();
-
-        final List<ScanFilter> filters = new ArrayList<>();
-        filters.add(new ScanFilter.Builder()
-                .setServiceUuid(new ParcelUuid(filterUuid))
-                .build());
-
-        BluetoothLeScannerCompat.getScanner()
-                .startScan(filters, settings, mScanCallbacks);
-    }
-
-    // 🔥 NEW: Proxy scan entry point
-    public void startProxyScan(@NonNull final ProxyScanCallback callback) {
-        mProxyScanCallback = callback;
-        startScan(BleMeshManager.MESH_PROXY_UUID);
-    }
-
-    public void stopScan() {
-        BluetoothLeScannerCompat.getScanner().stopScan(mScanCallbacks);
-        mScannerStateLiveData.scanningStopped();
-        mScannerLiveData.clear();
-        mProxyScanCallback = null;
-    }
-
-    // ------------------------------------------------------------------------
-    // Helpers
-    // ------------------------------------------------------------------------
-    private void updateScannerLiveData(final ScanResult result) {
-        final ScanRecord scanRecord = result.getScanRecord();
-        if (scanRecord != null && scanRecord.getBytes() != null) {
-
-            final byte[] beaconData =
-                    mMeshManagerApi.getMeshBeaconData(scanRecord.getBytes());
-
-            if (beaconData != null) {
-                mScannerLiveData.deviceDiscovered(
-                        result,
-                        mMeshManagerApi.getMeshBeacon(beaconData));
-            } else {
-                mScannerLiveData.deviceDiscovered(result);
-            }
-
-            mScannerStateLiveData.deviceFound();
-        }
-    }
-
-    private boolean checkIfNodeIdentityMatches(final byte[] serviceData) {
-        final MeshNetwork network = mMeshManagerApi.getMeshNetwork();
-        if (network != null) {
-            for (ProvisionedMeshNode node : network.getNodes()) {
-                if (mMeshManagerApi.nodeIdentityMatches(node, serviceData)) {
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
-
-    // ------------------------------------------------------------------------
-    // Broadcast receiver control
-    // ------------------------------------------------------------------------
-    void registerBroadcastReceivers() {
-        mContext.registerReceiver(
-                mBluetoothStateBroadcastReceiver,
-                new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED));
-
-        if (Utils.isWithinMarshmallowAndR()) {
-            mContext.registerReceiver(
-                    mLocationProviderChangedReceiver,
-                    new IntentFilter(LocationManager.MODE_CHANGED_ACTION));
-        }
-    }
-
-    void unregisterBroadcastReceivers() {
-        mContext.unregisterReceiver(mBluetoothStateBroadcastReceiver);
-        if (Utils.isWithinMarshmallowAndR()) {
-            mContext.unregisterReceiver(mLocationProviderChangedReceiver);
-        }
-    }
-
-    // ------------------------------------------------------------------------
-    // 🔥 Callback interface
-    // ------------------------------------------------------------------------
-    public interface ProxyScanCallback {
-        void onProxyFound(@NonNull ScanResult result);
-    }
 }

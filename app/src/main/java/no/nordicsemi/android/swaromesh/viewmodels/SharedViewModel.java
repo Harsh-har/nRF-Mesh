@@ -6,27 +6,44 @@ import android.content.SharedPreferences;
 import androidx.annotation.NonNull;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
+
 import java.io.OutputStream;
+
 import javax.inject.Inject;
+
 import dagger.hilt.android.lifecycle.HiltViewModel;
 import dagger.hilt.android.qualifiers.ApplicationContext;
 import no.nordicsemi.android.swaromesh.utils.NetworkExportUtils;
 
 @HiltViewModel
-public class SharedViewModel extends BaseViewModel implements NetworkExportUtils.NetworkExportCallbacks {
+public class SharedViewModel extends BaseViewModel
+        implements NetworkExportUtils.NetworkExportCallbacks {
 
     private final ScannerRepository mScannerRepository;
     private final SingleLiveEvent<String> networkExportState = new SingleLiveEvent<>();
 
-    // ✅ Prefs
+    // ---------------------------------------------------------------------
+    // PREFS
+    // ---------------------------------------------------------------------
     private static final String PREFS_NAME = "mesh_prefs";
     private static final String KEY_PROXY_ENABLED = "proxy_enabled";
 
     private final SharedPreferences prefs;
 
-    // ✅ proxyEnabled state (default true)
+    // ---------------------------------------------------------------------
+    // PROXY STATE
+    // ---------------------------------------------------------------------
     private final MutableLiveData<Boolean> proxyEnabled = new MutableLiveData<>();
 
+    // ---------------------------------------------------------------------
+    // DEVICE NAME FILTER
+    // ---------------------------------------------------------------------
+    private static final String DEFAULT_DEVICE_NAME_FILTER = "SW-RL02-012";
+    private final MutableLiveData<String> deviceNameFilter = new MutableLiveData<>();
+
+    // ---------------------------------------------------------------------
+    // CONSTRUCTOR
+    // ---------------------------------------------------------------------
     @Inject
     SharedViewModel(
             @NonNull final NrfMeshRepository nrfMeshRepository,
@@ -40,11 +57,20 @@ public class SharedViewModel extends BaseViewModel implements NetworkExportUtils
 
         prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
 
-        // ✅ Load saved value on startup
+        // ✅ Load proxy state
         boolean saved = prefs.getBoolean(KEY_PROXY_ENABLED, true);
         proxyEnabled.setValue(saved);
+
+        // ✅ Default device name filter
+        deviceNameFilter.setValue(DEFAULT_DEVICE_NAME_FILTER);
+
+        // 🔥 APPLY DEFAULT FILTER TO SCANNER
+        mScannerRepository.setDeviceNameFilter(DEFAULT_DEVICE_NAME_FILTER);
     }
 
+    // ---------------------------------------------------------------------
+    // LIFECYCLE
+    // ---------------------------------------------------------------------
     @Override
     protected void onCleared() {
         super.onCleared();
@@ -52,6 +78,9 @@ public class SharedViewModel extends BaseViewModel implements NetworkExportUtils
         mScannerRepository.unregisterBroadcastReceivers();
     }
 
+    // ---------------------------------------------------------------------
+    // NETWORK
+    // ---------------------------------------------------------------------
     public LiveData<String> getNetworkLoadState() {
         return mNrfMeshRepository.getNetworkLoadState();
     }
@@ -69,14 +98,22 @@ public class SharedViewModel extends BaseViewModel implements NetworkExportUtils
     }
 
     public void exportMeshNetwork() {
-        final String fileName = getNetworkLiveData().getNetworkName() + ".json";
-        NetworkExportUtils.exportMeshNetwork(getMeshManagerApi(), NrfMeshRepository.EXPORT_PATH, fileName, this);
+        final String fileName =
+                getNetworkLiveData().getNetworkName() + ".json";
+        NetworkExportUtils.exportMeshNetwork(
+                getMeshManagerApi(),
+                NrfMeshRepository.EXPORT_PATH,
+                fileName,
+                this
+        );
     }
 
     @Override
     public void onNetworkExported() {
-        networkExportState.postValue(getNetworkLiveData().getMeshNetwork().getMeshName()
-                + " has been successfully exported.");
+        networkExportState.postValue(
+                getNetworkLiveData().getMeshNetwork().getMeshName()
+                        + " has been successfully exported."
+        );
     }
 
     @Override
@@ -84,21 +121,38 @@ public class SharedViewModel extends BaseViewModel implements NetworkExportUtils
         networkExportState.postValue(error);
     }
 
-    // ---------------- PROXY BUTTON STATE (PERSISTENT) ----------------
-
+    // ---------------------------------------------------------------------
+    // PROXY BUTTON STATE
+    // ---------------------------------------------------------------------
     public LiveData<Boolean> getProxyEnabled() {
         return proxyEnabled;
     }
 
     public void setProxyEnabled(boolean enabled) {
         proxyEnabled.setValue(enabled);
-
-        // ✅ Save in prefs
         prefs.edit().putBoolean(KEY_PROXY_ENABLED, enabled).apply();
     }
 
     public boolean isProxyEnabled() {
         Boolean v = proxyEnabled.getValue();
         return v != null && v;
+    }
+
+    // ---------------------------------------------------------------------
+    // DEVICE NAME FILTER (FINAL + WORKING)
+    // ---------------------------------------------------------------------
+    public LiveData<String> getDeviceNameFilter() {
+        return deviceNameFilter;
+    }
+
+    public void setDeviceNameFilter(String name) {
+        deviceNameFilter.setValue(name);
+
+        // 🔥 THIS IS THE MISSING LINK
+        mScannerRepository.setDeviceNameFilter(name);
+    }
+
+    public String getCurrentDeviceNameFilter() {
+        return deviceNameFilter.getValue();
     }
 }

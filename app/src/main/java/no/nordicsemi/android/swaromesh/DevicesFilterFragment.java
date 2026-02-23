@@ -6,28 +6,30 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
-import android.widget.RadioButton;
-import android.widget.RadioGroup;
-import android.widget.TextView;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.lifecycle.ViewModelProvider;
 
 import com.google.android.material.textfield.TextInputEditText;
+
+import no.nordicsemi.android.swaromesh.viewmodels.SharedViewModel;
 
 public class DevicesFilterFragment extends Fragment {
 
     private static final String TAG = "DevicesFilter";
 
-    // UI references (MATCH XML)
+    // 🔹 DEFAULT FILTER VALUE
+    private static final String DEFAULT_DEVICE_NAME = "SW-RL03-016";
+
     private TextInputEditText etDeviceName;
-    private RadioGroup rgSignalStrength;
-    private TextView tvSignalPreview;
-    private TextView tvRssiValue;
     private Button btnApply, btnReset;
 
-    public DevicesFilterFragment() {}
+    private SharedViewModel sharedViewModel;
+
+    public DevicesFilterFragment() {
+        // Required empty public constructor
+    }
 
     public static DevicesFilterFragment newInstance() {
         return new DevicesFilterFragment();
@@ -39,82 +41,72 @@ public class DevicesFilterFragment extends Fragment {
             ViewGroup container,
             Bundle savedInstanceState) {
 
-        View view = inflater.inflate(R.layout.fragment_devices_filter, container, false);
+        View view = inflater.inflate(
+                R.layout.fragment_devices_filter,
+                container,
+                false
+        );
+
+        // ✅ Shared ViewModel (Activity scope)
+        sharedViewModel = new ViewModelProvider(requireActivity())
+                .get(SharedViewModel.class);
 
         initUi(view);
+        setupDefaultValue();
         setupActions();
 
         return view;
     }
 
     private void initUi(View view) {
-        etDeviceName     = view.findViewById(R.id.etDeviceName);
-        rgSignalStrength = view.findViewById(R.id.rgSignalStrength);
-        tvSignalPreview  = view.findViewById(R.id.tvSignalPreview);
-        tvRssiValue      = view.findViewById(R.id.tvRssiValue);
-        btnApply         = view.findViewById(R.id.btnApply);
-        btnReset         = view.findViewById(R.id.btnReset);
+        etDeviceName = view.findViewById(R.id.etDeviceName);
+        btnApply     = view.findViewById(R.id.btnApply);
+        btnReset     = view.findViewById(R.id.btnReset);
+    }
 
-        // Default state
-        rgSignalStrength.check(R.id.rbSignalDefault);
-        tvSignalPreview.setText("Any signal strength");
-        tvRssiValue.setText("RSSI: Any");
+    // ---------------------------------------------------------------------
+    // SET DEFAULT FILTER
+    // ---------------------------------------------------------------------
+    private void setupDefaultValue() {
+        etDeviceName.setText(DEFAULT_DEVICE_NAME);
     }
 
     private void setupActions() {
-
-        rgSignalStrength.setOnCheckedChangeListener((group, checkedId) ->
-                updateSignalPreview(checkedId)
-        );
-
         btnApply.setOnClickListener(v -> applyFilter());
-
         btnReset.setOnClickListener(v -> resetFilter());
     }
 
-    private void updateSignalPreview(int checkedId) {
-
-        if (checkedId == R.id.rbSignal3Bars) {
-            tvSignalPreview.setText("Weak signal (3 bars)");
-            tvRssiValue.setText("RSSI ≥ -80 dBm");
-
-        } else if (checkedId == R.id.rbSignal4Bars) {
-            tvSignalPreview.setText("Medium signal (4 bars)");
-            tvRssiValue.setText("RSSI ≥ -65 dBm");
-
-        } else if (checkedId == R.id.rbSignal5Bars) {
-            tvSignalPreview.setText("Strong signal (5 bars)");
-            tvRssiValue.setText("RSSI ≥ -50 dBm");
-
-        } else {
-            tvSignalPreview.setText("Any signal strength");
-            tvRssiValue.setText("RSSI: Any");
-        }
-    }
-
+    // ---------------------------------------------------------------------
+    // APPLY FILTER
+    // ---------------------------------------------------------------------
     private void applyFilter() {
 
-        String deviceName = etDeviceName.getText() != null
-                ? etDeviceName.getText().toString().trim()
-                : "";
-
-        int selectedId = rgSignalStrength.getCheckedRadioButtonId();
-        RadioButton rb = requireView().findViewById(selectedId);
-        String signalFilter = rb != null ? rb.getText().toString() : "Default";
+        String deviceName =
+                etDeviceName.getText() != null
+                        ? etDeviceName.getText().toString().trim()
+                        : "";
 
         Log.i(TAG, "----- APPLY FILTER -----");
-        Log.i(TAG, "Device Name     : " + deviceName);
-        Log.i(TAG, "Signal Strength : " + signalFilter);
+        Log.i(TAG, "Unprovisioned Device Name Filter: " + deviceName);
 
-        // TODO: connect to ViewModel / device scan filtering
-        // getParentFragmentManager().popBackStack();
+        // ✅ SEND FILTER TO VIEWMODEL
+        sharedViewModel.setDeviceNameFilter(deviceName);
+
+        // Close filter screen
+        requireActivity()
+                .getSupportFragmentManager()
+                .popBackStack();
     }
 
+    // ---------------------------------------------------------------------
+    // RESET FILTER
+    // ---------------------------------------------------------------------
     private void resetFilter() {
+
         etDeviceName.setText("");
-        rgSignalStrength.check(R.id.rbSignalDefault);
-        tvSignalPreview.setText("Any signal strength");
-        tvRssiValue.setText("RSSI: Any");
+
+        // ✅ CLEAR FILTER IN VIEWMODEL
+        sharedViewModel.setDeviceNameFilter(null);
 
         Log.i(TAG, "Filters reset");
     }
