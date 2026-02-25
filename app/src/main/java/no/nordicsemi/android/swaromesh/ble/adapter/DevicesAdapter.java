@@ -1,4 +1,3 @@
-
 package no.nordicsemi.android.swaromesh.ble.adapter;
 
 import android.text.TextUtils;
@@ -6,28 +5,65 @@ import android.view.LayoutInflater;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
+
 import androidx.annotation.NonNull;
 import androidx.lifecycle.LifecycleOwner;
 import androidx.recyclerview.widget.RecyclerView;
+
+import java.util.ArrayList;
 import java.util.List;
+
 import no.nordicsemi.android.swaromesh.R;
 import no.nordicsemi.android.swaromesh.adapter.ExtendedBluetoothDevice;
 import no.nordicsemi.android.swaromesh.databinding.DeviceItemBinding;
 import no.nordicsemi.android.swaromesh.viewmodels.ScannerLiveData;
 
 public class DevicesAdapter extends RecyclerView.Adapter<DevicesAdapter.ViewHolder> {
-    private final List<ExtendedBluetoothDevice> mDevices;
+
+    // All devices from scanner (unfiltered source of truth)
+    private final List<ExtendedBluetoothDevice> mAllDevices;
+
+    // Currently displayed devices (filtered)
+    private final List<ExtendedBluetoothDevice> mDisplayedDevices;
+
+    // Current active filter string
+    private String mCurrentFilter = "";
+
     private OnItemClickListener mOnItemClickListener;
 
-    public DevicesAdapter(@NonNull final LifecycleOwner owner, @NonNull final ScannerLiveData scannerLiveData) {
-        mDevices = scannerLiveData.getDevices();
+    public DevicesAdapter(@NonNull final LifecycleOwner owner,
+                          @NonNull final ScannerLiveData scannerLiveData) {
+
+        mAllDevices = scannerLiveData.getDevices();
+        mDisplayedDevices = new ArrayList<>(mAllDevices);
+
         scannerLiveData.observe(owner, devices -> {
-            final Integer i = devices.getUpdatedDeviceIndex();
-            if (i != null)
-                notifyItemChanged(i);
-            else
-                notifyDataSetChanged();
+            // New scan results arrived — re-apply current filter so display stays consistent
+            applyFilter(mCurrentFilter);
         });
+    }
+
+    /**
+     * Apply a name filter to the displayed device list.
+     * Pass empty string to show all devices.
+     */
+    public void applyFilter(@NonNull String filter) {
+        mCurrentFilter = filter;
+        mDisplayedDevices.clear();
+
+        if (filter.isEmpty()) {
+            mDisplayedDevices.addAll(mAllDevices);
+        } else {
+            String lowerFilter = filter.toLowerCase();
+            for (ExtendedBluetoothDevice device : mAllDevices) {
+                if (device.getName() != null
+                        && device.getName().toLowerCase().contains(lowerFilter)) {
+                    mDisplayedDevices.add(device);
+                }
+            }
+        }
+
+        notifyDataSetChanged();
     }
 
     public void setOnItemClickListener(@NonNull final OnItemClickListener listener) {
@@ -37,19 +73,21 @@ public class DevicesAdapter extends RecyclerView.Adapter<DevicesAdapter.ViewHold
     @NonNull
     @Override
     public ViewHolder onCreateViewHolder(@NonNull final ViewGroup parent, final int viewType) {
-        return new ViewHolder(DeviceItemBinding.inflate(LayoutInflater.from(parent.getContext()), parent, false));
+        return new ViewHolder(DeviceItemBinding.inflate(
+                LayoutInflater.from(parent.getContext()), parent, false));
     }
 
     @Override
     public void onBindViewHolder(@NonNull final ViewHolder holder, final int position) {
-        final ExtendedBluetoothDevice device = mDevices.get(position);
+        final ExtendedBluetoothDevice device = mDisplayedDevices.get(position);
         final String deviceName = device.getName();
 
-        if (!TextUtils.isEmpty(deviceName))
-            holder.deviceName.setText(deviceName);
-        else
-            holder.deviceName.setText(R.string.unknown_device);
+        holder.deviceName.setText(TextUtils.isEmpty(deviceName)
+                ? holder.deviceName.getContext().getString(R.string.unknown_device)
+                : deviceName);
+
         holder.deviceAddress.setText(device.getAddress());
+
         final int rssiPercent = (int) (100.0f * (127.0f + device.getRssi()) / (127.0f + 20.0f));
         holder.rssi.setImageLevel(rssiPercent);
     }
@@ -61,7 +99,7 @@ public class DevicesAdapter extends RecyclerView.Adapter<DevicesAdapter.ViewHold
 
     @Override
     public int getItemCount() {
-        return mDevices.size();
+        return mDisplayedDevices.size();
     }
 
     public boolean isEmpty() {
@@ -86,8 +124,9 @@ public class DevicesAdapter extends RecyclerView.Adapter<DevicesAdapter.ViewHold
 
             binding.deviceContainer.setOnClickListener(v -> {
                 if (mOnItemClickListener != null) {
-                    if(getAdapterPosition() > -1 && mDevices.size() > 0) {
-                        mOnItemClickListener.onItemClick(mDevices.get(getAdapterPosition()));
+                    int pos = getAdapterPosition();
+                    if (pos > -1 && !mDisplayedDevices.isEmpty()) {
+                        mOnItemClickListener.onItemClick(mDisplayedDevices.get(pos));
                     }
                 }
             });

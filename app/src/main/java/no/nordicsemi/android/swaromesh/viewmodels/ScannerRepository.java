@@ -31,7 +31,8 @@ import no.nordicsemi.android.support.v18.scanner.ScanResult;
 import no.nordicsemi.android.support.v18.scanner.ScanSettings;
 
 /**
- * Repository for scanning Bluetooth Mesh devices
+ * Repository for scanning Bluetooth Mesh devices.
+ * Fixed: stopScan() no longer clears results; connected flag prevents scan restart after proxy connect.
  */
 public class ScannerRepository {
 
@@ -45,11 +46,11 @@ public class ScannerRepository {
 
     private UUID mFilterUuid;
 
-    // 🔹 DEVICE NAME FILTER (NEW)
-    private String mDeviceNameFilter = "SW-RL03-016";
-
-    // 🔥 Proxy scan callback
+    // Proxy scan callback for auto-connect
     private ProxyScanCallback mProxyScanCallback;
+
+    // ✅ FIX: Flag to prevent scan restart after proxy connection is established
+    private boolean mIsConnected = false;
 
     // ------------------------------------------------------------------------
     // Scan Callback
@@ -59,16 +60,17 @@ public class ScannerRepository {
         @Override
         public void onScanResult(final int callbackType, @NonNull final ScanResult result) {
             try {
+                // ✅ FIX: If already connected, ignore all scan results to prevent interference
+                if (mIsConnected) return;
+
                 if (mFilterUuid == null) return;
 
                 // ---------------- PROVISIONING SCAN ----------------
                 if (mFilterUuid.equals(BleMeshManager.MESH_PROVISIONING_UUID)) {
-
                     if (Utils.isLocationRequired(mContext)
                             && !Utils.isLocationEnabled(mContext)) {
                         Utils.markLocationNotRequired(mContext);
                     }
-
                     updateScannerLiveData(result);
                 }
 
@@ -91,6 +93,7 @@ public class ScannerRepository {
                     if (matched) {
                         updateScannerLiveData(result);
 
+                        // Auto proxy callback
                         if (mProxyScanCallback != null) {
                             mProxyScanCallback.onProxyFound(result);
                         }
@@ -109,157 +112,13 @@ public class ScannerRepository {
 
         @Override
         public void onScanFailed(final int errorCode) {
+            Log.e(TAG, "Scan failed with error code: " + errorCode);
             mScannerStateLiveData.scanningStopped();
         }
     };
 
     // ------------------------------------------------------------------------
-    // Constructor
-    // ------------------------------------------------------------------------
-    @Inject
-    public ScannerRepository(
-            @NonNull @ApplicationContext final Context context,
-            @NonNull final MeshManagerApi meshManagerApi) {
-
-        this.mContext = context;
-        this.mMeshManagerApi = meshManagerApi;
-
-        mScannerStateLiveData =
-                new ScannerStateLiveData(Utils.isBleEnabled(),
-                        Utils.isLocationEnabled(context));
-
-        mScannerLiveData = new ScannerLiveData();
-    }
-
-    // ------------------------------------------------------------------------
-    // PUBLIC API
-    // ------------------------------------------------------------------------
-    public ScannerStateLiveData getScannerState() {
-        return mScannerStateLiveData;
-    }
-
-    public ScannerLiveData getScannerResults() {
-        return mScannerLiveData;
-    }
-
-    // 🔹 SET DEVICE NAME FILTER (CALLED FROM VIEWMODEL)
-    public void setDeviceNameFilter(String name) {
-        mDeviceNameFilter = (name == null || name.isEmpty()) ? null : name;
-        mScannerLiveData.clear(); // refresh list
-    }
-
-    // ------------------------------------------------------------------------
-    // Scan control
-    // ------------------------------------------------------------------------
-    public void startScan(@NonNull final UUID filterUuid) {
-
-        mFilterUuid = filterUuid;
-
-        if (mScannerStateLiveData.isScanning()) return;
-
-        mScannerStateLiveData.scanningStarted();
-
-        final ScanSettings settings = new ScanSettings.Builder()
-                .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
-                .setReportDelay(0)
-                .setUseHardwareFilteringIfSupported(false)
-                .build();
-
-        final List<ScanFilter> filters = new ArrayList<>();
-        filters.add(new ScanFilter.Builder()
-                .setServiceUuid(new ParcelUuid(filterUuid))
-                .build());
-
-        BluetoothLeScannerCompat.getScanner()
-                .startScan(filters, settings, mScanCallbacks);
-    }
-
-    public void startProxyScan(@NonNull final ProxyScanCallback callback) {
-        mProxyScanCallback = callback;
-        startScan(BleMeshManager.MESH_PROXY_UUID);
-    }
-
-    public void stopScan() {
-        BluetoothLeScannerCompat.getScanner().stopScan(mScanCallbacks);
-        mScannerStateLiveData.scanningStopped();
-        mScannerLiveData.clear();
-        mProxyScanCallback = null;
-    }
-
-    // ------------------------------------------------------------------------
-    // HELPERS
-    // ------------------------------------------------------------------------
-    private void updateScannerLiveData(final ScanResult result) {
-
-        // 🔹 APPLY NAME FILTER HERE
-        if (mDeviceNameFilter != null) {
-            final String name = result.getDevice().getName();
-            if (name == null || !name.equals(mDeviceNameFilter)) {
-                return; // ❌ filtered out
-            }
-        }
-
-        final ScanRecord scanRecord = result.getScanRecord();
-        if (scanRecord != null && scanRecord.getBytes() != null) {
-
-            final byte[] beaconData =
-                    mMeshManagerApi.getMeshBeaconData(scanRecord.getBytes());
-
-            if (beaconData != null) {
-                mScannerLiveData.deviceDiscovered(
-                        result,
-                        mMeshManagerApi.getMeshBeacon(beaconData));
-            } else {
-                mScannerLiveData.deviceDiscovered(result);
-            }
-
-            mScannerStateLiveData.deviceFound();
-        }
-    }
-
-    private boolean checkIfNodeIdentityMatches(final byte[] serviceData) {
-        final MeshNetwork network = mMeshManagerApi.getMeshNetwork();
-        if (network != null) {
-            for (ProvisionedMeshNode node : network.getNodes()) {
-                if (mMeshManagerApi.nodeIdentityMatches(node, serviceData)) {
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
-
-    // ------------------------------------------------------------------------
-    // BROADCAST RECEIVERS
-    // ------------------------------------------------------------------------
-    void registerBroadcastReceivers() {
-        mContext.registerReceiver(
-                mBluetoothStateBroadcastReceiver,
-                new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED));
-
-        if (Utils.isWithinMarshmallowAndR()) {
-            mContext.registerReceiver(
-                    mLocationProviderChangedReceiver,
-                    new IntentFilter(LocationManager.MODE_CHANGED_ACTION));
-        }
-    }
-
-    void unregisterBroadcastReceivers() {
-        mContext.unregisterReceiver(mBluetoothStateBroadcastReceiver);
-        if (Utils.isWithinMarshmallowAndR()) {
-            mContext.unregisterReceiver(mLocationProviderChangedReceiver);
-        }
-    }
-
-    // ------------------------------------------------------------------------
-    // CALLBACK
-    // ------------------------------------------------------------------------
-    public interface ProxyScanCallback {
-        void onProxyFound(@NonNull ScanResult result);
-    }
-
-    // ------------------------------------------------------------------------
-    // RECEIVERS
+    // Broadcast Receivers
     // ------------------------------------------------------------------------
     private final BroadcastReceiver mLocationProviderChangedReceiver =
             new BroadcastReceiver() {
@@ -299,4 +158,191 @@ public class ScannerRepository {
                     }
                 }
             };
+
+    // ------------------------------------------------------------------------
+    // Constructor
+    // ------------------------------------------------------------------------
+    @Inject
+    public ScannerRepository(
+            @NonNull @ApplicationContext final Context context,
+            @NonNull final MeshManagerApi meshManagerApi) {
+
+        this.mContext = context;
+        this.mMeshManagerApi = meshManagerApi;
+
+        mScannerStateLiveData =
+                new ScannerStateLiveData(Utils.isBleEnabled(),
+                        Utils.isLocationEnabled(context));
+
+        mScannerLiveData = new ScannerLiveData();
+    }
+
+    // ------------------------------------------------------------------------
+    // Public getters
+    // ------------------------------------------------------------------------
+    public ScannerStateLiveData getScannerState() {
+        return mScannerStateLiveData;
+    }
+
+    public ScannerLiveData getScannerResults() {
+        return mScannerLiveData;
+    }
+
+    // ------------------------------------------------------------------------
+    // Scan control
+    // ------------------------------------------------------------------------
+    public void startScan(@NonNull final UUID filterUuid) {
+        // ✅ FIX: Do not start scan if already connected to proxy
+        if (mIsConnected) {
+            Log.d(TAG, "startScan() ignored — already connected to proxy");
+            return;
+        }
+
+        mFilterUuid = filterUuid;
+
+        if (mScannerStateLiveData.isScanning()) return;
+
+        mScannerStateLiveData.scanningStarted();
+
+        final ScanSettings settings = new ScanSettings.Builder()
+                .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
+                .setReportDelay(0)
+                .setUseHardwareFilteringIfSupported(false)
+                .build();
+
+        final List<ScanFilter> filters = new ArrayList<>();
+        filters.add(new ScanFilter.Builder()
+                .setServiceUuid(new ParcelUuid(filterUuid))
+                .build());
+
+        BluetoothLeScannerCompat.getScanner()
+                .startScan(filters, settings, mScanCallbacks);
+
+        Log.d(TAG, "Scan started with UUID: " + filterUuid);
+    }
+
+    /**
+     * Start proxy scan with a callback for when a proxy node is found.
+     */
+    public void startProxyScan(@NonNull final ProxyScanCallback callback) {
+        mProxyScanCallback = callback;
+        startScan(BleMeshManager.MESH_PROXY_UUID);
+    }
+
+    /**
+     * ✅ FIX: stopScan() does NOT clear scanner results anymore.
+     * Results are preserved so auto-connect can still find the device.
+     * Call clearResults() explicitly if you want to wipe the list.
+     */
+    public void stopScan() {
+        try {
+            BluetoothLeScannerCompat.getScanner().stopScan(mScanCallbacks);
+        } catch (Exception e) {
+            Log.e(TAG, "stopScan error: " + e.getMessage());
+        }
+        mScannerStateLiveData.scanningStopped();
+        mProxyScanCallback = null;
+        Log.d(TAG, "Scan stopped. Results preserved.");
+    }
+
+    /**
+     * Explicitly clear scan results. Call this only when starting a fresh scan session.
+     */
+    public void clearResults() {
+        mScannerLiveData.clear();
+        Log.d(TAG, "Scanner results cleared.");
+    }
+
+    // ------------------------------------------------------------------------
+    // ✅ Connection state management
+    // ------------------------------------------------------------------------
+
+    /**
+     * Call this when proxy connection is successfully established.
+     * Prevents scan observer from restarting scan and disconnecting the proxy.
+     */
+    public void onProxyConnected() {
+        mIsConnected = true;
+        stopScan();
+        Log.d(TAG, "Proxy connected — scanning suppressed.");
+    }
+
+    /**
+     * Call this when proxy is disconnected (e.g. user navigates back).
+     * Re-enables scanning.
+     */
+    public void onProxyDisconnected() {
+        mIsConnected = false;
+        Log.d(TAG, "Proxy disconnected — scanning re-enabled.");
+    }
+
+    /**
+     * Returns true if currently connected to a proxy node.
+     */
+    public boolean isConnected() {
+        return mIsConnected;
+    }
+
+    // ------------------------------------------------------------------------
+    // Helpers
+    // ------------------------------------------------------------------------
+    private void updateScannerLiveData(final ScanResult result) {
+        final ScanRecord scanRecord = result.getScanRecord();
+        if (scanRecord != null && scanRecord.getBytes() != null) {
+
+            final byte[] beaconData =
+                    mMeshManagerApi.getMeshBeaconData(scanRecord.getBytes());
+
+            if (beaconData != null) {
+                mScannerLiveData.deviceDiscovered(
+                        result,
+                        mMeshManagerApi.getMeshBeacon(beaconData));
+            } else {
+                mScannerLiveData.deviceDiscovered(result);
+            }
+
+            mScannerStateLiveData.deviceFound();
+        }
+    }
+
+    private boolean checkIfNodeIdentityMatches(final byte[] serviceData) {
+        final MeshNetwork network = mMeshManagerApi.getMeshNetwork();
+        if (network != null) {
+            for (ProvisionedMeshNode node : network.getNodes()) {
+                if (mMeshManagerApi.nodeIdentityMatches(node, serviceData)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    // ------------------------------------------------------------------------
+    // Broadcast receiver control
+    // ------------------------------------------------------------------------
+    void registerBroadcastReceivers() {
+        mContext.registerReceiver(
+                mBluetoothStateBroadcastReceiver,
+                new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED));
+
+        if (Utils.isWithinMarshmallowAndR()) {
+            mContext.registerReceiver(
+                    mLocationProviderChangedReceiver,
+                    new IntentFilter(LocationManager.MODE_CHANGED_ACTION));
+        }
+    }
+
+    void unregisterBroadcastReceivers() {
+        mContext.unregisterReceiver(mBluetoothStateBroadcastReceiver);
+        if (Utils.isWithinMarshmallowAndR()) {
+            mContext.unregisterReceiver(mLocationProviderChangedReceiver);
+        }
+    }
+
+    // ------------------------------------------------------------------------
+    // Callback interface
+    // ------------------------------------------------------------------------
+    public interface ProxyScanCallback {
+        void onProxyFound(@NonNull ScanResult result);
+    }
 }
