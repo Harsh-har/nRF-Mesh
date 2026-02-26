@@ -10,21 +10,24 @@
     tools:context=".DevicesFilterFragment">
 
     <!-- Title -->
+
+    <!-- Device Selection Spinner -->
+
     <TextView
         android:id="@+id/tvFilterTitle"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:gravity="center"
         android:text="Unprovision Device Filters"
+        android:textAlignment="center"
         android:textAppearance="@style/TextAppearance.MaterialComponents.Headline5"
         android:textSize="20sp"
         android:textStyle="bold"
-        android:gravity="center"
-        android:textAlignment="center"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="1.0"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
-
-    <!-- Device Selection Spinner -->
 
     <TextView
         android:id="@+id/tvDeviceLabel"
@@ -78,6 +81,59 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"/>
     </com.google.android.material.textfield.TextInputLayout>
+
+    <!--  Signal Strength Filter -->
+    <TextView
+        android:id="@+id/tvRssi"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Signal Strength"
+        android:textStyle="bold"
+        app:layout_constraintTop_toBottomOf="@id/tilDeviceName"
+        app:layout_constraintStart_toStartOf="parent"
+        android:layout_marginTop="66dp"/>
+
+    <!-- Signal Strength Indicators -->
+    <RadioGroup
+        android:id="@+id/rgSignalStrength"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintTop_toBottomOf="@id/tvRssi"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginTop="8dp">
+
+        <RadioButton
+            android:id="@+id/rbSignalDefault"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Default"
+            android:checked="true"
+            android:layout_marginEnd="8dp"/>
+
+        <RadioButton
+            android:id="@+id/rbSignal3Bars"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="20%"
+            android:layout_marginEnd="8dp"/>
+
+        <RadioButton
+            android:id="@+id/rbSignal4Bars"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="60%"
+            android:layout_marginEnd="8dp"/>
+
+        <RadioButton
+            android:id="@+id/rbSignal5Bars"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="100%"/>
+    </RadioGroup>
+
+
 
     <!-- Action Buttons -->
     <LinearLayout

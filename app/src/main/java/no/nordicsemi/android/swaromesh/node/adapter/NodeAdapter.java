@@ -158,17 +158,33 @@ public class NodeAdapter extends RecyclerView.Adapter<NodeAdapter.ViewHolder> {
 
     public void filter(String query) {
         final List<ProvisionedMeshNode> filteredList = new ArrayList<>();
+
         if (query == null || query.trim().isEmpty()) {
             filteredList.addAll(allNodes);
         } else {
-            String lowerCaseQuery = query.toLowerCase();
+            String lowerCaseQuery = query.toLowerCase().trim();
+
             for (ProvisionedMeshNode node : allNodes) {
-                if (node.getNodeName() != null &&
-                        node.getNodeName().toLowerCase().contains(lowerCaseQuery)) {
+
+                // Device Name
+                String nodeName = node.getNodeName() != null
+                        ? node.getNodeName().toLowerCase()
+                        : "";
+
+                // Unicast Address (convert to hex string like UI shows)
+                String addressHex = MeshParserUtils.bytesToHex(
+                        MeshAddress.addressIntToBytes(node.getUnicastAddress()),
+                        false
+                ).toLowerCase();
+
+                if (nodeName.contains(lowerCaseQuery) ||
+                        addressHex.contains(lowerCaseQuery)) {
+
                     filteredList.add(node);
                 }
             }
         }
+
         expandedPositions.clear();
         differ.submitList(filteredList);
     }
