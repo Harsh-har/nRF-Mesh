@@ -43,38 +43,37 @@ import java.util.UUID;
 public class ScannerActivity extends AppCompatActivity implements DevicesAdapter.OnItemClickListener {
 
     private static final String TAG = "ScannerActivity";
-    private static final int REQUEST_ACCESS_FINE_LOCATION = 1022;
-    private static final int REQUEST_ACCESS_BLUETOOTH_PERMISSION = 1023;
-    private static final long AUTO_CONNECT_RETRY_DELAY_MS = 1000;
-    private static final long TARGET_CONNECT_TIMEOUT_MS = 30000;
-    private static final long AUTO_CONNECT_AFTER_PROVISIONING_DELAY = 2000;
+    private static final int    REQUEST_ACCESS_FINE_LOCATION          = 1022;
+    private static final int    REQUEST_ACCESS_BLUETOOTH_PERMISSION   = 1023;
+    private static final long   AUTO_CONNECT_RETRY_DELAY_MS           = 1000;
+    private static final long   TARGET_CONNECT_TIMEOUT_MS             = 30000;
+    private static final long   AUTO_CONNECT_AFTER_PROVISIONING_DELAY = 2000;
 
     private ActivityScannerBinding binding;
-    private ScannerViewModel mViewModel;
-    private SharedViewModel mSharedViewModel;
-    private DevicesAdapter adapter;
+    private ScannerViewModel       mViewModel;
+    private SharedViewModel        mSharedViewModel;
+    private DevicesAdapter         adapter;
 
-    // Filter from bottom nav
-    private String mCurrentDeviceFilter = "";
+    // Active filters
+    private String mCurrentDeviceFilter  = "";           // name / spinner filter
+    private int    mCurrentSignalFilter  = DevicesAdapter.SIGNAL_DEFAULT;  // ← NEW signal filter
 
     private boolean mScanWithProxyService = true;
-    private boolean mSilentConnect = false;
-    private boolean mAutoConnectStarted = false;
-    private boolean mIsNewlyProvisioned = false;
-    private String targetProxyMac;
+    private boolean mSilentConnect        = false;
+    private boolean mAutoConnectStarted   = false;
+    private boolean mIsNewlyProvisioned   = false;
+    private String  targetProxyMac;
 
     private boolean mShouldAutoConnectAfterProvisioning = false;
-    private String mProvisionedDeviceMac = null;
+    private String  mProvisionedDeviceMac               = null;
 
-    // ✅ ROOT FIX: These two flags together prevent double-launch and scan restart
-    // mReconnectLaunched — set TRUE the moment reconnect.launch() is called, never reset until result
-    // mProxyConnected   — set TRUE when RESULT_OK received, prevents any further scan
+    // ✅ ROOT FIX: prevent double-launch and scan restart
     private boolean mReconnectLaunched = false;
-    private boolean mProxyConnected = false;
+    private boolean mProxyConnected    = false;
 
-    private Handler mAutoConnectHandler;
+    private Handler  mAutoConnectHandler;
     private Runnable mAutoConnectRunnable;
-    private long mScanStartTime;
+    private long     mScanStartTime;
 
     // -----------------------------------------------------------------------
     // Activity Result Launchers
@@ -91,9 +90,9 @@ public class ScannerActivity extends AppCompatActivity implements DevicesAdapter
                             result.getData().getBooleanExtra(Utils.EXTRA_AUTO_CONNECT_AFTER_PROVISIONING, false);
 
                     if (autoConnectAfterProvisioning && provisionedDevice != null) {
-                        mProvisionedDeviceMac = provisionedDevice.getAddress();
+                        mProvisionedDeviceMac               = provisionedDevice.getAddress();
                         mShouldAutoConnectAfterProvisioning = true;
-                        mIsNewlyProvisioned = true;
+                        mIsNewlyProvisioned                 = true;
 
                         Log.d(TAG, "Provisioning complete for: " + mProvisionedDeviceMac);
 
@@ -119,8 +118,7 @@ public class ScannerActivity extends AppCompatActivity implements DevicesAdapter
     private final ActivityResultLauncher<Intent> reconnect =
             registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
                 if (result.getResultCode() == RESULT_OK) {
-                    // ✅ Mark proxy as fully connected — all scan/loop guards check this
-                    mProxyConnected = true;
+                    mProxyConnected    = true;
                     mReconnectLaunched = false;
 
                     final Intent data = result.getData();
@@ -134,9 +132,8 @@ public class ScannerActivity extends AppCompatActivity implements DevicesAdapter
                     overridePendingTransition(0, 0);
 
                 } else {
-                    // Connection failed — reset flags and allow retry
                     mReconnectLaunched = false;
-                    mProxyConnected = false;
+                    mProxyConnected    = false;
 
                     if (!mScanWithProxyService && mSilentConnect) {
                         showScannerUI();
@@ -156,10 +153,10 @@ public class ScannerActivity extends AppCompatActivity implements DevicesAdapter
     protected void onCreate(@Nullable final Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        binding = ActivityScannerBinding.inflate(getLayoutInflater());
+        binding          = ActivityScannerBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
-        mViewModel = new ViewModelProvider(this).get(ScannerViewModel.class);
+        mViewModel       = new ViewModelProvider(this).get(ScannerViewModel.class);
         mSharedViewModel = new ViewModelProvider(this).get(SharedViewModel.class);
 
         final Toolbar toolbar = binding.toolbar;
@@ -171,7 +168,7 @@ public class ScannerActivity extends AppCompatActivity implements DevicesAdapter
         // Parse intent
         if (getIntent() != null) {
             mScanWithProxyService = getIntent().getBooleanExtra(Utils.EXTRA_DATA_PROVISIONING_SERVICE, true);
-            mSilentConnect = getIntent().getBooleanExtra(Utils.EXTRA_SILENT_CONNECT, false);
+            mSilentConnect        = getIntent().getBooleanExtra(Utils.EXTRA_SILENT_CONNECT, false);
 
             boolean autoConnectAfterProvisioning =
                     getIntent().getBooleanExtra(Utils.EXTRA_AUTO_CONNECT_AFTER_PROVISIONING, false);
@@ -179,10 +176,10 @@ public class ScannerActivity extends AppCompatActivity implements DevicesAdapter
             if (autoConnectAfterProvisioning) {
                 String deviceMac = getIntent().getStringExtra(Utils.EXTRA_TARGET_PROXY_MAC);
                 if (deviceMac != null) {
-                    mProvisionedDeviceMac = deviceMac;
+                    mProvisionedDeviceMac               = deviceMac;
                     mShouldAutoConnectAfterProvisioning = true;
-                    mSilentConnect = true;
-                    mScanWithProxyService = false;
+                    mSilentConnect                      = true;
+                    mScanWithProxyService               = false;
 
                     Log.d(TAG, "Auto-connect from intent for MAC: " + deviceMac);
 
@@ -213,9 +210,11 @@ public class ScannerActivity extends AppCompatActivity implements DevicesAdapter
         final RecyclerView recyclerViewDevices = binding.recyclerViewBleDevices;
         recyclerViewDevices.setLayoutManager(new LinearLayoutManager(this));
         recyclerViewDevices.addItemDecoration(
-                new DividerItemDecoration(recyclerViewDevices.getContext(), DividerItemDecoration.VERTICAL));
+                new DividerItemDecoration(recyclerViewDevices.getContext(),
+                        DividerItemDecoration.VERTICAL));
 
-        final SimpleItemAnimator itemAnimator = (SimpleItemAnimator) recyclerViewDevices.getItemAnimator();
+        final SimpleItemAnimator itemAnimator =
+                (SimpleItemAnimator) recyclerViewDevices.getItemAnimator();
         if (itemAnimator != null) itemAnimator.setSupportsChangeAnimations(false);
 
         adapter = new DevicesAdapter(this, mViewModel.getScannerRepository().getScannerResults());
@@ -230,7 +229,7 @@ public class ScannerActivity extends AppCompatActivity implements DevicesAdapter
 
         mViewModel.getScannerRepository().getScannerState().observe(this, this::startScan);
 
-        targetProxyMac = getIntent().getStringExtra(Utils.EXTRA_TARGET_PROXY_MAC);
+        targetProxyMac    = getIntent().getStringExtra(Utils.EXTRA_TARGET_PROXY_MAC);
         mAutoConnectHandler = new Handler();
 
         if (targetProxyMac != null && !mShouldAutoConnectAfterProvisioning) {
@@ -238,28 +237,36 @@ public class ScannerActivity extends AppCompatActivity implements DevicesAdapter
                     String.format("Looking for device: %s...", formatMacForDisplay(targetProxyMac)));
         }
 
-        // ✅ Filter: observe from SharedViewModel (bottom nav sets this)
+        // ✅ Observe name/spinner filter from SharedViewModel
         mSharedViewModel.getDeviceNameFilter().observe(this, filter -> {
             mCurrentDeviceFilter = filter != null ? filter : "";
-            Log.d(TAG, "Filter changed: '" + mCurrentDeviceFilter + "'");
+            Log.d(TAG, "Name filter changed: '" + mCurrentDeviceFilter + "'");
             applyFilterToAdapter();
         });
 
-        // ✅ Filter: re-apply when new scan results arrive
+        // ✅ Observe signal threshold from SharedViewModel ← NEW
+        mSharedViewModel.getSignalThreshold().observe(this, threshold -> {
+            mCurrentSignalFilter = threshold != null ? threshold : DevicesAdapter.SIGNAL_DEFAULT;
+            Log.d(TAG, "Signal filter changed: " + mCurrentSignalFilter + "%");
+            applyFilterToAdapter();
+        });
+
+        // ✅ Re-apply filters when new scan results arrive
         mViewModel.getScannerRepository().getScannerResults().observe(this, scannerLiveData -> {
             applyFilterToAdapter();
         });
     }
 
     // -----------------------------------------------------------------------
-    // Filter — from SharedViewModel / bottom nav
+    // Filter — apply BOTH name and signal to adapter ← UPDATED
     // -----------------------------------------------------------------------
 
     private void applyFilterToAdapter() {
         if (!mScanWithProxyService || mSilentConnect || mShouldAutoConnectAfterProvisioning) return;
         if (adapter == null) return;
 
-        adapter.applyFilter(mCurrentDeviceFilter);
+        // Pass both filters to adapter — device must pass both to be shown
+        adapter.applyFilters(mCurrentDeviceFilter, mCurrentSignalFilter);
 
         if (!mSilentConnect && !mShouldAutoConnectAfterProvisioning) {
             binding.noDevices.getRoot().setVisibility(
@@ -275,7 +282,6 @@ public class ScannerActivity extends AppCompatActivity implements DevicesAdapter
     protected void onStart() {
         super.onStart();
 
-        // ✅ FIX: Don't restart scan if reconnect already launched or proxy connected
         if (mProxyConnected || mReconnectLaunched) {
             Log.d(TAG, "onStart: reconnect in progress or connected — skipping scan");
             return;
@@ -294,7 +300,6 @@ public class ScannerActivity extends AppCompatActivity implements DevicesAdapter
     protected void onStop() {
         super.onStop();
 
-        // ✅ FIX: Don't stop scan if reconnect is in progress or proxy connected
         if (mProxyConnected || mReconnectLaunched) {
             Log.d(TAG, "onStop: reconnect in progress — not stopping scan");
             return;
@@ -390,11 +395,10 @@ public class ScannerActivity extends AppCompatActivity implements DevicesAdapter
     }
 
     // -----------------------------------------------------------------------
-    // Scan observer — called every time ScannerStateLiveData changes
+    // Scan observer
     // -----------------------------------------------------------------------
 
     private void startScan(final ScannerStateLiveData state) {
-        // ✅ ROOT FIX: Block everything if reconnect is already launched or proxy connected
         if (mProxyConnected || mReconnectLaunched) {
             Log.d(TAG, "startScan() blocked — reconnect launched or proxy connected");
             return;
@@ -481,7 +485,6 @@ public class ScannerActivity extends AppCompatActivity implements DevicesAdapter
         stopScan();
 
         new Handler().postDelayed(() -> runOnUiThread(() -> {
-            // ✅ Guard: don't start scan if already launched
             if (mReconnectLaunched || mProxyConnected) return;
 
             Log.d(TAG, "Starting PROXY scan after delay");
@@ -500,13 +503,12 @@ public class ScannerActivity extends AppCompatActivity implements DevicesAdapter
         if (mAutoConnectStarted) return;
 
         mAutoConnectStarted = true;
-        mScanStartTime = System.currentTimeMillis();
+        mScanStartTime      = System.currentTimeMillis();
         Log.d(TAG, "Auto-connect loop started");
 
         mAutoConnectRunnable = new Runnable() {
             @Override
             public void run() {
-                // ✅ Stop loop immediately if reconnect already launched or connected
                 if (mProxyConnected || mReconnectLaunched) {
                     Log.d(TAG, "Loop stopped — reconnect launched or connected");
                     stopAutoConnectLoop();
@@ -539,11 +541,8 @@ public class ScannerActivity extends AppCompatActivity implements DevicesAdapter
                 if (targetDevice != null) {
                     Log.i(TAG, "✅ Target found: " + targetDevice.getAddress());
 
-                    // ✅ KEY FIX: Set mReconnectLaunched = true BEFORE launching
-                    // This prevents the ScannerStateLiveData observer from restarting scan
-                    // between stopScan() and reconnect.launch() completing
-                    mReconnectLaunched = true;
-                    mAutoConnectStarted = false; // reset so loop doesn't restart
+                    mReconnectLaunched  = true;
+                    mAutoConnectStarted = false;
 
                     stopScan();
                     stopAutoConnectLoop();
@@ -577,12 +576,11 @@ public class ScannerActivity extends AppCompatActivity implements DevicesAdapter
     }
 
     private ExtendedBluetoothDevice findTargetDevice() {
-        final ScannerLiveData resultsLiveData = mViewModel.getScannerRepository().getScannerResults();
+        final ScannerLiveData resultsLiveData =
+                mViewModel.getScannerRepository().getScannerResults();
         if (resultsLiveData == null || resultsLiveData.getDevices() == null) return null;
 
-        Log.d(TAG, "Scan results size: " + resultsLiveData.getDevices().size());
         for (ExtendedBluetoothDevice device : resultsLiveData.getDevices()) {
-            Log.d(TAG, "Checking: " + device.getName() + " [" + device.getAddress() + "]");
             if (device.getAddress() != null
                     && device.getAddress().equalsIgnoreCase(targetProxyMac)) {
                 return device;
@@ -597,9 +595,9 @@ public class ScannerActivity extends AppCompatActivity implements DevicesAdapter
 
     private void updateProgressText() {
         if (targetProxyMac == null || binding.textConnectingProgress == null) return;
-        long elapsed = (System.currentTimeMillis() - mScanStartTime) / 1000;
-        String mac = formatMacForDisplay(targetProxyMac);
-        String text = mShouldAutoConnectAfterProvisioning
+        long   elapsed = (System.currentTimeMillis() - mScanStartTime) / 1000;
+        String mac     = formatMacForDisplay(targetProxyMac);
+        String text    = mShouldAutoConnectAfterProvisioning
                 ? String.format("Provisioned device: %s\nConnecting... (%d seconds)", mac, elapsed)
                 : String.format("Looking for device: %s\nElapsed: %d seconds...", mac, elapsed);
         binding.textConnectingProgress.setText(text);
@@ -640,13 +638,14 @@ public class ScannerActivity extends AppCompatActivity implements DevicesAdapter
         binding.connectivityProgressContainer.setVisibility(View.GONE);
         binding.stateScanning.setVisibility(View.VISIBLE);
 
-        targetProxyMac = null;
+        targetProxyMac                      = null;
         mShouldAutoConnectAfterProvisioning = false;
-        mReconnectLaunched = false;
+        mReconnectLaunched                  = false;
         stopAutoConnectLoop();
 
         if (adapter != null) {
-            adapter.applyFilter(mCurrentDeviceFilter);
+            // Re-apply both filters when returning to scanner UI
+            adapter.applyFilters(mCurrentDeviceFilter, mCurrentSignalFilter);
         }
     }
 

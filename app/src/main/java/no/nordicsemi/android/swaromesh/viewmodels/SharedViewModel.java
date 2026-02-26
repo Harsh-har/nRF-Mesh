@@ -16,6 +16,7 @@ import javax.inject.Inject;
 import dagger.hilt.android.lifecycle.HiltViewModel;
 import dagger.hilt.android.qualifiers.ApplicationContext;
 import no.nordicsemi.android.swaromesh.adapter.ExtendedBluetoothDevice;
+import no.nordicsemi.android.swaromesh.ble.adapter.DevicesAdapter;
 import no.nordicsemi.android.swaromesh.utils.NetworkExportUtils;
 
 
@@ -25,18 +26,20 @@ public class SharedViewModel extends BaseViewModel implements NetworkExportUtils
     private final ScannerRepository mScannerRepository;
     private final SingleLiveEvent<String> networkExportState = new SingleLiveEvent<>();
 
-    private static final String PREFS_NAME = "mesh_prefs";
-    private static final String KEY_PROXY_ENABLED = "proxy_enabled";
-    private static final String KEY_DEVICE_NAME_FILTER = "device_name_filter";
-    private static final String KEY_SELECTED_DEVICE = "selected_device";
+    private static final String PREFS_NAME              = "mesh_prefs";
+    private static final String KEY_PROXY_ENABLED       = "proxy_enabled";
+    private static final String KEY_DEVICE_NAME_FILTER  = "device_name_filter";
+    private static final String KEY_SELECTED_DEVICE     = "selected_device";
+    private static final String KEY_SIGNAL_THRESHOLD    = "signal_threshold";       // ← NEW
     private static final String DEFAULT_SELECTED_DEVICE = "Select Device";
 
     private final SharedPreferences prefs;
 
-    private final MutableLiveData<Boolean> proxyEnabled = new MutableLiveData<>();
-    private final MutableLiveData<String> deviceNameFilter = new MutableLiveData<>("");
-    private final MutableLiveData<String> selectedDevice = new MutableLiveData<>(DEFAULT_SELECTED_DEVICE);
-    private final MutableLiveData<List<ExtendedBluetoothDevice>> filteredDevices = new MutableLiveData<>(new ArrayList<>());
+    private final MutableLiveData<Boolean>  proxyEnabled    = new MutableLiveData<>();
+    private final MutableLiveData<String>   deviceNameFilter = new MutableLiveData<>("");
+    private final MutableLiveData<String>   selectedDevice  = new MutableLiveData<>(DEFAULT_SELECTED_DEVICE);
+    private final MutableLiveData<Integer>  signalThreshold = new MutableLiveData<>(DevicesAdapter.SIGNAL_DEFAULT); // ← NEW
+    private final MutableLiveData<List<ExtendedBluetoothDevice>> filteredDevices         = new MutableLiveData<>(new ArrayList<>());
     private final MutableLiveData<List<ExtendedBluetoothDevice>> allUnprovisionedDevices = new MutableLiveData<>(new ArrayList<>());
 
     @Inject
@@ -52,14 +55,11 @@ public class SharedViewModel extends BaseViewModel implements NetworkExportUtils
 
         prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
 
-        boolean savedProxy = prefs.getBoolean(KEY_PROXY_ENABLED, true);
-        proxyEnabled.setValue(savedProxy);
-
-        String savedFilter = prefs.getString(KEY_DEVICE_NAME_FILTER, "");
-        deviceNameFilter.setValue(savedFilter);
-
-        String savedSelectedDevice = prefs.getString(KEY_SELECTED_DEVICE, DEFAULT_SELECTED_DEVICE);
-        selectedDevice.setValue(savedSelectedDevice);
+        // Restore persisted values
+        proxyEnabled.setValue(prefs.getBoolean(KEY_PROXY_ENABLED, true));
+        deviceNameFilter.setValue(prefs.getString(KEY_DEVICE_NAME_FILTER, ""));
+        selectedDevice.setValue(prefs.getString(KEY_SELECTED_DEVICE, DEFAULT_SELECTED_DEVICE));
+        signalThreshold.setValue(prefs.getInt(KEY_SIGNAL_THRESHOLD, DevicesAdapter.SIGNAL_DEFAULT)); // ← NEW
     }
 
     @Override
@@ -67,18 +67,14 @@ public class SharedViewModel extends BaseViewModel implements NetworkExportUtils
         super.onCleared();
 
         // ✅ ROOT FIX: Do NOT disconnect if proxy is currently connected.
-        // Previously, onCleared() always called disconnect() when ScannerActivity
-        // was destroyed — even during a successful proxy connection transition to
-        // NodeConfigurationActivity. This caused the ~1 second auto-disconnect bug.
-        //
-        // Now: only disconnect if BLE is NOT connected (i.e., genuine cleanup scenario).
-        // When proxy is connected and user navigates forward, BLE stays alive.
         if (!mNrfMeshRepository.getBleMeshManager().isConnected()) {
             mNrfMeshRepository.disconnect();
         }
 
         mScannerRepository.unregisterBroadcastReceivers();
     }
+
+    // ---------------- NETWORK ----------------
 
     public LiveData<String> getNetworkLoadState() {
         return mNrfMeshRepository.getNetworkLoadState();
@@ -114,9 +110,7 @@ public class SharedViewModel extends BaseViewModel implements NetworkExportUtils
 
     // ---------------- PROXY BUTTON STATE (PERSISTENT) ----------------
 
-    public LiveData<Boolean> getProxyEnabled() {
-        return proxyEnabled;
-    }
+    public LiveData<Boolean> getProxyEnabled() { return proxyEnabled; }
 
     public void setProxyEnabled(boolean enabled) {
         proxyEnabled.setValue(enabled);
@@ -130,9 +124,7 @@ public class SharedViewModel extends BaseViewModel implements NetworkExportUtils
 
     // ---------------- DEVICE NAME FILTER (PERSISTENT) ----------------
 
-    public LiveData<String> getDeviceNameFilter() {
-        return deviceNameFilter;
-    }
+    public LiveData<String> getDeviceNameFilter() { return deviceNameFilter; }
 
     public void setDeviceNameFilter(String filter) {
         if (filter == null) filter = "";
@@ -141,19 +133,15 @@ public class SharedViewModel extends BaseViewModel implements NetworkExportUtils
     }
 
     public String getDeviceNameFilterValue() {
-        String value = deviceNameFilter.getValue();
-        return value != null ? value : "";
+        String v = deviceNameFilter.getValue();
+        return v != null ? v : "";
     }
 
-    public void clearDeviceNameFilter() {
-        setDeviceNameFilter("");
-    }
+    public void clearDeviceNameFilter() { setDeviceNameFilter(""); }
 
     // ---------------- SELECTED DEVICE (PERSISTENT) ----------------
 
-    public LiveData<String> getSelectedDevice() {
-        return selectedDevice;
-    }
+    public LiveData<String> getSelectedDevice() { return selectedDevice; }
 
     public void setSelectedDevice(String device) {
         if (device == null) device = DEFAULT_SELECTED_DEVICE;
@@ -162,23 +150,40 @@ public class SharedViewModel extends BaseViewModel implements NetworkExportUtils
     }
 
     public String getSelectedDeviceValue() {
-        String value = selectedDevice.getValue();
-        return value != null ? value : DEFAULT_SELECTED_DEVICE;
+        String v = selectedDevice.getValue();
+        return v != null ? v : DEFAULT_SELECTED_DEVICE;
     }
 
     public boolean isDeviceSelected(String deviceName) {
         return deviceName != null && deviceName.equals(getSelectedDeviceValue());
     }
 
-    public void clearSelectedDevice() {
-        setSelectedDevice(DEFAULT_SELECTED_DEVICE);
+    public void clearSelectedDevice() { setSelectedDevice(DEFAULT_SELECTED_DEVICE); }
+
+    // ---------------- SIGNAL STRENGTH THRESHOLD (PERSISTENT) ← NEW ----------------
+
+    public LiveData<Integer> getSignalThreshold() { return signalThreshold; }
+
+    /**
+     * Set minimum RSSI signal threshold.
+     * Use DevicesAdapter.SIGNAL_DEFAULT (0) to disable.
+     * Use DevicesAdapter.SIGNAL_20 / SIGNAL_60 / SIGNAL_100 for thresholds.
+     */
+    public void setSignalThreshold(int threshold) {
+        signalThreshold.setValue(threshold);
+        prefs.edit().putInt(KEY_SIGNAL_THRESHOLD, threshold).apply();
     }
+
+    public int getSignalThresholdValue() {
+        Integer v = signalThreshold.getValue();
+        return v != null ? v : DevicesAdapter.SIGNAL_DEFAULT;
+    }
+
+    public void clearSignalThreshold() { setSignalThreshold(DevicesAdapter.SIGNAL_DEFAULT); }
 
     // ---------------- FILTERED DEVICES ----------------
 
-    public LiveData<List<ExtendedBluetoothDevice>> getFilteredDevices() {
-        return filteredDevices;
-    }
+    public LiveData<List<ExtendedBluetoothDevice>> getFilteredDevices() { return filteredDevices; }
 
     public void setFilteredDevices(List<ExtendedBluetoothDevice> devices) {
         if (devices == null) devices = new ArrayList<>();
@@ -186,19 +191,15 @@ public class SharedViewModel extends BaseViewModel implements NetworkExportUtils
     }
 
     public List<ExtendedBluetoothDevice> getFilteredDevicesValue() {
-        List<ExtendedBluetoothDevice> value = filteredDevices.getValue();
-        return value != null ? value : new ArrayList<>();
+        List<ExtendedBluetoothDevice> v = filteredDevices.getValue();
+        return v != null ? v : new ArrayList<>();
     }
 
-    public void clearFilteredDevices() {
-        filteredDevices.setValue(new ArrayList<>());
-    }
+    public void clearFilteredDevices() { filteredDevices.setValue(new ArrayList<>()); }
 
     // ---------------- ALL UNPROVISIONED DEVICES ----------------
 
-    public LiveData<List<ExtendedBluetoothDevice>> getAllUnprovisionedDevices() {
-        return allUnprovisionedDevices;
-    }
+    public LiveData<List<ExtendedBluetoothDevice>> getAllUnprovisionedDevices() { return allUnprovisionedDevices; }
 
     public void setAllUnprovisionedDevices(List<ExtendedBluetoothDevice> devices) {
         if (devices == null) devices = new ArrayList<>();
@@ -206,66 +207,87 @@ public class SharedViewModel extends BaseViewModel implements NetworkExportUtils
     }
 
     public List<ExtendedBluetoothDevice> getAllUnprovisionedDevicesValue() {
-        List<ExtendedBluetoothDevice> value = allUnprovisionedDevices.getValue();
-        return value != null ? value : new ArrayList<>();
+        List<ExtendedBluetoothDevice> v = allUnprovisionedDevices.getValue();
+        return v != null ? v : new ArrayList<>();
     }
 
     public void addUnprovisionedDevice(ExtendedBluetoothDevice device) {
         if (device == null) return;
-        List<ExtendedBluetoothDevice> currentList = getAllUnprovisionedDevicesValue();
-        if (!currentList.contains(device)) {
-            currentList.add(device);
-            allUnprovisionedDevices.setValue(currentList);
+        List<ExtendedBluetoothDevice> current = getAllUnprovisionedDevicesValue();
+        if (!current.contains(device)) {
+            current.add(device);
+            allUnprovisionedDevices.setValue(current);
         }
     }
 
-    public void clearAllUnprovisionedDevices() {
-        allUnprovisionedDevices.setValue(new ArrayList<>());
-    }
+    public void clearAllUnprovisionedDevices() { allUnprovisionedDevices.setValue(new ArrayList<>()); }
 
-    // ---------------- FILTER UTILITY METHODS ----------------
+    // ---------------- FILTER UTILITY ----------------
 
     public boolean isFilterActive() {
-        return !getDeviceNameFilterValue().isEmpty() ||
-                !getSelectedDeviceValue().equals(DEFAULT_SELECTED_DEVICE);
+        return !getDeviceNameFilterValue().isEmpty()
+                || !getSelectedDeviceValue().equals(DEFAULT_SELECTED_DEVICE)
+                || getSignalThresholdValue() != DevicesAdapter.SIGNAL_DEFAULT;
     }
 
     public String getActiveFilterDescription() {
+        StringBuilder sb = new StringBuilder();
+
         if (!getSelectedDeviceValue().equals(DEFAULT_SELECTED_DEVICE)) {
-            return "Filter: " + getSelectedDeviceValue();
+            sb.append("Device: ").append(getSelectedDeviceValue());
         } else if (!getDeviceNameFilterValue().isEmpty()) {
-            return "Filter: " + getDeviceNameFilterValue();
-        } else {
-            return "No filter active";
+            sb.append("Name: ").append(getDeviceNameFilterValue());
         }
+
+        if (getSignalThresholdValue() != DevicesAdapter.SIGNAL_DEFAULT) {
+            if (sb.length() > 0) sb.append(" | ");
+            sb.append("Signal ≥ ").append(getSignalThresholdValue()).append("%");
+        }
+
+        return sb.length() > 0 ? "Filter: " + sb : "No filter active";
     }
 
     public void resetAllFilters() {
         clearDeviceNameFilter();
         clearSelectedDevice();
+        clearSignalThreshold();   // ← NEW
         clearFilteredDevices();
     }
 
+    /**
+     * Apply both name AND signal filters.
+     * Device must pass BOTH to be included.
+     */
     public List<ExtendedBluetoothDevice> applyFilter(List<ExtendedBluetoothDevice> devices) {
         if (devices == null) return new ArrayList<>();
 
-        String filterToUse;
-        if (!getSelectedDeviceValue().equals(DEFAULT_SELECTED_DEVICE)) {
-            filterToUse = getSelectedDeviceValue();
-        } else {
-            filterToUse = getDeviceNameFilterValue();
-        }
+        // Spinner selection takes priority over typed name
+        String nameFilter = !getSelectedDeviceValue().equals(DEFAULT_SELECTED_DEVICE)
+                ? getSelectedDeviceValue()
+                : getDeviceNameFilterValue();
 
-        if (filterToUse.isEmpty()) {
+        int     threshold      = getSignalThresholdValue();
+        boolean hasNameFilter  = !nameFilter.isEmpty();
+        boolean hasSignalFilter = threshold != DevicesAdapter.SIGNAL_DEFAULT;
+
+        if (!hasNameFilter && !hasSignalFilter) {
             return new ArrayList<>(devices);
         }
 
-        List<ExtendedBluetoothDevice> filtered = new ArrayList<>();
-        String lowerCaseFilter = filterToUse.toLowerCase();
+        List<ExtendedBluetoothDevice> filtered    = new ArrayList<>();
+        String                        lowerFilter = nameFilter.toLowerCase();
 
         for (ExtendedBluetoothDevice device : devices) {
-            if (device.getName() != null &&
-                    device.getName().toLowerCase().contains(lowerCaseFilter)) {
+
+            // Name check
+            boolean nameOk = !hasNameFilter
+                    || (device.getName() != null
+                    && device.getName().toLowerCase().contains(lowerFilter));
+
+            // Signal check
+            boolean signalOk = !hasSignalFilter || matchesSignalThreshold(device, threshold);
+
+            if (nameOk && signalOk) {
                 filtered.add(device);
             }
         }
@@ -273,16 +295,18 @@ public class SharedViewModel extends BaseViewModel implements NetworkExportUtils
         return filtered;
     }
 
+    private boolean matchesSignalThreshold(@NonNull ExtendedBluetoothDevice device, int threshold) {
+        int rssiPercent = (int) (100.0f * (127.0f + device.getRssi()) / (127.0f + 20.0f));
+        return rssiPercent >= threshold;
+    }
+
     public void applyCurrentFilter() {
-        List<ExtendedBluetoothDevice> filtered = applyFilter(getAllUnprovisionedDevicesValue());
-        setFilteredDevices(filtered);
+        setFilteredDevices(applyFilter(getAllUnprovisionedDevicesValue()));
     }
 
     // ---------------- SCANNER REPOSITORY ACCESS ----------------
 
-    public ScannerRepository getScannerRepository() {
-        return mScannerRepository;
-    }
+    public ScannerRepository getScannerRepository() { return mScannerRepository; }
 
     public LiveData<ScannerLiveData> getScannerResults() {
         return mScannerRepository.getScannerResults();

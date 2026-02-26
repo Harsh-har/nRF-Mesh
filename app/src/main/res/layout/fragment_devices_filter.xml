@@ -9,7 +9,6 @@
     android:padding="16dp"
     tools:context=".DevicesFilterFragment">
 
-    <!-- Title -->
 
     <!-- Device Selection Spinner -->
 
