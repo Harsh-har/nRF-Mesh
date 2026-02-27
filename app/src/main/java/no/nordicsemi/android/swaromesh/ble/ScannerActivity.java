@@ -98,13 +98,22 @@ public class ScannerActivity extends AppCompatActivity implements DevicesAdapter
 
                         showConnectingUI();
                         binding.textConnectingProgress.setText(
-                                String.format("Provisioning complete!\nConnecting to %s...",
+                                String.format("Pr" +
+                                                "ovisioning complete!\nConnecting to %s...",
                                         formatMacForDisplay(mProvisionedDeviceMac)));
 
                         startAutoConnectAfterProvisioning();
                     } else {
                         setResultIntent(result.getData());
                     }
+
+
+
+
+
+
+
+
                 }
             });
 
@@ -434,12 +443,20 @@ public class ScannerActivity extends AppCompatActivity implements DevicesAdapter
             binding.noLocationPermission.getRoot().setVisibility(View.GONE);
         }
 
+        // FIX: Always show Bluetooth off UI when Bluetooth is disabled
         if (!state.isBluetoothEnabled()) {
-            if (!mSilentConnect && !mShouldAutoConnectAfterProvisioning) {
-                binding.bluetoothOff.getRoot().setVisibility(View.VISIBLE);
-                binding.stateScanning.setVisibility(View.INVISIBLE);
-                binding.noDevices.getRoot().setVisibility(View.GONE);
+            // Remove the condition - always show Bluetooth off UI
+            binding.bluetoothOff.getRoot().setVisibility(View.VISIBLE);
+            binding.stateScanning.setVisibility(View.INVISIBLE);
+            binding.noDevices.getRoot().setVisibility(View.GONE);
+            binding.connectivityProgressContainer.setVisibility(View.GONE);
+
+            // Stop any auto-connect attempts
+            if (mAutoConnectStarted) {
+                stopAutoConnectLoop();
             }
+
+            Log.d(TAG, "Bluetooth is off - showing Bluetooth off UI");
             return;
         } else {
             binding.bluetoothOff.getRoot().setVisibility(View.GONE);
@@ -469,10 +486,14 @@ public class ScannerActivity extends AppCompatActivity implements DevicesAdapter
         if (!mScanWithProxyService && (mSilentConnect || mShouldAutoConnectAfterProvisioning)
                 && targetProxyMac != null && !mAutoConnectStarted) {
             Log.d(TAG, "Starting auto-connect loop for: " + targetProxyMac);
-            startAutoConnectLoop();
+            // Only start auto-connect if Bluetooth is enabled
+            if (state.isBluetoothEnabled()) {
+                startAutoConnectLoop();
+            } else {
+                Log.d(TAG, "Bluetooth is off - not starting auto-connect");
+            }
         }
     }
-
     // -----------------------------------------------------------------------
     // Auto-connect after provisioning
     // -----------------------------------------------------------------------
